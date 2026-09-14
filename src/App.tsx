@@ -1,121 +1,31 @@
-import { FormEvent, useEffect, useState } from 'react'
+import { FormEvent, ReactNode, useEffect, useMemo, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { hasSupabaseConfig, supabase } from './lib/supabase'
 
-function Brand() {
-  return (
-    <div className="brand">
-      <span className="brandMark" aria-hidden="true">
-        <i /><i /><i />
-      </span>
-      <span><strong>Meu Fluxo</strong><small>Finanças pessoais</small></span>
-    </div>
-  )
-}
+type PageId = 'dashboard' | 'transactions' | 'payables' | 'loans' | 'vehicles' | 'investments' | 'comparisons' | 'projections' | 'settings'
+type IconName = PageId | 'menu' | 'plus' | 'bell' | 'search' | 'close' | 'wallet' | 'calendar' | 'trend'
+const navigation: Array<{ id: PageId; label: string }> = [{id:'dashboard',label:'Visão geral'},{id:'transactions',label:'Lançamentos'},{id:'payables',label:'Pagar e receber'},{id:'loans',label:'Empréstimos'},{id:'vehicles',label:'Veículos'},{id:'investments',label:'Investimentos'},{id:'comparisons',label:'Comparações'},{id:'projections',label:'Projeções'}]
+const pageHelp: Record<PageId,string>={dashboard:'Resumo financeiro do período',transactions:'Entradas, saídas e transferências',payables:'Compromissos previstos e realizados',loans:'Juros, pagamentos e amortizações',vehicles:'Custo real e média mensal por veículo',investments:'Aportes, resgates e rendimentos',comparisons:'Variações, tendências e alertas',projections:'Cenários futuros do fluxo de caixa',settings:'Perfil, categorias e preferências'}
 
-function SetupNotice() {
-  return (
-    <main className="setupPage">
-      <section className="setupCard">
-        <Brand />
-        <span className="status">Primeira etapa concluída</span>
-        <h1>Estrutura pronta para conectar ao Supabase</h1>
-        <p>O código inicial, a autenticação e a estrutura segura do banco já estão preparados. Falta cadastrar as duas variáveis públicas do projeto.</p>
-        <div className="codeList">
-          <code>VITE_SUPABASE_URL</code>
-          <code>VITE_SUPABASE_PUBLISHABLE_KEY</code>
-        </div>
-        <p className="securityNote">Senhas do banco e chaves administrativas nunca devem ser incluídas no código.</p>
-      </section>
-    </main>
-  )
-}
+function Icon({name,size=20}:{name:IconName;size?:number}){const p:Record<IconName,ReactNode>={dashboard:<><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,transactions:<><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></>,payables:<><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></>,loans:<><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M7 7V4h10v3M8 13h8M12 10v6"/></>,vehicles:<><path d="m5 15 1.5-6h11l1.5 6M3 15h18v4h-3v-2H6v2H3z"/><path d="M7 14h.01M17 14h.01"/></>,investments:<><path d="M4 20V10M10 20V5M16 20v-7M22 20V3M2 20h21"/></>,comparisons:<><path d="M7 4v16M17 4v16M4 8l3-3 3 3M14 16l3 3 3-3"/></>,projections:<><path d="m3 18 6-7 4 4 8-10M16 5h5v5"/></>,settings:<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></>,menu:<path d="M4 7h16M4 12h16M4 17h16"/>,plus:<path d="M12 5v14M5 12h14"/>,bell:<><path d="M6 9a6 6 0 0 1 12 0v6l2 2H4l2-2Z"/><path d="M10 21h4"/></>,search:<><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></>,close:<path d="m6 6 12 12M18 6 6 18"/>,wallet:<><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M15 10h7v5h-7a2.5 2.5 0 0 1 0-5Z"/></>,calendar:<><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></>,trend:<path d="m3 17 6-6 4 4 8-9M16 6h5v5"/>};return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">{p[name]}</svg>}
+function Brand(){return <div className="brand"><span className="brandMark"><i/><i/><i/></span><span><strong>Meu Fluxo</strong><small>Finanças pessoais</small></span></div>}
+function EmptyState({icon,title,text,action,onAction}:{icon:IconName;title:string;text:string;action?:string;onAction?:()=>void}){return <div className="emptyState"><span className="emptyIcon"><Icon name={icon} size={23}/></span><h3>{title}</h3><p>{text}</p>{action&&<button className="secondaryButton" onClick={onAction}>{action}</button>}</div>}
+function PageHeader({title,description,action,onAction,children}:{title:string;description:string;action?:string;onAction?:()=>void;children?:ReactNode}){return <div className="pageHeader"><div><h2>{title}</h2><p>{description}</p></div><div className="pageActions">{children}{action&&<button className="primaryButton" onClick={onAction}><Icon name="plus" size={17}/>{action}</button>}</div></div>}
+function Metric({label,tone='blue'}:{label:string;tone?:string}){return <article className="metric"><span className={`metricIcon ${tone}`}><Icon name={tone==='green'?'trend':tone==='red'?'wallet':'dashboard'} size={18}/></span><small>{label}</small><strong>R$ 0,00</strong><p>Sem lançamentos no período</p></article>}
 
-function Login() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [message, setMessage] = useState('')
-  const [loading, setLoading] = useState(false)
+function DashboardPage({openEntry}:{openEntry:()=>void}){return <><PageHeader title="Visão geral" description="Acompanhe o mês, identifique mudanças e acesse os detalhes." action="Novo lançamento" onAction={openEntry}><select className="selectControl" aria-label="Período"><option>Setembro de 2026</option></select></PageHeader><div className="metrics"><Metric label="Entradas no mês" tone="green"/><Metric label="Saídas no mês" tone="red"/><Metric label="Resultado do mês"/><Metric label="Saldo disponível" tone="amber"/></div><div className="dashboardGrid"><section className="card chartCard"><div className="cardHeader"><div><h3>Entradas e saídas</h3><p>Evolução dos últimos seis meses</p></div><div className="legend"><span className="income">Entradas</span><span className="expense">Saídas</span></div></div><div className="emptyChart"><div className="chartGrid"><i/><i/><i/><i/></div><span>O gráfico aparecerá após os primeiros lançamentos.</span></div></section><section className="card"><div className="cardHeader"><div><h3>Despesas por grupo</h3><p>Participação no mês</p></div></div><EmptyState icon="comparisons" title="Sem despesas" text="Os grupos aparecerão aqui conforme os lançamentos forem registrados."/></section></div><div className="dashboardGrid lower"><section className="card"><div className="cardHeader"><div><h3>Últimos lançamentos</h3><p>Entradas e saídas recentes</p></div><button className="textButton">Ver todos</button></div><EmptyState icon="transactions" title="Nenhum lançamento" text="Adicione uma entrada ou saída para iniciar o controle." action="Adicionar lançamento" onAction={openEntry}/></section><section className="card attention"><div className="cardHeader"><div><h3>Atenção</h3><p>Contas, tendências e avisos</p></div></div><div className="notice neutral"><Icon name="bell"/><div><strong>Sem alertas no momento</strong><p>Os avisos serão calculados com base no seu histórico.</p></div></div></section></div></>}
+function TransactionsPage({openEntry}:{openEntry:()=>void}){return <><PageHeader title="Lançamentos" description="Consulte, filtre e registre todas as movimentações." action="Adicionar lançamento" onAction={openEntry}/><div className="toolbar"><label className="searchField"><Icon name="search" size={18}/><input placeholder="Pesquisar descrição ou categoria"/></label><select className="selectControl"><option>Todos os tipos</option><option>Entradas</option><option>Saídas</option><option>Transferências</option></select><select className="selectControl"><option>Todos os grupos</option></select></div><section className="card tableCard"><div className="tableScroll"><table><thead><tr><th>Data</th><th>Descrição</th><th>Grupo</th><th>Conta</th><th>Situação</th><th className="right">Valor</th></tr></thead><tbody/></table></div><EmptyState icon="transactions" title="Sua lista está vazia" text="Os lançamentos poderão ser filtrados por período, grupo, categoria e situação." action="Criar primeiro lançamento" onAction={openEntry}/></section></>}
+function PayablesPage(){return <><PageHeader title="Pagar e receber" description="Veja o que vence, o que já foi realizado e o que está atrasado." action="Nova conta"/><div className="statusMetrics"><article><span>Vence nos próximos 7 dias</span><strong>R$ 0,00</strong></article><article><span>A receber</span><strong>R$ 0,00</strong></article><article><span>Vencido</span><strong>R$ 0,00</strong></article></div><div className="twoColumns"><section className="card"><div className="cardHeader"><div><h3>Calendário financeiro</h3><p>Setembro de 2026</p></div><button className="iconButton"><Icon name="calendar"/></button></div><EmptyState icon="calendar" title="Nenhuma conta programada" text="Recorrências e parcelas futuras aparecerão automaticamente."/></section><section className="card"><div className="cardHeader"><div><h3>Próximos compromissos</h3><p>Ordenados por vencimento</p></div></div><EmptyState icon="payables" title="Agenda livre" text="Não há contas previstas para este período."/></section></div></>}
+function LoansPage(){return <><PageHeader title="Empréstimos" description="Controle por pessoa com juros compostos proporcionais aos dias." action="Novo empréstimo"/><div className="twoColumns loanIntro"><section className="card loanSummary"><span className="sectionTag">Resumo geral</span><strong className="bigValue">R$ 0,00</strong><p>Saldo principal a receber</p><div className="miniGrid"><div><small>Total emprestado</small><strong>R$ 0,00</strong></div><div><small>Juros recebidos</small><strong>R$ 0,00</strong></div><div><small>Pessoas</small><strong>0</strong></div></div></section><section className="card formulaCard"><h3>Regra de cálculo</h3><p>Taxa mensal configurável com capitalização proporcional aos dias.</p><code>saldo × ((1 + taxa)<sup>dias ÷ 30</sup> − 1)</code><small>Pagamentos quitam primeiro os juros acumulados e depois amortizam o principal.</small></section></div><section className="card sectionGap"><div className="cardHeader"><div><h3>Pessoas e contratos</h3><p>Filtre pelo nome e consulte a memória de cálculo</p></div><label className="compactSearch"><Icon name="search" size={16}/><input placeholder="Pesquisar pessoa"/></label></div><EmptyState icon="loans" title="Nenhum empréstimo cadastrado" text="Cadastre uma pessoa e registre as datas em que o dinheiro foi entregue." action="Cadastrar empréstimo"/></section></>}
+function VehiclesPage(){return <><PageHeader title="Veículos" description="Separe o custo real do mês e acompanhe a média mensal." action="Cadastrar veículo"/><div className="twoColumns"><section className="card"><EmptyState icon="vehicles" title="Nenhum veículo cadastrado" text="Cadastre carro ou moto para relacionar combustível, impostos e manutenção." action="Cadastrar veículo"/></section><section className="card"><div className="cardHeader"><div><h3>Custo mês a mês</h3><p>Sem ratear valores no fluxo de caixa real</p></div></div><div className="emptyChart compact"><div className="chartGrid"><i/><i/><i/></div><span>Escolha um veículo para visualizar.</span></div></section></div><section className="card infoCard sectionGap"><div className="notice blue"><Icon name="vehicles"/><div><strong>Como a média será apresentada</strong><p>IPVA, licenciamento e seguro permanecem no mês do pagamento. A média mensal será exibida separadamente para planejamento.</p></div></div></section></>}
+function InvestmentsPage(){return <><PageHeader title="Investimentos" description="Acompanhe aportes, resgates, rentabilidade e rendimentos realizados." action="Adicionar investimento"/><div className="metrics"><Metric label="Saldo aplicado"/><Metric label="Aportes no mês"/><Metric label="Rendimento líquido" tone="green"/><Metric label="Rentabilidade" tone="amber"/></div><div className="twoColumns"><section className="card"><div className="cardHeader"><div><h3>Evolução dos investimentos</h3><p>Patrimônio e rendimento líquido</p></div></div><div className="emptyChart"><div className="chartGrid"><i/><i/><i/></div><span>Cadastre uma conta de investimento para começar.</span></div></section><section className="card"><div className="cardHeader"><div><h3>Produtos</h3><p>Comparação por instituição</p></div></div><EmptyState icon="investments" title="Nenhum produto cadastrado" text="Aportes serão tratados como transferências, sem inflar as despesas."/></section></div></>}
+function ComparisonsPage(){return <><PageHeader title="Comparações" description="Entenda o que aumentou, diminuiu e se tornou tendência."><select className="selectControl"><option>Mês anterior</option><option>Mesmo mês do ano anterior</option></select></PageHeader><div className="twoColumns"><section className="card"><div className="cardHeader"><div><h3>Resumo da comparação</h3><p>Valor, diferença e variação percentual</p></div></div><EmptyState icon="comparisons" title="Ainda não há períodos comparáveis" text="São necessários lançamentos em pelo menos dois períodos."/></section><section className="card"><div className="cardHeader"><div><h3>Variação por grupo</h3><p>Maiores aumentos e reduções</p></div></div><EmptyState icon="trend" title="Sem variações calculadas" text="Quando a base estiver pronta, cada resultado abrirá os lançamentos que o explicam."/></section></div><section className="card sectionGap"><div className="cardHeader"><div><h3>Análises automáticas</h3><p>Tendências calculadas com pelo menos três períodos completos</p></div></div><div className="notice neutral"><Icon name="bell"/><div><strong>Nenhuma tendência disponível</strong><p>Uma alteração isolada não será classificada como tendência.</p></div></div></section></>}
+function ProjectionsPage(){return <><PageHeader title="Projeções" description="Visualize o saldo futuro usando recorrências, parcelas e contas previstas."><label className="dateControl">Projetar até<input type="month" defaultValue="2027-06"/></label></PageHeader><div className="scenarioTabs"><button>Conservador</button><button className="active">Base</button><button>Otimista</button></div><section className="card projectionCard"><div className="projectionSummary"><div><small>Saldo inicial</small><strong>R$ 0,00</strong></div><div><small>Entradas previstas</small><strong>R$ 0,00</strong></div><div><small>Saídas previstas</small><strong>R$ 0,00</strong></div><div><small>Saldo projetado</small><strong>R$ 0,00</strong></div></div><div className="emptyChart"><div className="chartGrid"><i/><i/><i/><i/></div><span>A projeção não inventará receitas ou rendimentos sem uma premissa cadastrada.</span></div></section></>}
+function SettingsPage(){const groups=[{title:'Contas e cartões',text:'Saldos iniciais, cartões e datas de fechamento.'},{title:'Grupos e categorias',text:'Categorias exclusivas para cada usuário.'},{title:'Recorrências',text:'Salário, aluguel e serviços com histórico por vigência.'},{title:'Usuários',text:'Criação de acessos e permissões administrativas.'},{title:'Alertas',text:'Limites, vencimentos e tendências financeiras.'},{title:'Segurança e dados',text:'Senha, sessões, exportação e backup.'}];return <><PageHeader title="Configurações" description="Personalize o sistema sem alterar os dados de outros usuários."/><div className="settingsGrid">{groups.map((item,index)=><button className="settingCard" key={item.title}><span className="settingIcon"><Icon name={index===3?'settings':index===0?'wallet':index===2?'calendar':'dashboard'}/></span><span><strong>{item.title}</strong><small>{item.text}</small></span><b>›</b></button>)}</div></>}
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-    if (!supabase) return
-    setLoading(true)
-    setMessage('')
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    setLoading(false)
-    if (error) setMessage('Não foi possível entrar. Confira o e-mail e a senha.')
-  }
+function EntryDialog({close}:{close:()=>void}){const[type,setType]=useState('Saída');function submit(e:FormEvent){e.preventDefault();alert('Estrutura validada. O lançamento será gravado quando o Supabase estiver conectado.');close()}return <div className="dialogBackdrop" onMouseDown={e=>e.target===e.currentTarget&&close()}><form className="dialog" onSubmit={submit}><div className="dialogHeader"><div><h2>Novo lançamento</h2><p>Registre uma movimentação financeira.</p></div><button type="button" className="iconButton" onClick={close}><Icon name="close"/></button></div><div className="typeTabs">{['Saída','Entrada','Transferência'].map(i=><button type="button" className={type===i?'active':''} onClick={()=>setType(i)} key={i}>{i}</button>)}</div><div className="formGrid"><label>Valor<input inputMode="decimal" placeholder="R$ 0,00" required/></label><label>Data<input type="date" required/></label><label>Grupo<select required><option value="">Selecionar grupo</option></select></label><label>Categoria<select required><option value="">Selecionar categoria</option></select></label><label>Conta<select required><option value="">Selecionar conta</option></select></label><label>Situação<select><option>Realizado</option><option>Previsto</option></select></label><label className="full">Observação<input placeholder="Inclua um detalhe para facilitar a busca"/></label></div><div className="dialogFooter"><button type="button" className="secondaryButton" onClick={close}>Cancelar</button><button type="submit" className="primaryButton">Salvar lançamento</button></div></form></div>}
 
-  return (
-    <main className="loginPage">
-      <section className="loginIntro">
-        <Brand />
-        <div>
-          <span className="eyebrow">Controle financeiro pessoal</span>
-          <h1>Suas finanças organizadas em um só lugar.</h1>
-          <p>Acompanhe lançamentos, empréstimos, veículos e investimentos com os dados protegidos por usuário.</p>
-        </div>
-        <small>Os valores de cada perfil permanecem separados.</small>
-      </section>
-      <section className="loginPanel">
-        <form className="loginCard" onSubmit={handleSubmit}>
-          <h2>Entrar</h2>
-          <p>Acesse o seu painel financeiro.</p>
-          <label>E-mail<input type="email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" required /></label>
-          <label>Senha<input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" required /></label>
-          {message && <div className="error" role="alert">{message}</div>}
-          <button type="submit" disabled={loading}>{loading ? 'Entrando...' : 'Entrar'}</button>
-          <button type="button" className="textButton">Esqueci minha senha</button>
-        </form>
-      </section>
-    </main>
-  )
-}
-
-function Dashboard({ session }: { session: Session }) {
-  async function signOut() { await supabase?.auth.signOut() }
-  return (
-    <div className="dashboard">
-      <aside>
-        <Brand />
-        <nav>
-          <button className="active">Visão geral</button>
-          <button>Lançamentos</button>
-          <button>Empréstimos</button>
-          <button>Veículos</button>
-          <button>Investimentos</button>
-          <button>Comparações</button>
-          <button>Projeções</button>
-        </nav>
-        <button className="signOut" onClick={signOut}>Sair</button>
-      </aside>
-      <main>
-        <header><div><span className="eyebrow">Painel financeiro</span><h1>Visão geral</h1></div><button className="primary">Novo lançamento</button></header>
-        <div className="content">
-          <div className="welcome"><div><h2>Base segura conectada</h2><p>Sessão ativa para {session.user.email}. Os indicadores serão preenchidos após a importação validada dos lançamentos.</p></div><span className="status">Conectado</span></div>
-          <div className="metrics">
-            {['Entradas no mês','Saídas no mês','Resultado do mês','Saldo acumulado'].map(label => <article key={label}><span>{label}</span><strong>R$ 0,00</strong><small>Aguardando importação</small></article>)}
-          </div>
-          <section className="emptyState"><span className="emptyIcon">+</span><h3>Próximo passo: importar os lançamentos</h3><p>A planilha será revisada antes da inclusão para separar valores realizados de parcelas futuras.</p></section>
-        </div>
-      </main>
-    </div>
-  )
-}
-
-export default function App() {
-  const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(hasSupabaseConfig)
-
-  useEffect(() => {
-    if (!supabase) return
-    supabase.auth.getSession().then(({ data }) => { setSession(data.session); setLoading(false) })
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession))
-    return () => data.subscription.unsubscribe()
-  }, [])
-
-  if (!hasSupabaseConfig) return <SetupNotice />
-  if (loading) return <main className="loading">Carregando...</main>
-  return session ? <Dashboard session={session} /> : <Login />
-}
+function AppShell({session,previewMode=false}:{session?:Session|null;previewMode?:boolean}){const initial=(location.hash.replace('#/','') as PageId)||'dashboard';const[page,setPage]=useState<PageId>(navigation.some(i=>i.id===initial)||initial==='settings'?initial:'dashboard');const[menuOpen,setMenuOpen]=useState(false),[entryOpen,setEntryOpen]=useState(false);const currentLabel=useMemo(()=>[...navigation,{id:'settings' as PageId,label:'Configurações'}].find(i=>i.id===page)?.label||'Visão geral',[page]);function navigate(id:PageId){setPage(id);setMenuOpen(false);location.hash=`/${id}`;window.scrollTo({top:0,behavior:'smooth'})}async function signOut(){if(session)await supabase?.auth.signOut()}const pages:Record<PageId,ReactNode>={dashboard:<DashboardPage openEntry={()=>setEntryOpen(true)}/>,transactions:<TransactionsPage openEntry={()=>setEntryOpen(true)}/>,payables:<PayablesPage/>,loans:<LoansPage/>,vehicles:<VehiclesPage/>,investments:<InvestmentsPage/>,comparisons:<ComparisonsPage/>,projections:<ProjectionsPage/>,settings:<SettingsPage/>};return <div className="appShell"><aside className={menuOpen?'open':''}><Brand/><span className="navSection">Principal</span><nav>{navigation.map(i=><button key={i.id} className={page===i.id?'active':''} onClick={()=>navigate(i.id)}><Icon name={i.id}/>{i.label}</button>)}</nav><span className="navSection">Conta</span><nav><button className={page==='settings'?'active':''} onClick={()=>navigate('settings')}><Icon name="settings"/>Configurações</button></nav><div className="profile"><span>HV</span><div><strong>{session?.user.email?.split('@')[0]||'Henrique'}</strong><small>{previewMode?'Modo estrutura':'Usuário conectado'}</small></div><button onClick={signOut}>{session?'Sair':''}</button></div></aside>{menuOpen&&<button className="menuOverlay" onClick={()=>setMenuOpen(false)}/>}<main className="workspace"><header className="topbar"><button className="mobileMenu" onClick={()=>setMenuOpen(true)}><Icon name="menu"/></button><div><small>{pageHelp[page]}</small><h1>{currentLabel}</h1></div><div className="topActions"><button className="iconButton"><Icon name="bell"/></button><button className="primaryButton topNew" onClick={()=>setEntryOpen(true)}><Icon name="plus" size={17}/>Novo lançamento</button></div></header>{previewMode&&<div className="previewBanner"><span>Visualização da estrutura</span><p>Dados reais e conexão com o Supabase ainda não foram adicionados.</p></div>}<div className="workspaceContent">{pages[page]}</div></main>{entryOpen&&<EntryDialog close={()=>setEntryOpen(false)}/>}</div>}
+function SetupNotice({preview}:{preview:()=>void}){return <main className="setupPage"><section className="setupCard"><Brand/><span className="status">Estrutura em validação</span><h1>O painel já pode ser revisado antes da conexão com os dados.</h1><p>Navegue pelas telas, confira a organização e valide o uso no computador e no celular. Nenhum dado real será incluído nesta etapa.</p><div className="setupActions"><button className="primaryButton" onClick={preview}>Visualizar estrutura</button></div><div className="codeList"><code>VITE_SUPABASE_URL</code><code>VITE_SUPABASE_PUBLISHABLE_KEY</code></div><p className="securityNote">As variáveis serão configuradas somente depois da aprovação desta estrutura.</p></section></main>}
+function Login(){const[email,setEmail]=useState(''),[password,setPassword]=useState(''),[message,setMessage]=useState(''),[loading,setLoading]=useState(false);async function submit(e:FormEvent){e.preventDefault();if(!supabase)return;setLoading(true);setMessage('');const{error}=await supabase.auth.signInWithPassword({email,password});setLoading(false);if(error)setMessage('Não foi possível entrar. Confira o e-mail e a senha.')}return <main className="loginPage"><section className="loginIntro"><Brand/><div><span className="eyebrow">Controle financeiro pessoal</span><h1>Suas finanças organizadas em um só lugar.</h1><p>Lançamentos, empréstimos, veículos e investimentos com dados protegidos por usuário.</p></div><small>Os valores de cada perfil permanecem separados.</small></section><section className="loginPanel"><form className="loginCard" onSubmit={submit}><h2>Entrar</h2><p>Acesse o seu painel financeiro.</p><label>E-mail<input type="email" value={email} onChange={e=>setEmail(e.target.value)} required/></label><label>Senha<input type="password" value={password} onChange={e=>setPassword(e.target.value)} required/></label>{message&&<div className="error">{message}</div>}<button type="submit" className="primaryButton" disabled={loading}>{loading?'Entrando...':'Entrar'}</button><button type="button" className="textButton">Esqueci minha senha</button></form></section></main>}
+export default function App(){const[session,setSession]=useState<Session|null>(null),[loading,setLoading]=useState(hasSupabaseConfig),[preview,setPreview]=useState(false);useEffect(()=>{if(!supabase)return;supabase.auth.getSession().then(({data})=>{setSession(data.session);setLoading(false)});const{data}=supabase.auth.onAuthStateChange((_event,next)=>setSession(next));return()=>data.subscription.unsubscribe()},[]);if(!hasSupabaseConfig&&!preview)return<SetupNotice preview={()=>setPreview(true)}/>;if(!hasSupabaseConfig&&preview)return<AppShell previewMode/>;if(loading)return<main className="loading">Carregando...</main>;return session?<AppShell session={session}/>:<Login/>}
