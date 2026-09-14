@@ -1,0 +1,298 @@
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.formGrid select:disabled {
+  background: #f4f6f9;
+  color: #9aa4b6;
+  cursor: not-allowed;
+}
+
+.configSummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.configSummary article {
+  padding: 17px 19px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+}
+
+.configSummary small,
+.configSummary strong {
+  display: block;
+}
+
+.configSummary small {
+  color: var(--muted);
+  font-size: .73rem;
+}
+
+.configSummary strong {
+  margin-top: 7px;
+  font-size: 1.15rem;
+}
+
+.categoryManager {
+  padding: 0;
+  overflow: hidden;
+}
+
+.categoryManagerHeader {
+  padding: 20px 20px 4px;
+  margin: 0;
+}
+
+.inlineActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.configForm {
+  display: grid;
+  grid-template-columns: minmax(210px, 1fr) minmax(170px, .75fr) minmax(170px, .75fr) auto;
+  align-items: end;
+  gap: 12px;
+  margin: 16px 20px;
+  padding: 16px;
+  background: #f7f9fc;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+}
+
+.configForm > div:first-child {
+  align-self: center;
+}
+
+.configForm > div:first-child strong,
+.configForm > div:first-child small {
+  display: block;
+}
+
+.configForm > div:first-child strong {
+  font-size: .85rem;
+}
+
+.configForm > div:first-child small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: .69rem;
+  line-height: 1.35;
+}
+
+.configForm label {
+  margin: 0;
+  color: #526078;
+  font-size: .79rem;
+  font-weight: 750;
+}
+
+.configForm input,
+.configForm select {
+  display: block;
+  width: 100%;
+  height: 45px;
+  margin-top: 7px;
+  padding: 0 12px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid #dce2eb;
+  border-radius: 10px;
+}
+
+.configForm input:focus,
+.configForm select:focus {
+  border-color: var(--blue);
+  outline: 3px solid #dfe8ff;
+}
+
+.configFormActions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.configMessage {
+  margin: 14px 20px 0;
+  padding: 10px 12px;
+  color: #147854;
+  background: #e9f7f1;
+  border-radius: 10px;
+  font-size: .76rem;
+  font-weight: 700;
+}
+
+.categoryGroups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.categoryGroup {
+  padding: 19px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.categoryGroup:nth-child(odd) {
+  border-right: 1px solid var(--line);
+}
+
+.categoryGroupHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.categoryGroupHeader strong,
+.categoryGroupHeader small {
+  display: block;
+}
+
+.categoryGroupHeader strong {
+  font-size: .84rem;
+}
+
+.categoryGroupHeader small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: .68rem;
+}
+
+.natureBadge {
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: .64rem;
+  font-weight: 800;
+}
+
+.natureBadge.income {
+  color: #13845c;
+  background: #e7f7f0;
+}
+
+.natureBadge.expense {
+  color: #c84949;
+  background: #fff0ef;
+}
+
+.categoryChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.categoryChips span {
+  padding: 6px 8px;
+  color: #526078;
+  background: #f8f9fb;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: .69rem;
+}
+
+.dialog.entryDialog {
+  width: min(760px, 100%);
+}
+
+.fieldHint {
+  display: block;
+  margin-top: 6px;
+  color: #8993a5;
+  font-size: .66rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.installmentBox {
+  display: flex;
+  gap: 12px;
+  padding: 13px 14px;
+  margin: 2px 0 14px;
+  color: var(--blue);
+  background: #f1f5ff;
+  border: 1px solid #cddcff;
+  border-radius: 12px;
+}
+
+.installmentBox > svg {
+  flex: 0 0 auto;
+}
+
+.installmentBox strong {
+  display: block;
+  font-size: .76rem;
+}
+
+.installmentBox p {
+  margin: 4px 0 0;
+  color: #596a8d;
+  font-size: .7rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 1080px) {
+  .configForm {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .configForm > div:first-child,
+  .configFormActions {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 780px) {
+  .configSummary,
+  .categoryGroups {
+    grid-template-columns: 1fr;
+  }
+
+  .categoryGroup:nth-child(odd) {
+    border-right: 0;
+  }
+
+  .categoryManagerHeader {
+    display: block;
+  }
+
+  .inlineActions {
+    margin-top: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .configForm {
+    grid-template-columns: 1fr;
+    margin: 14px;
+  }
+
+  .configForm > div:first-child,
+  .configFormActions {
+    grid-column: auto;
+  }
+
+  .inlineActions > button {
+    width: 100%;
+  }
+
+  .typeTabs {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .typeTabs button {
+    padding: 0 5px;
+    font-size: .72rem;
+  }
+}
