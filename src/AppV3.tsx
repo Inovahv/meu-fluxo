@@ -1,8 +1,8 @@
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { hasSupabaseConfig, supabase } from './lib/supabase'
-import { buildProjectionSeries, filterCashFlow, summarizeCashFlow } from './financeCore.mjs'
-import type { CashFlowScope, PeriodMode } from './financeCore.mjs'
+import { buildProjectionSeries, filterCashFlow, summarizeCashFlow } from './financeCore'
+import type { CashFlowScope, PeriodMode } from './financeCore'
 
 type PageId = 'dashboard' | 'transactions' | 'payables' | 'loans' | 'vehicles' | 'investments' | 'comparisons' | 'projections' | 'settings'
 type Nature = 'Entrada' | 'Saída'
