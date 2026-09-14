@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'npm:@supabase/supabase-js@2.57.4'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -6,30 +6,50 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
-  if (req.method !== 'POST') return new Response(JSON.stringify({ error: 'Método não permitido.' }), { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+  if (req.method !== 'POST') return json({ error: 'Método não permitido.' }, 405)
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')
     const serviceRole = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    if (!supabaseUrl || !anonKey || !serviceRole) throw new Error('Configuração do servidor incompleta.')
+    if (!supabaseUrl || !serviceRole) throw new Error('Configuração do servidor incompleta.')
 
     const authHeader = req.headers.get('Authorization') || ''
-    const userClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } })
-    const { data: authData, error: authError } = await userClient.auth.getUser()
-    if (authError || !authData.user) return new Response(JSON.stringify({ error: 'Sessão inválida.' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    if (!authHeader.startsWith('Bearer ')) return json({ error: 'Sessão inválida.' }, 401)
 
-    const adminClient = createClient(supabaseUrl, serviceRole)
-    const { data: profile, error: profileError } = await adminClient.from('profiles').select('is_admin').eq('id', authData.user.id).single()
-    if (profileError || !profile?.is_admin) return new Response(JSON.stringify({ error: 'Acesso restrito a administradores.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    const token = authHeader.slice('Bearer '.length)
+    const adminClient = createClient(supabaseUrl, serviceRole, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+
+    const { data: authData, error: authError } = await adminClient.auth.getUser(token)
+    if (authError || !authData.user) return json({ error: 'Sessão inválida.' }, 401)
+
+    const { data: profile, error: profileError } = await adminClient
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', authData.user.id)
+      .single()
+
+    if (profileError || !profile?.is_admin) {
+      return json({ error: 'Acesso restrito a administradores.' }, 403)
+    }
 
     const body = await req.json()
-    const fullName = String(body.fullName || '').trim()
-    const email = String(body.email || '').trim().toLowerCase()
-    const password = String(body.password || '')
-    if (!fullName || !email || password.length < 8) return new Response(JSON.stringify({ error: 'Informe nome, e-mail e uma senha temporária com pelo menos 8 caracteres.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    const fullName = String(body?.fullName || '').trim()
+    const email = String(body?.email || '').trim().toLowerCase()
+    const password = String(body?.password || '')
+
+    if (!fullName || !email || password.length < 8) {
+      return json({ error: 'Informe nome, e-mail e uma senha temporária com pelo menos 8 caracteres.' }, 400)
+    }
 
     const { data, error } = await adminClient.auth.admin.createUser({
       email,
@@ -37,10 +57,17 @@ Deno.serve(async (req: Request) => {
       email_confirm: true,
       user_metadata: { full_name: fullName },
     })
-    if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
-    return new Response(JSON.stringify({ user: { id: data.user.id, email: data.user.email, full_name: fullName } }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    if (error) return json({ error: error.message }, 400)
+
+    return json({
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        full_name: fullName,
+      },
+    })
   } catch (error) {
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Erro inesperado.' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    return json({ error: error instanceof Error ? error.message : 'Erro inesperado.' }, 500)
   }
 })
