@@ -1,0 +1,26 @@
+name: Validar branch financeira
+
+on:
+  push:
+    branches:
+      - feat/fluxo-caixa-historico-admin
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Testes de regras financeiras
+        run: node --test tests/*.test.mjs
+      - name: Build
+        run: npm run build
