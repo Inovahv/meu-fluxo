@@ -64,12 +64,16 @@ select
 from auth.users u
 on conflict (id) do nothing;
 
-update public.profiles p
-set is_admin = true,
-    updated_at = now()
-from auth.users u
-where p.id = u.id
-  and lower(coalesce(u.email, '')) = lower('vieirahenrique321@gmail.com');
+do $$
+begin
+  if (select count(*) from auth.users) = 1 then
+    update public.profiles
+    set is_admin = true,
+        updated_at = now()
+    where id = (select id from auth.users limit 1);
+  end if;
+end;
+$$;
 
 drop policy if exists "profiles admins read all" on public.profiles;
 create policy "profiles admins read all"
