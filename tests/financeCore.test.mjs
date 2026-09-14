@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { filterCashFlow, buildProjectionSeries } from '../src/financeCore.mjs'
+import { filterCashFlow, buildProjectionSeries } from '../src/financeCore.ts'
 
 const rows = [
   { id:'1', type:'income', status:'completed', amount:1000, competence_date:'2026-08-05', settlement_date:'2026-08-05', category_id:'salary' },
