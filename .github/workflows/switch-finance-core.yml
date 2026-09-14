@@ -1,0 +1,32 @@
+name: Aplicar núcleo financeiro TypeScript
+
+on:
+  push:
+    branches:
+      - feat/fluxo-caixa-historico-admin
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/fluxo-caixa-historico-admin
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/switch-finance-core.mjs
+      - name: Commit import fix if needed
+        run: |
+          if git diff --quiet; then
+            echo "Nenhuma alteração necessária"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/AppV3.tsx
+          git commit -m "fix: usar núcleo financeiro TypeScript"
+          git push origin HEAD:feat/fluxo-caixa-historico-admin
