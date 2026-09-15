@@ -1,0 +1,261 @@
+:root {
+  --page-bg: #f4f7fb;
+  --surface: #fff;
+  --surface-raised: #fff;
+  --text: #172033;
+  --text-muted: #667085;
+  --border: #dfe6ef;
+  --primary: #2563eb;
+  --income: #0f8f68;
+  --expense: #cf4555;
+  --focus: #80aaff;
+  --bg: var(--page-bg);
+  --ink: var(--text);
+  --muted: var(--text-muted);
+  --line: var(--border);
+  --blue: var(--primary);
+  --green: var(--income);
+  --red: var(--expense);
+  --surface-elevated: color-mix(in srgb, var(--primary) 7%, var(--surface));
+  --primary-contrast: #fff;
+  --income-tint: color-mix(in srgb, var(--income) 9%, var(--surface));
+  --expense-tint: color-mix(in srgb, var(--expense) 9%, var(--surface));
+  --warning-tint: color-mix(in srgb, var(--executive-warning) 9%, var(--surface));
+  --executive-positive: #08734f;
+  --executive-negative: #b22e42;
+  --executive-warning: #855000;
+  --executive-result: var(--primary);
+  --amber: var(--executive-warning);
+  color: var(--text);
+  background: var(--page-bg);
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --page-bg: #08111f;
+  --surface: #111d2f;
+  --surface-raised: #17263b;
+  --text: #edf4ff;
+  --text-muted: #aab8cb;
+  --border: #2a3b52;
+  --primary: #72a2ff;
+  --income: #46c79a;
+  --expense: #ff7b88;
+  --focus: #9bbcff;
+  --primary-contrast: #08111f;
+  --executive-positive: var(--income);
+  --executive-negative: var(--expense);
+  --executive-warning: #f4c16b;
+  --shadow: 0 8px 28px rgb(0 0 0 / .18);
+  color-scheme: dark;
+}
+
+.analysisContext { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 18px; margin-bottom: 18px; }
+.analysisContext p, .selectedMonthContext, .balanceExplanation { color: var(--muted); font-size: .78rem; line-height: 1.6; }
+.analysisContext p { flex: 1 1 260px; margin: 0; }
+.basisToggle { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface, #fff); }
+.basisToggle button { min-height: 44px; padding: 8px 15px; border: 0; border-radius: 8px; color: var(--ink); background: transparent; font-size: .8rem; font-weight: 750; }
+.basisToggle button[aria-pressed="true"] { color: var(--executive-result); background: var(--surface-elevated, #edf3ff); box-shadow: inset 0 -3px var(--executive-result); }
+.selectedMonthContext { margin: 0 0 14px; }
+.executiveMetrics .metric { min-width: 0; }
+.executiveMetrics .metric > strong { overflow-wrap: anywhere; }
+.metric > .metricDelta { margin-top: 10px; font-size: .76rem; line-height: 1.6; font-weight: 700; }
+.metricDelta span { white-space: nowrap; }
+.favorable { color: var(--executive-positive) !important; }
+.unfavorable { color: var(--executive-negative) !important; }
+.neutral { color: var(--muted) !important; }
+.comparisonTrend { min-width: 150px; font-weight: 700; }
+
+.monthlySection { margin-bottom: 18px; min-width: 0; }
+.monthlyRail {
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(220px, 260px);
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+  padding: 5px 5px 14px;
+}
+.monthCard { scroll-snap-align: start; min-width: 0; display: grid; gap: 10px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; text-align: left; color: var(--ink); background: var(--surface, #fff); }
+.monthCard[aria-pressed="true"] { border-color: var(--executive-result); box-shadow: inset 0 3px var(--executive-result); background: var(--surface-elevated, #f3f7ff); }
+.monthCardHeading { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 5px; }
+.monthCardHeading strong { font-size: 1rem; }
+.monthCardHeading small { font-size: .67rem; color: var(--muted); }
+.monthCardValue { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 8px; font-size: .78rem; line-height: 1.4; }
+.monthCardValue > span { color: var(--muted); }
+.monthCardValue b { overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.monthResult b { color: var(--executive-result); }
+.monthBalance { border-top: 1px solid var(--line); padding-top: 10px; }
+.balanceExplanation { margin: 10px 0 0; }
+.monthCard:focus-visible,
+.basisToggle button:focus-visible,
+.chartSwitch button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.proDashboard > .card { min-width: 0; }
+.executiveTimeline .lineIncome { stroke-dasharray: 9 3; }
+.executiveTimeline .lineExpense { stroke-dasharray: 3 4; }
+.lineResult { fill: none; stroke: var(--executive-result); stroke-width: 3; }
+.dotResult, .resultMarker { fill: var(--executive-result); stroke: var(--surface, #fff); stroke-width: 2; }
+.resultLabel { fill: var(--executive-result); stroke: none; font-size: 10px; font-weight: 750; }
+.chartZero { stroke: var(--muted); stroke-width: 1; }
+.executiveTimeline .chartLegend { position: sticky; left: 0; flex-wrap: wrap; gap: 10px 18px; padding: 8px 0; }
+.legendResult:before { background: var(--executive-result); transform: rotate(45deg); }
+.executiveTimeline .legendIncome:before { border-radius: 50%; }
+.executiveTimeline .legendExpense:before { border-radius: 0; }
+
+.executiveAlerts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px; }
+.executiveAlert { border: 1px solid var(--line); border-inline-start: 4px solid currentColor; border-radius: 10px; padding: 14px; background: var(--surface, #fff); }
+.executiveAlert.critical { color: var(--executive-negative); }
+.executiveAlert.warning { color: var(--executive-warning); }
+.executiveAlert.positive { color: var(--executive-positive) !important; }
+.executiveAlert.info { color: var(--executive-result); }
+.alertSeverity { font-size: .75rem; font-weight: 800; }
+.executiveAlert h4 { color: var(--ink); font-size: .85rem; margin: 8px 0; }
+.executiveAlert p { color: var(--muted); font-size: .78rem; line-height: 1.6; margin: 0; font-weight: 400; }
+
+@media (max-width: 640px) {
+  .monthlyRail { grid-auto-columns: minmax(0, min(82vw, 290px, 100%)); }
+  .monthlySection { padding: 14px; }
+  .executiveMetrics { grid-template-columns: minmax(0, 1fr); }
+  .chartCard .cardHeader { flex-wrap: wrap; }
+  .basisToggle { width: 100%; }
+  .basisToggle button { flex: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monthlyRail { scroll-behavior: auto; }
+}
+
+/* Shared surfaces override the legacy light-only sheets loaded before this file. */
+body, .workspace, .loginPage { background: var(--page-bg); color: var(--text); }
+.card, .metric, .dialog, .filterPanel, .advancedFilterBody, .cashScopeTabs,
+.recordGrid article, .loanKpis > div, .personList > button,
+.settingsList > button, .settingsList.staticList > div, .userDirectory article,
+.statusMetrics article, .systemUnavailable > section { background: var(--surface); color: var(--text); border-color: var(--border); }
+.appShell > aside { background: var(--surface); color: var(--text); border-right: 1px solid var(--border); overflow-y: auto; }
+.appShell nav button { color: var(--text-muted); min-height: 44px; }
+.appShell nav button:hover, .appShell nav button.active { background: var(--surface-elevated); color: var(--primary); }
+.appShell nav button.active { box-shadow: inset 3px 0 var(--primary); font-weight: 850; }
+.appShell .brand small, .navSection, .profile small, .profile button { color: var(--text-muted); }
+.brandMark i { background: var(--primary-contrast); }
+.profile { border-color: var(--border); }
+.profile > span, .recordIcon, .emptyIcon, .metricIcon, .avatarLarge,
+.personList > button > span, .userDirectory article > span, .rankingList > div > span { background: var(--surface-elevated); color: var(--primary); }
+.topbar { background: var(--surface); color: var(--text); border-color: var(--border); }
+.mobileMenu { color: var(--text); }
+.primaryButton { background: var(--primary); color: var(--primary-contrast); }
+.primaryButton:hover:not(:disabled) { background: color-mix(in srgb, var(--primary) 88%, var(--text)); }
+.secondaryButton, .iconButton, .rowActions button, .natureTabs button,
+.dateRange > button, .themeOptions button { background: var(--surface-raised); color: var(--text); border-color: var(--border); }
+.themeOptions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.themeOptions button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 10px; border: 1px solid var(--border); border-radius: 11px; font-size: .8rem; font-weight: 750; }
+.themeHelp { color: var(--text-muted); font-size: .75rem; line-height: 1.6; margin: 14px 0 0; }
+.appearanceCard { grid-column: 1 / -1; }
+.themeOptions button[aria-pressed='true'], .cashScopeTabs button.active,
+.chartSwitch button.active, .secondaryButton.compact.active, .dateRange > button.active,
+.personList > button.active { background: var(--surface-elevated); color: var(--primary); border-color: var(--primary); box-shadow: inset 0 -3px var(--primary); }
+.secondaryButton:hover:not(:disabled), .iconButton:hover:not(:disabled),
+.rowActions button:hover:not(:disabled), .settingsList > button:hover,
+.themeOptions button:hover, .monthCard:hover, .basisToggle button:hover,
+.cashScopeTabs button:hover, .chartSwitch button:hover, .personList > button:hover { background: var(--surface-elevated); border-color: var(--primary); }
+.miniForm, .recurrenceBox, .chartSwitch, .rankingList > div, .comparisonList > div { background: var(--surface-elevated); border-color: var(--border); }
+.miniForm { grid-template-columns: minmax(0, 1fr) minmax(0, .8fr) auto; }
+.userForm { grid-template-columns: repeat(3, minmax(0, 1fr)) auto; }
+.appShell input, .appShell select, .appShell textarea, .loginCard input {
+  min-width: 0; max-width: 100%; background: var(--surface-raised); color: var(--text); border-color: var(--border); accent-color: var(--primary);
+}
+.pageActions label { display: grid; gap: 6px; color: var(--text-muted); font-size: .78rem; min-width: 0; }
+.pageActions label select { min-height: 44px; padding: 0 10px; border: 1px solid var(--border); border-radius: 10px; }
+.loginCard label, .formGrid label { color: var(--text-muted); }
+input::placeholder, textarea::placeholder { color: var(--text-muted); opacity: 1; }
+.appShell input:disabled, .appShell select:disabled, .appShell textarea:disabled {
+  background: var(--page-bg); color: var(--text-muted); border-style: dashed; cursor: not-allowed;
+}
+button:disabled { opacity: .6; cursor: not-allowed; box-shadow: none; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible,
+textarea:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.appShell input:focus, .appShell select:focus, .loginCard input:focus { outline-color: var(--focus); border-color: var(--primary); }
+th { background: var(--surface-raised); color: var(--text-muted); border-color: var(--border); }
+tbody td { color: var(--text-muted); border-color: var(--border); }
+tbody tr:hover td { background: var(--surface-elevated); }
+.cashTable .selectedRow td { background: var(--surface-elevated); }
+.cashTable .selectedRow td:first-child { box-shadow: inset 3px 0 var(--primary); }
+.eventList article, .groupBreakdown > div { border-color: var(--border); }
+.metric > p, .userDirectory article b, .comparisonList small { color: var(--text-muted); }
+.positive, .amountCell.income { color: var(--executive-positive) !important; }
+.negative, .amountCell.expense { color: var(--executive-negative) !important; }
+.metricIcon.green, .statusPill.realizado, .adminBadge, .configMessage { color: var(--executive-positive); background: var(--income-tint); }
+.metricIcon.red, .statusPill.vencido, .error, .dangerButton, .tinyButton { color: var(--executive-negative); background: var(--expense-tint); border-color: var(--expense); }
+.metricIcon.amber { color: var(--executive-warning); background: var(--warning-tint); }
+.dangerButton:hover:not(:disabled) { background: color-mix(in srgb, var(--expense) 18%, var(--surface)); }
+.statusPill.previsto, .sourceBadge.legacy { color: var(--primary); background: var(--surface-elevated); }
+.statusPill.cancelado, .sourceBadge { color: var(--text-muted); background: var(--surface-raised); }
+.natureTabs button.active.income { color: var(--executive-positive); background: var(--income-tint); border-color: var(--income); box-shadow: inset 0 -3px var(--income); }
+.natureTabs button.active.expense { color: var(--executive-negative); background: var(--expense-tint); border-color: var(--expense); box-shadow: inset 0 -3px var(--expense); }
+.chartGuide { stroke: var(--border); }
+.chartAxis { fill: var(--text-muted); }
+.dotIncome, .dotExpense, .projectionDot { stroke: var(--surface); }
+.donutSimple:after, .donut:after, .emptyChart span { background: var(--surface); }
+.chartEmpty { text-align: center; padding: 16px; }
+.timelineChart, .tableScroll, .monthlyRail { max-width: 100%; scrollbar-color: var(--text-muted) var(--surface); }
+.card, .metrics, .metric, .recordGrid, .loanWorkspace, .loanPanel,
+.managerSettingsGrid, .userDirectory, .workspaceContent, .pageHeader > div { min-width: 0; }
+.cardHeader p, .pageHeader p, .settingsList span, .settingsList small,
+.recordGrid small, .userDirectory strong, .userDirectory small { overflow-wrap: anywhere; }
+.recordGrid b { white-space: normal; overflow-wrap: anywhere; }
+.cardHeader { flex-wrap: wrap; }
+
+@media (max-width: 1100px) {
+  .userForm { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 780px) {
+  .appShell > aside { height: 100dvh; }
+  .mobileMenu, .topNew { flex-shrink: 0; min-width: 44px; min-height: 44px; }
+}
+
+@media (max-width: 760px) {
+  .miniForm, .userForm { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 480px) {
+  .workspaceContent { padding: 18px 12px 36px; }
+  .card, .metric { padding: 16px; border-radius: 14px; }
+  .tableCard, .comparisonTableCard { padding: 0; }
+  .topbar { padding: 0 10px; }
+  .topbar h1 { font-size: 1rem; overflow-wrap: anywhere; }
+  .pageActions, .inlineActions, .dialogFooter, .themeOptions { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; }
+  .pageActions > *, .inlineActions > *, .dialogFooter > *, .miniForm button { width: 100%; min-width: 0; }
+  .pageActions > .selectControl, .dateControl { display: grid; width: 100%; }
+  .formGrid, .miniForm, .userForm, .recurrenceFields, .advancedFilterBody { grid-template-columns: minmax(0, 1fr); }
+  .miniForm { padding: 10px; }
+  .formGrid label, .advancedFilterBody label { min-width: 0; }
+  .dialogBackdrop { padding: 10px; }
+  .dialog { max-height: calc(100dvh - 20px); border-radius: 14px; }
+  .dialogHeader, .dialogFooter, .formGrid { padding-left: 16px; padding-right: 16px; }
+  .dialogHeader { gap: 10px; }
+  .dialogHeader > div { min-width: 0; }
+  .dialogHeader .iconButton { flex-shrink: 0; }
+  .primaryButton, .secondaryButton, .dangerButton, .textButton, .cashScopeTabs button, .chartSwitch button { min-height: 44px; }
+  .cashScopeTabs { grid-template-columns: minmax(0, 1fr); }
+  .cashScopeTabs button { font-size: .75rem; height: auto; padding: 10px; }
+  .monthlyRail { grid-auto-columns: minmax(0, 88%); padding-inline: 4px; touch-action: pan-x pan-y; }
+  .monthCard { padding: 13px; }
+  .loanPerson > div:first-child { min-width: 0; flex-wrap: wrap; }
+  .loanKpis strong, .metric > strong { overflow-wrap: anywhere; }
+  .personList > button { grid-template-columns: 38px minmax(0, 1fr); }
+  .personList b { grid-column: 2; white-space: normal; overflow-wrap: anywhere; }
+  .eventList article { grid-template-columns: 12px minmax(0, 1fr); }
+  .eventList article > b { grid-column: 2; overflow-wrap: anywhere; }
+  .loanRecords .secondaryButton { grid-column: 1 / -1; white-space: normal; }
+  .rankingList > div { grid-template-columns: 28px minmax(0, 1fr); }
+  .rankingList b { grid-column: 2; overflow-wrap: anywhere; }
+  .donutLegendSimple > div { grid-template-columns: 10px minmax(0, 1fr) auto; }
+  .rowActions button { min-width: 44px; min-height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}

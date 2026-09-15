@@ -1,3 +1,5 @@
+import { analysisDate, type AnalysisBasis } from './managerialCore.ts'
+
 export type CashFlowScope = 'realized' | 'projected' | 'consolidated'
 export type PeriodMode = 'all' | 'year' | 'month' | 'custom'
 export type CashRow = {
@@ -20,15 +22,16 @@ export type CashFlowFilterOptions = {
   groupId?: string
   categoryId?: string
   groupByCategory?: Record<string,string>
+  dateBasis?: AnalysisBasis
 }
 
 function cashDate(row: CashRow) { return row.settlement_date || row.competence_date || '' }
 
 export function filterCashFlow<T extends CashRow>(rows: T[], options: CashFlowFilterOptions = {}): T[] {
-  const { scope='consolidated', today=new Date().toISOString().slice(0,10), periodMode='all', year='', month='', from='', to='', groupId='all', categoryId='all', groupByCategory={} } = options
+  const { scope='consolidated', today=new Date().toISOString().slice(0,10), periodMode='all', year='', month='', from='', to='', groupId='all', categoryId='all', groupByCategory={}, dateBasis='cash' } = options
   return rows.filter((row) => {
     if (!row || row.type === 'transfer' || row.status === 'cancelled') return false
-    const date = cashDate(row)
+    const date = analysisDate(row, dateBasis)
     if (!date) return false
     if (scope === 'realized' && !(row.status === 'completed' && date <= today)) return false
     if (scope === 'projected' && !(row.status === 'planned' && date >= today)) return false
@@ -43,7 +46,7 @@ export function filterCashFlow<T extends CashRow>(rows: T[], options: CashFlowFi
 }
 
 export function buildProjectionSeries(rows: CashRow[], referenceDate = new Date().toISOString().slice(0,10), openingBalance = 0) {
-  const future = rows.filter((row) => row.status === 'planned' && row.type !== 'transfer' && cashDate(row) >= referenceDate)
+  const future = filterCashFlow(rows, { scope: 'projected', today: referenceDate, dateBasis: 'cash' })
   const grouped = new Map<string,{key:string;income:number;expense:number}>()
   for (const row of future) {
     const key = cashDate(row).slice(0,7)
@@ -60,4 +63,15 @@ export function summarizeCashFlow(rows: CashRow[]) {
   const income = rows.filter((row)=>row.type==='income').reduce((sum,row)=>sum+Number(row.amount||0),0)
   const expense = rows.filter((row)=>row.type==='expense').reduce((sum,row)=>sum+Number(row.amount||0),0)
   return { income, expense, net: income-expense }
+}
+
+export function calculateRealizedBalance(
+  rows: CashRow[],
+  accounts: Array<{ initial_balance: number }>,
+  referenceDate: string,
+) {
+  const openingBalance = accounts.reduce((sum, account) => sum + Number(account.initial_balance || 0), 0)
+  return openingBalance + summarizeCashFlow(
+    filterCashFlow(rows, { scope: 'realized', today: referenceDate, dateBasis: 'cash' }),
+  ).net
 }

@@ -1,308 +1,833 @@
-import { FormEvent, ReactNode, useEffect, useMemo, useState } from 'react'
-import type { Session } from '@supabase/supabase-js'
-import { hasSupabaseConfig, supabase } from './lib/supabase'
-import { buildProjectionSeries, filterCashFlow, summarizeCashFlow } from './financeCore'
-import type { CashFlowScope, PeriodMode } from './financeCore'
-import { computeLoanLedger } from './loanCore'
-
-type PageId = 'dashboard' | 'transactions' | 'payables' | 'loans' | 'vehicles' | 'investments' | 'comparisons' | 'projections' | 'settings'
-type Nature = 'Entrada' | 'Saída'
-type DbType = 'income' | 'expense' | 'transfer'
-type DbStatus = 'planned' | 'completed' | 'overdue' | 'cancelled'
-type ChartKind = 'bar' | 'line'
-type IconName = PageId | 'menu' | 'plus' | 'close' | 'search' | 'edit' | 'trash' | 'calendar' | 'wallet' | 'users' | 'filter' | 'check'
-
-type Category = { id: string; name: string; group_id: string; active?: boolean }
-type CategoryGroup = { id: string; name: string; nature: Nature; categories: Category[]; active?: boolean }
-type Account = { id: string; name: string; account_type: string; initial_balance: number; active?: boolean }
+import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import type { Session } from '@supabase/supabase-js';
+import { hasSupabaseConfig, supabase } from './lib/supabase';
+import { buildProjectionSeries, calculateRealizedBalance, filterCashFlow, summarizeCashFlow } from './financeCore';
+import type { CashFlowScope, PeriodMode } from './financeCore';
+import { computeLoanLedger } from './loanCore';
+import { buildTransactionFinancialRows, createUuidV4 } from './transactionCore';
+import { analysisDate, buildAnalysisYears, buildExecutiveAlerts, buildInvestmentSummary, buildMonthlySeries, buildVehicleSummaries, calculateDelta, selectedMonthContext } from './managerialCore';
+import type { AnalysisBasis, MonthlyPoint } from './managerialCore';
+import { normalizeThemePreference, resolveTheme, themeStorageKey } from './themeCore';
+import type { ThemePreference } from './themeCore';
+type PageId = 'dashboard' | 'transactions' | 'payables' | 'loans' | 'vehicles' | 'investments' | 'comparisons' | 'projections' | 'settings';
+type Nature = 'Entrada' | 'Saída';
+type DbType = 'income' | 'expense' | 'transfer';
+type DbStatus = 'planned' | 'completed' | 'overdue' | 'cancelled';
+type ChartKind = 'bar' | 'line';
+type IconName = PageId | 'menu' | 'plus' | 'close' | 'search' | 'edit' | 'trash' | 'calendar' | 'wallet' | 'users' | 'filter' | 'check';
+type Category = {
+    id: string;
+    name: string;
+    group_id: string;
+    active?: boolean;
+};
+type CategoryGroup = {
+    id: string;
+    name: string;
+    nature: Nature;
+    categories: Category[];
+    active?: boolean;
+};
+type Account = {
+    id: string;
+    name: string;
+    account_type: string;
+    initial_balance: number;
+    active?: boolean;
+};
 type Transaction = {
-  id: string
-  account_id: string | null
-  category_id: string | null
-  type: DbType
-  status: DbStatus
-  description: string
-  notes: string | null
-  payment_method: string | null
-  amount: number
-  competence_date: string
-  settlement_date: string | null
-  installment_group_id: string | null
-  installment_number: number | null
-  installment_total: number | null
-  vehicle_id: string | null
-  source?: string | null
-  source_ref?: string | null
-}
-type Vehicle = { id: string; name: string; plate: string | null; make: string | null; model: string | null; model_year: number | null; status: string }
-type Borrower = { id: string; name: string; document: string | null; contact: string | null; notes: string | null }
-type Loan = { id: string; borrower_id: string; monthly_rate: number; start_date: string; status: string; notes: string | null }
-type LoanEvent = { id: string; loan_id: string; event_date: string; event_type: string; amount: number; interest_component: number; principal_component: number; notes: string | null }
-type RecurringRule = { id: string; name: string; type: DbType; amount: number; category_id: string | null; account_id: string | null; payment_method: string | null; day_of_month: number; start_date: string; end_date: string | null; active: boolean; notes: string | null }
-type Profile = { id: string; full_name: string; email?: string | null; is_admin: boolean }
-
+    id: string;
+    account_id: string | null;
+    category_id: string | null;
+    type: DbType;
+    status: DbStatus;
+    description: string;
+    notes: string | null;
+    payment_method: string | null;
+    amount: number;
+    competence_date: string;
+    settlement_date: string | null;
+    installment_group_id: string | null;
+    installment_number: number | null;
+    installment_total: number | null;
+    vehicle_id: string | null;
+    source?: string | null;
+    source_ref?: string | null;
+};
+type Vehicle = {
+    id: string;
+    name: string;
+    plate: string | null;
+    make: string | null;
+    model: string | null;
+    model_year: number | null;
+    status: string;
+};
+type Borrower = {
+    id: string;
+    name: string;
+    document: string | null;
+    contact: string | null;
+    notes: string | null;
+};
+type Loan = {
+    id: string;
+    borrower_id: string;
+    monthly_rate: number;
+    start_date: string;
+    status: string;
+    notes: string | null;
+};
+type LoanEvent = {
+    id: string;
+    loan_id: string;
+    event_date: string;
+    event_type: string;
+    amount: number;
+    interest_component: number;
+    principal_component: number;
+    notes: string | null;
+};
+type RecurringRule = {
+    id: string;
+    name: string;
+    type: DbType;
+    amount: number;
+    category_id: string | null;
+    account_id: string | null;
+    payment_method: string | null;
+    day_of_month: number;
+    start_date: string;
+    end_date: string | null;
+    active: boolean;
+    notes: string | null;
+};
+type Profile = {
+    id: string;
+    full_name: string;
+    email?: string | null;
+    is_admin: boolean;
+};
 type TransactionDraft = {
-  nature: Nature
-  description: string
-  amount: number
-  competenceDate: string
-  settlementDate: string
-  groupId: string
-  categoryId: string
-  accountId: string
-  paymentMethod: string
-  status: DbStatus
-  notes: string
-  installments: number
-  firstInstallmentDate: string
-  recurring: boolean
-  recurrenceDay: number
-  recurrenceEnd: string
-  seriesScope: 'single' | 'future'
-}
-
+    nature: Nature;
+    description: string;
+    amount: number;
+    competenceDate: string;
+    settlementDate: string;
+    groupId: string;
+    categoryId: string;
+    accountId: string;
+    vehicleId: string;
+    paymentMethod: string;
+    status: DbStatus;
+    notes: string;
+    installments: number;
+    firstInstallmentDate: string;
+    recurring: boolean;
+    recurrenceDay: number;
+    recurrenceEnd: string;
+    seriesScope: 'single' | 'future';
+};
 type FilterState = {
-  scope: CashFlowScope
-  periodMode: PeriodMode
-  year: string
-  month: string
-  from: string
-  to: string
-  groupId: string
-  categoryId: string
-}
-
-const pages: Array<{ id: PageId; label: string }> = [
-  { id: 'dashboard', label: 'Visão geral' },
-  { id: 'transactions', label: 'Lançamentos' },
-  { id: 'payables', label: 'Pagar e receber' },
-  { id: 'loans', label: 'Empréstimos' },
-  { id: 'vehicles', label: 'Veículos' },
-  { id: 'investments', label: 'Investimentos' },
-  { id: 'comparisons', label: 'Comparações' },
-  { id: 'projections', label: 'Projeções' },
-]
-
+    scope: CashFlowScope;
+    periodMode: PeriodMode;
+    year: string;
+    month: string;
+    from: string;
+    to: string;
+    groupId: string;
+    categoryId: string;
+};
+const pages: Array<{
+    id: PageId;
+    label: string;
+}> = [
+    { id: 'dashboard', label: 'Visão geral' },
+    { id: 'transactions', label: 'Lançamentos' },
+    { id: 'payables', label: 'Pagar e receber' },
+    { id: 'loans', label: 'Empréstimos' },
+    { id: 'vehicles', label: 'Veículos' },
+    { id: 'investments', label: 'Investimentos' },
+    { id: 'comparisons', label: 'Comparações' },
+    { id: 'projections', label: 'Projeções' },
+];
 const pageHelp: Record<PageId, string> = {
-  dashboard: 'Fluxo realizado, projetado e consolidado',
-  transactions: 'Histórico completo, edição e exclusão em massa',
-  payables: 'Compromissos previstos a pagar e receber',
-  loans: 'Pessoas, contratos, pagamentos e juros',
-  vehicles: 'Custos vinculados aos veículos',
-  investments: 'Patrimônio e movimentações de investimento',
-  comparisons: 'Compare dois períodos livremente',
-  projections: 'Fluxo de caixa futuro baseado em movimentos previstos',
-  settings: 'Classificações, contas, recorrências e usuários',
+    dashboard: 'Fluxo realizado, projetado e consolidado',
+    transactions: 'Histórico completo, edição e exclusão em massa',
+    payables: 'Compromissos previstos a pagar e receber',
+    loans: 'Pessoas, contratos, pagamentos e juros',
+    vehicles: 'Custos vinculados aos veículos',
+    investments: 'Patrimônio e movimentações de investimento',
+    comparisons: 'Compare dois períodos livremente',
+    projections: 'Fluxo de caixa futuro baseado em movimentos previstos',
+    settings: 'Classificações, contas, recorrências e usuários',
+};
+const RECURRENCE_MARKER = '[[MF:RECORRENTE]]';
+function today() { return new Date().toISOString().slice(0, 10); }
+function money(value: number) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number.isFinite(value) ? value : 0); }
+function parseMoney(value: string) { const n = Number(value.replace(/R\$/g, '').replace(/\s/g, '').replace(/\./g, '').replace(',', '.')); return Number.isFinite(n) ? n : 0; }
+function dateLabel(value?: string | null) { if (!value)
+    return '—'; const [y, m, d] = value.split('-'); return `${d}/${m}/${y}`; }
+function monthLabel(value: string) { const [y, m] = value.slice(0, 7).split('-').map(Number); return new Intl.DateTimeFormat('pt-BR', { month: 'short', year: '2-digit' }).format(new Date(y, m - 1, 1)).replace('.', ''); }
+function uuid() { return createUuidV4(); }
+function addMonths(value: string, offset: number, preferredDay?: number) { const [y, m, d] = value.split('-').map(Number); const base = new Date(y, m - 1 + offset, 1); const last = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate(); const day = Math.min(preferredDay || d, last); return `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; }
+function natureToDb(value: Nature): DbType { return value === 'Entrada' ? 'income' : 'expense'; }
+function dbToNature(value: DbType): Nature { return value === 'income' ? 'Entrada' : 'Saída'; }
+function cashDate(row: Transaction) { return row.settlement_date || row.competence_date; }
+function statusLabel(row: Transaction) { if (row.status === 'cancelled')
+    return 'Cancelado'; if (row.status === 'planned' && cashDate(row) < today())
+    return 'Vencido'; if (row.status === 'planned')
+    return 'Previsto'; return 'Realizado'; }
+function isRecurring(row: Transaction) { return Boolean(row.notes?.startsWith(RECURRENCE_MARKER)); }
+function cleanNotes(notes?: string | null) { return notes?.startsWith(RECURRENCE_MARKER) ? notes.replace(RECURRENCE_MARKER, '').replace(/^\n/, '') : notes || ''; }
+function Icon({ name, size = 19 }: {
+    name: IconName;
+    size?: number;
+}) {
+    const p: Record<IconName, ReactNode> = {
+        dashboard: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
+        transactions: <><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></>,
+        payables: <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></>,
+        loans: <><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M7 7V4h10v3M8 13h8M12 10v6"/></>,
+        vehicles: <><path d="m5 15 1.5-6h11l1.5 6M3 15h18v4h-3v-2H6v2H3z"/><path d="M7 14h.01M17 14h.01"/></>,
+        investments: <><path d="M4 20V10M10 20V5M16 20v-7M22 20V3M2 20h21"/></>,
+        comparisons: <><path d="M7 4v16M17 4v16M4 8l3-3 3 3M14 16l3 3 3-3"/></>,
+        projections: <><path d="m3 18 6-7 4 4 8-10M16 5h5v5"/></>,
+        settings: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></>,
+        menu: <path d="M4 7h16M4 12h16M4 17h16"/>,
+        plus: <path d="M12 5v14M5 12h14"/>,
+        close: <path d="m6 6 12 12M18 6 6 18"/>,
+        search: <><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></>,
+        edit: <><path d="M4 20h4l11-11-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></>,
+        trash: <><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14"/><path d="M10 11v6M14 11v6"/></>,
+        calendar: <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></>,
+        wallet: <><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M15 10h7v5h-7a2.5 2.5 0 0 1 0-5Z"/></>,
+        users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></>,
+        filter: <path d="M4 5h16M7 12h10M10 19h4"/>,
+        check: <path d="m5 12 4 4L19 6"/>,
+    };
+    return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">{p[name]}</svg>;
 }
-
-const RECURRENCE_MARKER = '[[MF:RECORRENTE]]'
-
-function today() { return new Date().toISOString().slice(0, 10) }
-function money(value: number) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number.isFinite(value) ? value : 0) }
-function parseMoney(value: string) { const n = Number(value.replace(/R\$/g, '').replace(/\s/g, '').replace(/\./g, '').replace(',', '.')); return Number.isFinite(n) ? n : 0 }
-function dateLabel(value?: string | null) { if (!value) return '—'; const [y, m, d] = value.split('-'); return `${d}/${m}/${y}` }
-function monthLabel(value: string) { const [y, m] = value.slice(0, 7).split('-').map(Number); return new Intl.DateTimeFormat('pt-BR', { month: 'short', year: '2-digit' }).format(new Date(y, m - 1, 1)).replace('.', '') }
-function uuid() { return typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}` }
-function addMonths(value: string, offset: number, preferredDay?: number) { const [y, m, d] = value.split('-').map(Number); const base = new Date(y, m - 1 + offset, 1); const last = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate(); const day = Math.min(preferredDay || d, last); return `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}` }
-function natureToDb(value: Nature): DbType { return value === 'Entrada' ? 'income' : 'expense' }
-function dbToNature(value: DbType): Nature { return value === 'income' ? 'Entrada' : 'Saída' }
-function cashDate(row: Transaction) { return row.settlement_date || row.competence_date }
-function statusLabel(row: Transaction) { if (row.status === 'cancelled') return 'Cancelado'; if (row.status === 'planned' && cashDate(row) < today()) return 'Vencido'; if (row.status === 'planned') return 'Previsto'; return 'Realizado' }
-function isRecurring(row: Transaction) { return Boolean(row.notes?.startsWith(RECURRENCE_MARKER)) }
-function cleanNotes(notes?: string | null) { return notes?.startsWith(RECURRENCE_MARKER) ? notes.replace(RECURRENCE_MARKER, '').replace(/^\n/, '') : notes || '' }
-
-function Icon({ name, size = 19 }: { name: IconName; size?: number }) {
-  const p: Record<IconName, ReactNode> = {
-    dashboard: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
-    transactions: <><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></>,
-    payables: <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></>,
-    loans: <><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M7 7V4h10v3M8 13h8M12 10v6"/></>,
-    vehicles: <><path d="m5 15 1.5-6h11l1.5 6M3 15h18v4h-3v-2H6v2H3z"/><path d="M7 14h.01M17 14h.01"/></>,
-    investments: <><path d="M4 20V10M10 20V5M16 20v-7M22 20V3M2 20h21"/></>,
-    comparisons: <><path d="M7 4v16M17 4v16M4 8l3-3 3 3M14 16l3 3 3-3"/></>,
-    projections: <><path d="m3 18 6-7 4 4 8-10M16 5h5v5"/></>,
-    settings: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></>,
-    menu: <path d="M4 7h16M4 12h16M4 17h16"/>,
-    plus: <path d="M12 5v14M5 12h14"/>,
-    close: <path d="m6 6 12 12M18 6 6 18"/>,
-    search: <><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></>,
-    edit: <><path d="M4 20h4l11-11-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></>,
-    trash: <><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14"/><path d="M10 11v6M14 11v6"/></>,
-    calendar: <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></>,
-    wallet: <><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M15 10h7v5h-7a2.5 2.5 0 0 1 0-5Z"/></>,
-    users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></>,
-    filter: <path d="M4 5h16M7 12h10M10 19h4"/>,
-    check: <path d="m5 12 4 4L19 6"/>,
-  }
-  return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">{p[name]}</svg>
+function Brand() { return <div className="brand"><span className="brandMark"><i /><i /><i /></span><span><strong>Meu Fluxo</strong><small>Finanças pessoais</small></span></div>; }
+function PageHeader({ title, description, action, onAction, children }: {
+    title: string;
+    description: string;
+    action?: string;
+    onAction?: () => void;
+    children?: ReactNode;
+}) { return <div className="pageHeader"><div><h2>{title}</h2><p>{description}</p></div><div className="pageActions">{children}{action && <button className="primaryButton" onClick={onAction}><Icon name="plus" size={16}/>{action}</button>}</div></div>; }
+function Empty({ icon, title, text }: {
+    icon: IconName;
+    title: string;
+    text: string;
+}) { return <div className="emptyState"><span className="emptyIcon"><Icon name={icon}/></span><h3>{title}</h3><p>{text}</p></div>; }
+function Metric({ label, value, tone = 'blue', detail, deltaPercent, favorable }: {
+    label: string;
+    value: number;
+    tone?: string;
+    detail?: string;
+    deltaPercent?: number | null;
+    favorable?: boolean;
+}) {
+    const trend = deltaPercent === 0 ? 'Sem variação' : favorable ? 'Favorável' : 'Desfavorável';
+    return <article className="metric"><span className={`metricIcon ${tone}`}><Icon name="wallet" size={17}/></span><small>{label}</small><strong>{money(value)}</strong><p>{detail || 'Conforme os filtros selecionados'}</p>{deltaPercent !== undefined && <p className={`metricDelta ${deltaPercent === null || deltaPercent === 0 ? 'neutral' : favorable ? 'favorable' : 'unfavorable'}`}>{deltaPercent === null ? 'Sem base comparável' : <>{deltaPercent > 0 ? '↑' : deltaPercent < 0 ? '↓' : '→'} {Math.abs(deltaPercent).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}% vs. mês anterior <span>· {trend}</span></>}</p>}</article>;
 }
-
-function Brand() { return <div className="brand"><span className="brandMark"><i/><i/><i/></span><span><strong>Meu Fluxo</strong><small>Finanças pessoais</small></span></div> }
-function PageHeader({ title, description, action, onAction, children }: { title: string; description: string; action?: string; onAction?: () => void; children?: ReactNode }) { return <div className="pageHeader"><div><h2>{title}</h2><p>{description}</p></div><div className="pageActions">{children}{action && <button className="primaryButton" onClick={onAction}><Icon name="plus" size={16}/>{action}</button>}</div></div> }
-function Empty({ icon, title, text }: { icon: IconName; title: string; text: string }) { return <div className="emptyState"><span className="emptyIcon"><Icon name={icon}/></span><h3>{title}</h3><p>{text}</p></div> }
-function Metric({ label, value, tone = 'blue', detail }: { label: string; value: number; tone?: string; detail?: string }) { return <article className="metric"><span className={`metricIcon ${tone}`}><Icon name="wallet" size={17}/></span><small>{label}</small><strong>{money(value)}</strong><p>{detail || 'Conforme os filtros selecionados'}</p></article> }
-function Modal({ title, description, close, children, wide = false }: { title: string; description?: string; close: () => void; children: ReactNode; wide?: boolean }) { return <div className="dialogBackdrop" onMouseDown={(e) => e.target === e.currentTarget && close()}><section className={`dialog ${wide ? 'wideDialog' : ''}`}><div className="dialogHeader"><div><h2>{title}</h2>{description && <p>{description}</p>}</div><button type="button" className="iconButton" onClick={close}><Icon name="close"/></button></div><div className="simpleDialogBody">{children}</div></section></div> }
-
-function buildPeriodRows(rows: Transaction[]) {
-  const grouped = new Map<string, { key: string; income: number; expense: number }>()
-  for (const row of rows) {
-    const key = cashDate(row).slice(0, 7)
-    if (!grouped.has(key)) grouped.set(key, { key, income: 0, expense: 0 })
-    const bucket = grouped.get(key)!
-    if (row.type === 'income') bucket.income += row.amount
-    if (row.type === 'expense') bucket.expense += row.amount
-  }
-  return [...grouped.values()].sort((a, b) => a.key.localeCompare(b.key))
+function Modal({ title, description, close, children, wide = false }: {
+    title: string;
+    description?: string;
+    close: () => void;
+    children: ReactNode;
+    wide?: boolean;
+}) { return <div className="dialogBackdrop" onMouseDown={(e) => e.target === e.currentTarget && close()}><section className={`dialog ${wide ? 'wideDialog' : ''}`}><div className="dialogHeader"><div><h2>{title}</h2>{description && <p>{description}</p>}</div><button type="button" className="iconButton" onClick={close}><Icon name="close"/></button></div><div className="simpleDialogBody">{children}</div></section></div>; }
+function BasisToggle({ value, onChange }: {
+    value: AnalysisBasis;
+    onChange: (value: AnalysisBasis) => void;
+}) {
+    return <div className="analysisContext"><div className="basisToggle" role="group" aria-label="Regime de análise"><button type="button" aria-pressed={value === 'cash'} onClick={() => onChange('cash')}>Caixa</button><button type="button" aria-pressed={value === 'competence'} onClick={() => onChange('competence')}>Competência</button></div><p>{value === 'cash' ? 'Caixa: data de pagamento ou recebimento; na ausência, usa a competência.' : 'Competência: data original da compra ou receita, independentemente do pagamento.'}</p></div>;
 }
-
-function TimelineChart({ rows, kind }: { rows: Array<{ key: string; income: number; expense: number }>; kind: ChartKind }) {
-  if (!rows.length) return <div className="chartEmpty">Sem dados no período selecionado.</div>
-  const width = 760, height = 260, left = 54, bottom = 36, top = 16
-  const max = Math.max(...rows.flatMap((r) => [r.income, r.expense]), 1)
-  const x = (index: number) => left + index * ((width - left - 18) / Math.max(rows.length - 1, 1))
-  const y = (value: number) => top + (height - top - bottom) * (1 - value / max)
-  const line = (field: 'income' | 'expense') => rows.map((r, i) => `${i ? 'L' : 'M'}${x(i)},${y(r[field])}`).join(' ')
-  return <div className="timelineChart"><svg viewBox={`0 0 ${width} ${height}`}>{[0,.25,.5,.75,1].map((p) => <g key={p}><line className="chartGuide" x1={left} x2={width - 10} y1={y(max*p)} y2={y(max*p)}/><text className="chartAxis" x="4" y={y(max*p)+4}>{Math.round(max*p).toLocaleString('pt-BR')}</text></g>)}{kind === 'line' ? <><path className="lineIncome" d={line('income')}/><path className="lineExpense" d={line('expense')}/>{rows.map((r,i) => <g key={r.key}><circle className="dotIncome" cx={x(i)} cy={y(r.income)} r="4"/><circle className="dotExpense" cx={x(i)} cy={y(r.expense)} r="4"/></g>)}</> : rows.map((r,i) => { const step = (width-left-18)/Math.max(rows.length,1); const bar=Math.min(20,step*.32); return <g key={r.key}><rect className="rectIncome" x={x(i)-bar-2} y={y(r.income)} width={bar} height={height-bottom-y(r.income)} rx="3"/><rect className="rectExpense" x={x(i)+2} y={y(r.expense)} width={bar} height={height-bottom-y(r.expense)} rx="3"/></g> })}{rows.map((r,i) => <text key={`label-${r.key}`} className="chartAxis" x={x(i)-18} y={height-10}>{monthLabel(r.key)}</text>)}</svg><div className="chartLegend"><span className="legendIncome">Entradas</span><span className="legendExpense">Saídas</span></div></div>
+function MonthlyRail({ rows, selectedKey, onSelect }: {
+    rows: MonthlyPoint[];
+    selectedKey?: string;
+    onSelect: (key: string) => void;
+}) {
+    const rail = useRef<HTMLDivElement>(null);
+    const seriesSignature = rows.map((row) => row.key).join('|');
+    useEffect(() => {
+        const selected = rail.current?.querySelector<HTMLButtonElement>('[aria-pressed="true"]');
+        if (rail.current && selected) rail.current.scrollTo({ left: selected.offsetLeft, behavior: 'instant' });
+    }, [selectedKey, seriesSignature]);
+    return <div className="monthlyRail" ref={rail} role="group" aria-label="Selecione o mês de análise">{rows.map((row) => <button type="button" className="monthCard" key={row.key} aria-pressed={row.key === selectedKey} onClick={() => onSelect(row.key)}><span className="monthCardHeading"><strong>{monthLabel(row.key)}</strong><small>{row.key === selectedKey ? '✓ Selecionado' : 'Selecionar'}</small></span><span className="monthCardValue"><span>Entrada</span><b>{money(row.income)}</b></span><span className="monthCardValue"><span>Saída</span><b>{money(row.expense)}</b></span><span className="monthCardValue monthResult"><span>Resultado</span><b>{money(row.net)}</b></span><span className="monthCardValue monthBalance"><span>Saldo</span><b>{money(row.balance)}</b></span></button>)}</div>;
 }
-
-function ProjectionChart({ rows }: { rows: Array<{ key: string; income: number; expense: number; balance: number }> }) {
-  if (!rows.length) return <div className="chartEmpty">Nenhum movimento futuro previsto.</div>
-  const width = 760, height = 260, left = 60, bottom = 36, top = 18
-  const values = rows.map((r) => r.balance); const min = Math.min(0, ...values); const max = Math.max(1, ...values); const span = Math.max(max - min, 1)
-  const x = (i: number) => left + i * ((width-left-20)/Math.max(rows.length-1,1)); const y=(v:number)=>top+(height-top-bottom)*(1-(v-min)/span)
-  const path = rows.map((r,i)=>`${i?'L':'M'}${x(i)},${y(r.balance)}`).join(' ')
-  return <div className="timelineChart"><svg viewBox={`0 0 ${width} ${height}`}><line className="chartGuide" x1={left} x2={width-10} y1={y(0)} y2={y(0)}/><path className="projectionLine" d={path}/>{rows.map((r,i)=><g key={r.key}><circle className="projectionDot" cx={x(i)} cy={y(r.balance)} r="4"/><text className="chartAxis" x={x(i)-18} y={height-10}>{monthLabel(r.key)}</text></g>)}</svg></div>
+function TimelineChart({ rows, kind }: {
+    rows: MonthlyPoint[];
+    kind: ChartKind;
+}) {
+    if (!rows.length)
+        return <div className="chartEmpty">Sem dados no período selecionado.</div>;
+    const width = Math.max(760, rows.length * 108 + 90), height = 300, left = 72, bottom = 40, top = 32;
+    const min = Math.min(0, ...rows.map((r) => r.net));
+    const max = Math.max(...rows.flatMap((r) => [r.income, r.expense, r.net]), 1);
+    const step = (width - left - 18) / rows.length;
+    const x = (index: number) => left + (index + .5) * step;
+    const y = (value: number) => top + (height - top - bottom) * (1 - (value - min) / (max - min));
+    const line = (field: 'income' | 'expense' | 'net') => rows.map((r, i) => `${i ? 'L' : 'M'}${x(i)},${y(r[field])}`).join(' ');
+    return <div className="timelineChart executiveTimeline"><svg viewBox={`0 0 ${width} ${height}`} style={{ minWidth: width }} role="img" aria-label="Evolução mensal de entradas, saídas e resultado em reais">
+        <title>Entradas, saídas e resultado mensal</title>
+        {[0, .25, .5, .75, 1].map((p) => { const value = min + (max - min) * p; return <g key={p}><line className="chartGuide" x1={left} x2={width - 10} y1={y(value)} y2={y(value)}/><text className="chartAxis" x="4" y={y(value) + 4}>{Math.round(value).toLocaleString('pt-BR')}</text></g>; })}
+        <line className="chartZero" x1={left} x2={width - 10} y1={y(0)} y2={y(0)}/>
+        {kind === 'line' ? <><path className="lineIncome" d={line('income')}/><path className="lineExpense" d={line('expense')}/><path className="lineResult" d={line('net')}/>{rows.map((r, i) => <g key={r.key}><title>{monthLabel(r.key)}: Entrada {money(r.income)}, Saída {money(r.expense)}, Resultado {money(r.net)}</title><circle className="dotIncome" cx={x(i)} cy={y(r.income)} r="4"/><circle className="dotExpense" cx={x(i)} cy={y(r.expense)} r="4"/><circle className="dotResult" cx={x(i)} cy={y(r.net)} r="5"/></g>)}</> : rows.map((r, i) => { const bar = Math.min(20, step * .25); return <g key={r.key}><title>{monthLabel(r.key)}: Entrada {money(r.income)}, Saída {money(r.expense)}, Resultado {money(r.net)}</title><rect className="rectIncome" x={x(i) - bar - 2} y={y(r.income)} width={bar} height={y(0) - y(r.income)} rx="3"/><rect className="rectExpense" x={x(i) + 2} y={y(r.expense)} width={bar} height={y(0) - y(r.expense)} rx="3"/><path className="resultMarker" d={`M${x(i) - 7},${y(r.net)} L${x(i)},${y(r.net) - 5} L${x(i) + 7},${y(r.net)} L${x(i)},${y(r.net) + 5} Z`}/><text className="resultLabel" x={x(i)} y={y(r.net) + (r.net < 0 ? 18 : -12)} textAnchor="middle">{r.net > 0 ? '+' : ''}{money(r.net)}</text></g>; })}
+        {rows.map((r, i) => <text key={`label-${r.key}`} className="chartAxis" x={x(i)} y={height - 10} textAnchor="middle">{monthLabel(r.key)}</text>)}
+    </svg><div className="chartLegend"><span className="legendIncome">Entradas</span><span className="legendExpense">Saídas</span><span className="legendResult">Resultado (±)</span></div></div>;
 }
-
-function ScopeTabs({ value, onChange }: { value: CashFlowScope; onChange: (value: CashFlowScope) => void }) {
-  return <div className="cashScopeTabs"><button className={value==='realized'?'active':''} onClick={()=>onChange('realized')}>Fluxo realizado</button><button className={value==='projected'?'active':''} onClick={()=>onChange('projected')}>Fluxo projetado</button><button className={value==='consolidated'?'active':''} onClick={()=>onChange('consolidated')}>Consolidado</button></div>
+function ProjectionChart({ rows }: {
+    rows: Array<{
+        key: string;
+        income: number;
+        expense: number;
+        balance: number;
+    }>;
+}) {
+    if (!rows.length)
+        return <div className="chartEmpty">Nenhum movimento futuro previsto.</div>;
+    const width = 760, height = 260, left = 60, bottom = 36, top = 18;
+    const values = rows.map((r) => r.balance);
+    const min = Math.min(0, ...values);
+    const max = Math.max(1, ...values);
+    const span = Math.max(max - min, 1);
+    const x = (i: number) => left + i * ((width - left - 20) / Math.max(rows.length - 1, 1));
+    const y = (v: number) => top + (height - top - bottom) * (1 - (v - min) / span);
+    const path = rows.map((r, i) => `${i ? 'L' : 'M'}${x(i)},${y(r.balance)}`).join(' ');
+    return <div className="timelineChart"><svg viewBox={`0 0 ${width} ${height}`}><line className="chartGuide" x1={left} x2={width - 10} y1={y(0)} y2={y(0)}/><path className="projectionLine" d={path}/>{rows.map((r, i) => <g key={r.key}><circle className="projectionDot" cx={x(i)} cy={y(r.balance)} r="4"/><text className="chartAxis" x={x(i) - 18} y={height - 10}>{monthLabel(r.key)}</text></g>)}</svg></div>;
 }
-
-function AdvancedFilters({ value, onChange, groups, transactions }: { value: FilterState; onChange: (value: FilterState) => void; groups: CategoryGroup[]; transactions: Transaction[] }) {
-  const [open, setOpen] = useState(false)
-  const years = Array.from(new Set(transactions.map((r)=>cashDate(r).slice(0,4)))).filter(Boolean).sort().reverse()
-  const categories = value.groupId === 'all' ? groups.flatMap((g)=>g.categories) : groups.find((g)=>g.id===value.groupId)?.categories || []
-  const set = (patch: Partial<FilterState>) => onChange({ ...value, ...patch })
-  return <section className="advancedFilter"><div className="advancedFilterTop"><ScopeTabs value={value.scope} onChange={(scope)=>set({scope})}/><button className={`secondaryButton compact ${open?'active':''}`} onClick={()=>setOpen(!open)}><Icon name="filter" size={16}/>Filtros</button></div>{open && <div className="advancedFilterBody"><label>Período<select value={value.periodMode} onChange={(e)=>set({periodMode:e.target.value as PeriodMode})}><option value="all">Todo período</option><option value="year">Ano</option><option value="month">Mês</option><option value="custom">Intervalo personalizado</option></select></label>{value.periodMode==='year' && <label>Ano<select value={value.year} onChange={(e)=>set({year:e.target.value})}><option value="">Selecione</option>{years.map((y)=><option key={y}>{y}</option>)}</select></label>}{value.periodMode==='month' && <label>Mês<input type="month" value={value.month} onChange={(e)=>set({month:e.target.value})}/></label>}{value.periodMode==='custom' && <><label>De<input type="date" value={value.from} onChange={(e)=>set({from:e.target.value})}/></label><label>Até<input type="date" value={value.to} onChange={(e)=>set({to:e.target.value})}/></label></>}<label>Grupo<select value={value.groupId} onChange={(e)=>set({groupId:e.target.value,categoryId:'all'})}><option value="all">Todos</option>{groups.map((g)=><option key={g.id} value={g.id}>{g.name}</option>)}</select></label><label>Categoria<select value={value.categoryId} onChange={(e)=>set({categoryId:e.target.value})}><option value="all">Todas</option>{categories.map((c)=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><button className="textButton clearFilters" onClick={()=>onChange({scope:value.scope,periodMode:'all',year:'',month:'',from:'',to:'',groupId:'all',categoryId:'all'})}>Limpar filtros avançados</button></div>}</section>
+function ScopeTabs({ value, onChange }: {
+    value: CashFlowScope;
+    onChange: (value: CashFlowScope) => void;
+}) {
+    return <div className="cashScopeTabs"><button className={value === 'realized' ? 'active' : ''} onClick={() => onChange('realized')}>Fluxo realizado</button><button className={value === 'projected' ? 'active' : ''} onClick={() => onChange('projected')}>Fluxo projetado</button><button className={value === 'consolidated' ? 'active' : ''} onClick={() => onChange('consolidated')}>Consolidado</button></div>;
 }
-
-function CashTable({ rows, groups, accounts, selected, onToggle, onToggleAll, onEdit, showSelection = false }: { rows: Transaction[]; groups: CategoryGroup[]; accounts: Account[]; selected?: Set<string>; onToggle?: (id:string)=>void; onToggleAll?: ()=>void; onEdit?: (row:Transaction)=>void; showSelection?: boolean }) {
-  const categoryMap = new Map<string,{category:string;group:string}>(); groups.forEach((g)=>g.categories.forEach((c)=>categoryMap.set(c.id,{category:c.name,group:g.name})))
-  const accountMap = new Map(accounts.map((a)=>[a.id,a.name])); const allSelected=Boolean(rows.length && selected && rows.every((r)=>selected.has(r.id)))
-  return <div className="tableScroll"><table className="proTable cashTable"><thead><tr>{showSelection && <th className="selectCol"><input type="checkbox" checked={allSelected} onChange={onToggleAll}/></th>}<th>Data caixa</th><th>Descrição</th><th>Classificação</th><th>Conta</th><th>Situação</th><th>Origem</th><th className="right">Valor</th>{onEdit && <th/>}</tr></thead><tbody>{rows.map((row)=>{ const info=row.category_id?categoryMap.get(row.category_id):undefined; return <tr key={row.id} className={selected?.has(row.id)?'selectedRow':''}>{showSelection && <td className="selectCol"><input type="checkbox" checked={Boolean(selected?.has(row.id))} onChange={()=>onToggle?.(row.id)}/></td>}<td>{dateLabel(cashDate(row))}<small>Comp. {dateLabel(row.competence_date)}</small></td><td><strong>{row.description}</strong><small>{info?.category || 'Sem categoria'}</small></td><td>{info?.group || '—'}</td><td>{row.account_id?accountMap.get(row.account_id)||'—':'—'}</td><td><span className={`statusPill ${statusLabel(row).toLowerCase()}`}>{statusLabel(row)}</span></td><td><span className={`sourceBadge ${row.source==='legacy_import'?'legacy':''}`}>{row.source==='legacy_import'?'Histórico':'Manual'}</span></td><td className={`right amountCell ${row.type}`}>{row.type==='expense'?'− ':row.type==='income'?'+ ':''}{money(row.amount)}</td>{onEdit && <td className="right"><button className="iconButton mini" title="Editar" onClick={()=>onEdit(row)}><Icon name="edit" size={15}/></button></td>}</tr>})}</tbody></table></div>
+function AdvancedFilters({ value, onChange, groups, transactions }: {
+    value: FilterState;
+    onChange: (value: FilterState) => void;
+    groups: CategoryGroup[];
+    transactions: Transaction[];
+}) {
+    const [open, setOpen] = useState(false);
+    const years = buildAnalysisYears(transactions, today().slice(0, 4));
+    const categories = value.groupId === 'all' ? groups.flatMap((g) => g.categories) : groups.find((g) => g.id === value.groupId)?.categories || [];
+    const set = (patch: Partial<FilterState>) => onChange({ ...value, ...patch });
+    return <section className="advancedFilter"><div className="advancedFilterTop"><ScopeTabs value={value.scope} onChange={(scope) => set({ scope })}/><button className={`secondaryButton compact ${open ? 'active' : ''}`} onClick={() => setOpen(!open)}><Icon name="filter" size={16}/>Filtros</button></div>{open && <div className="advancedFilterBody"><label>Período<select value={value.periodMode} onChange={(e) => set({ periodMode: e.target.value as PeriodMode })}><option value="all">Todo período</option><option value="year">Ano</option><option value="month">Mês</option><option value="custom">Intervalo personalizado</option></select></label>{value.periodMode === 'year' && <label>Ano<select value={value.year} onChange={(e) => set({ year: e.target.value })}><option value="">Selecione</option>{years.map((y) => <option key={y}>{y}</option>)}</select></label>}{value.periodMode === 'month' && <label>Mês<input type="month" value={value.month} onChange={(e) => set({ month: e.target.value })}/></label>}{value.periodMode === 'custom' && <><label>De<input type="date" value={value.from} onChange={(e) => set({ from: e.target.value })}/></label><label>Até<input type="date" value={value.to} onChange={(e) => set({ to: e.target.value })}/></label></>}<label>Grupo<select value={value.groupId} onChange={(e) => set({ groupId: e.target.value, categoryId: 'all' })}><option value="all">Todos</option>{groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}</select></label><label>Categoria<select value={value.categoryId} onChange={(e) => set({ categoryId: e.target.value })}><option value="all">Todas</option>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label><button className="textButton clearFilters" onClick={() => onChange({ scope: value.scope, periodMode: 'all', year: '', month: '', from: '', to: '', groupId: 'all', categoryId: 'all' })}>Limpar filtros avançados</button></div>}</section>;
 }
-
-function DashboardPage({ transactions, groups, accounts, onNew, onEdit }: { transactions: Transaction[]; groups: CategoryGroup[]; accounts: Account[]; onNew:()=>void; onEdit:(row:Transaction)=>void }) {
-  const [filters,setFilters]=useState<FilterState>({scope:'realized',periodMode:'all',year:'',month:'',from:'',to:'',groupId:'all',categoryId:'all'})
-  const [chart,setChart]=useState<ChartKind>('bar')
-  const groupByCategory=useMemo(()=>Object.fromEntries(groups.flatMap((g)=>g.categories.map((c)=>[c.id,g.id]))),[groups])
-  const filtered=filterCashFlow(transactions,{...filters,today:today(),groupByCategory}) as Transaction[]
-  const summary=summarizeCashFlow(filtered)
-  const periods=buildPeriodRows(filtered)
-  const expenseGroups=groups.map((g)=>({name:g.name,value:filtered.filter((r)=>r.type==='expense'&&r.category_id&&g.categories.some((c)=>c.id===r.category_id)).reduce((s,r)=>s+r.amount,0)})).filter((x)=>x.value>0).sort((a,b)=>b.value-a.value)
-  const expenseTotal=expenseGroups.reduce((s,x)=>s+x.value,0)
-  return <><PageHeader title="Visão geral" description="Dashboard gerencial do fluxo de caixa real e futuro." action="Novo lançamento" onAction={onNew}/><AdvancedFilters value={filters} onChange={setFilters} groups={groups} transactions={transactions}/><div className="metrics"><Metric label="Entradas" value={summary.income} tone="green"/><Metric label="Saídas" value={summary.expense} tone="red"/><Metric label="Resultado" value={summary.net}/><Metric label="Saldo das contas" value={accounts.reduce((s,a)=>s+Number(a.initial_balance||0),0)+transactions.filter((r)=>r.status==='completed').reduce((s,r)=>s+(r.type==='income'?r.amount:r.type==='expense'?-r.amount:0),0)} tone="amber" detail="Saldo inicial + movimentos realizados"/></div><div className="dashboardGrid proDashboard"><section className="card chartCard"><div className="cardHeader"><div><h3>Evolução do fluxo</h3><p>{filters.scope==='realized'?'O que já aconteceu':filters.scope==='projected'?'O que está previsto':'Realizado + previsto'}</p></div><div className="chartSwitch"><button className={chart==='bar'?'active':''} onClick={()=>setChart('bar')}>Barras</button><button className={chart==='line'?'active':''} onClick={()=>setChart('line')}>Linhas</button></div></div><TimelineChart rows={periods} kind={chart}/></section><section className="card"><div className="cardHeader"><div><h3>Despesas por grupo</h3><p>Participação no filtro atual</p></div></div>{expenseGroups.length?<div className="managerDonut"><div className="donutSimple" style={{background:`conic-gradient(${expenseGroups.map((x,i)=>`hsl(${210+i*42} 72% 55%) ${expenseGroups.slice(0,i).reduce((s,a)=>s+a.value,0)/expenseTotal*100}% ${(expenseGroups.slice(0,i+1).reduce((s,a)=>s+a.value,0)/expenseTotal*100)}%`).join(',')})`}}><span>{money(expenseTotal)}</span></div><div className="donutLegendSimple">{expenseGroups.slice(0,7).map((x,i)=><div key={x.name}><i style={{background:`hsl(${210+i*42} 72% 55%)`}}/><span>{x.name}</span><strong>{((x.value/expenseTotal)*100).toFixed(1)}%</strong></div>)}</div></div>:<Empty icon="comparisons" title="Sem despesas" text="Não há despesas no filtro selecionado."/>}</section></div><section className="card sectionGap"><div className="cardHeader"><div><h3>Movimentações recentes</h3><p>Até 10 registros do escopo selecionado</p></div></div>{filtered.length?<CashTable rows={[...filtered].sort((a,b)=>cashDate(b).localeCompare(cashDate(a))).slice(0,10)} groups={groups} accounts={accounts} onEdit={onEdit}/>:<Empty icon="transactions" title="Sem movimentações" text="Ajuste os filtros ou registre um lançamento."/>}</section></>
+function CashTable({ rows, groups, accounts, selected, onToggle, onToggleAll, onEdit, showSelection = false }: {
+    rows: Transaction[];
+    groups: CategoryGroup[];
+    accounts: Account[];
+    selected?: Set<string>;
+    onToggle?: (id: string) => void;
+    onToggleAll?: () => void;
+    onEdit?: (row: Transaction) => void;
+    showSelection?: boolean;
+}) {
+    const categoryMap = new Map<string, {
+        category: string;
+        group: string;
+    }>();
+    groups.forEach((g) => g.categories.forEach((c) => categoryMap.set(c.id, { category: c.name, group: g.name })));
+    const accountMap = new Map(accounts.map((a) => [a.id, a.name]));
+    const allSelected = Boolean(rows.length && selected && rows.every((r) => selected.has(r.id)));
+    return <div className="tableScroll"><table className="proTable cashTable"><thead><tr>{showSelection && <th className="selectCol"><input type="checkbox" checked={allSelected} onChange={onToggleAll}/></th>}<th>Data caixa</th><th>Descrição</th><th>Classificação</th><th>Conta</th><th>Situação</th><th>Origem</th><th className="right">Valor</th>{onEdit && <th />}</tr></thead><tbody>{rows.map((row) => { const info = row.category_id ? categoryMap.get(row.category_id) : undefined; return <tr key={row.id} className={selected?.has(row.id) ? 'selectedRow' : ''}>{showSelection && <td className="selectCol"><input type="checkbox" checked={Boolean(selected?.has(row.id))} onChange={() => onToggle?.(row.id)}/></td>}<td>{dateLabel(cashDate(row))}<small>Comp. {dateLabel(row.competence_date)}</small></td><td><strong>{row.description}</strong><small>{info?.category || 'Sem categoria'}</small></td><td>{info?.group || '—'}</td><td>{row.account_id ? accountMap.get(row.account_id) || '—' : '—'}</td><td><span className={`statusPill ${statusLabel(row).toLowerCase()}`}>{statusLabel(row)}</span></td><td><span className={`sourceBadge ${row.source === 'legacy_import' ? 'legacy' : ''}`}>{row.source === 'legacy_import' ? 'Histórico' : 'Manual'}</span></td><td className={`right amountCell ${row.type}`}>{row.type === 'expense' ? '− ' : row.type === 'income' ? '+ ' : ''}{money(row.amount)}</td>{onEdit && <td className="right"><button className="iconButton mini" title="Editar" onClick={() => onEdit(row)}><Icon name="edit" size={15}/></button></td>}</tr>; })}</tbody></table></div>;
 }
-
-function TransactionsPage({ transactions, groups, accounts, onNew, onEdit, onDeleteMany }: { transactions:Transaction[]; groups:CategoryGroup[]; accounts:Account[]; onNew:()=>void; onEdit:(row:Transaction)=>void; onDeleteMany:(ids:string[])=>Promise<void> }) {
-  const [search,setSearch]=useState(''); const [scope,setScope]=useState<CashFlowScope>('consolidated'); const [selected,setSelected]=useState<Set<string>>(new Set()); const [deleting,setDeleting]=useState(false)
-  const groupByCategory=useMemo(()=>Object.fromEntries(groups.flatMap((g)=>g.categories.map((c)=>[c.id,g.id]))),[groups])
-  const categoryText=useMemo(()=>Object.fromEntries(groups.flatMap((g)=>g.categories.map((c)=>[c.id,`${g.name} ${c.name}`]))),[groups])
-  const scoped=filterCashFlow(transactions,{scope,today:today(),periodMode:'all',groupByCategory}) as Transaction[]
-  const rows=scoped.filter((r)=>`${r.description} ${r.category_id?categoryText[r.category_id]||'':''} ${cleanNotes(r.notes)}`.toLowerCase().includes(search.toLowerCase())).sort((a,b)=>cashDate(b).localeCompare(cashDate(a)))
-  function toggle(id:string){setSelected((current)=>{const next=new Set(current); next.has(id)?next.delete(id):next.add(id); return next})}
-  function toggleAll(){setSelected((current)=>rows.every((r)=>current.has(r.id))?new Set():new Set(rows.map((r)=>r.id)))}
-  async function remove(){if(!selected.size)return;if(!window.confirm(`Excluir definitivamente ${selected.size} registro${selected.size===1?'':'s'} selecionado${selected.size===1?'':'s'}?`))return;setDeleting(true);try{await onDeleteMany([...selected]);setSelected(new Set())}finally{setDeleting(false)}}
-  return <><PageHeader title="Lançamentos" description="Consulte, edite e exclua vários registros de uma só vez." action="Novo lançamento" onAction={onNew}/><div className="transactionCommandBar"><ScopeTabs value={scope} onChange={(v)=>{setScope(v);setSelected(new Set())}}/><label className="searchField"><Icon name="search" size={16}/><input value={search} onChange={(e)=>setSearch(e.target.value)} placeholder="Pesquisar descrição, categoria ou observação"/></label>{selected.size>0&&<button className="dangerButton" onClick={remove} disabled={deleting}><Icon name="trash" size={16}/>{deleting?'Excluindo...':`Excluir selecionados (${selected.size})`}</button>}</div><section className="card tableCard">{rows.length?<CashTable rows={rows} groups={groups} accounts={accounts} selected={selected} onToggle={toggle} onToggleAll={toggleAll} onEdit={onEdit} showSelection/>:<Empty icon="transactions" title="Nenhum lançamento" text="Não há registros para a busca atual."/>}</section></>
+function DashboardPage({ transactions, groups, accounts, onNew, onEdit }: {
+    transactions: Transaction[];
+    groups: CategoryGroup[];
+    accounts: Account[];
+    onNew: () => void;
+    onEdit: (row: Transaction) => void;
+}) {
+    const [filters, setFilters] = useState<FilterState>({ scope: 'realized', periodMode: 'all', year: '', month: '', from: '', to: '', groupId: 'all', categoryId: 'all' });
+    const [chart, setChart] = useState<ChartKind>('bar');
+    const [basis, setBasis] = useState<AnalysisBasis>('cash');
+    const [selectedMonth, setSelectedMonth] = useState(today().slice(0, 7));
+    const groupByCategory = useMemo(() => Object.fromEntries(groups.flatMap((g) => g.categories.map((c) => [c.id, g.id]))), [groups]);
+    const filtered = filterCashFlow(transactions, { ...filters, dateBasis: basis, today: today(), groupByCategory });
+    const from = filters.periodMode === 'year' && filters.year ? `${filters.year}-01-01` : filters.periodMode === 'month' && filters.month ? `${filters.month}-01` : filters.periodMode === 'custom' ? filters.from : '';
+    const toMonth = filters.periodMode === 'year' && filters.year ? `${filters.year}-12` : filters.periodMode === 'month' ? filters.month : filters.periodMode === 'custom' ? filters.to.slice(0, 7) : '';
+    const initialBalance = accounts.reduce((sum, account) => sum + Number(account.initial_balance || 0), 0);
+    const realizedBalance = calculateRealizedBalance(transactions, accounts, today());
+    const scoped = filterCashFlow(transactions, { ...filters, periodMode: 'all', dateBasis: basis, today: today(), groupByCategory });
+    // Carry only earlier movements of the same scope/dimensions; never count the selected interval twice.
+    const carriedNet = from ? summarizeCashFlow(scoped.filter((row) => analysisDate(row, basis) < from)).net : 0;
+    const openingBalance = (filters.scope === 'projected' ? realizedBalance : initialBalance) + carriedNet;
+    const periods = buildMonthlySeries(filtered, { basis, openingBalance, fromMonth: from.slice(0, 7) || undefined, toMonth: toMonth || undefined });
+    const { current, previous } = selectedMonthContext(periods, selectedMonth);
+    useEffect(() => { if (current && current.key !== selectedMonth) setSelectedMonth(current.key); }, [current?.key, selectedMonth]);
+    const incomeDelta = current && previous ? calculateDelta(current.income, previous.income).percent : null;
+    const expenseDelta = current && previous ? calculateDelta(current.expense, previous.expense).percent : null;
+    const netDelta = current && previous ? calculateDelta(current.net, previous.net).percent : null;
+    const monthRows = current ? filtered.filter((row) => analysisDate(row, basis).startsWith(current.key)) : [];
+    const monthDetail = current ? `${monthLabel(current.key)} · ${basis === 'cash' ? 'Caixa' : 'Competência'}` : 'Sem mês disponível';
+    const alerts = buildExecutiveAlerts(periods);
+    const alertSeverities = { critical: '⚠ Crítico', warning: '⚠ Atenção', positive: '✓ Positivo', info: 'ⓘ Informativo' };
+    const expenseGroups = groups.map((g) => ({ name: g.name, value: monthRows.filter((r) => r.type === 'expense' && r.category_id && g.categories.some((c) => c.id === r.category_id)).reduce((s, r) => s + r.amount, 0) })).filter((x) => x.value > 0).sort((a, b) => b.value - a.value);
+    const expenseTotal = expenseGroups.reduce((s, x) => s + x.value, 0);
+    return <>
+        <PageHeader title="Visão geral" description="Dashboard gerencial do fluxo de caixa real e futuro." action="Novo lançamento" onAction={onNew}/>
+        <BasisToggle value={basis} onChange={setBasis}/>
+        <AdvancedFilters value={filters} onChange={setFilters} groups={groups} transactions={transactions}/>
+        <p className="selectedMonthContext" aria-live="polite">{current ? `Mês em análise: ${monthDetail}. Os três primeiros indicadores e as movimentações seguem este mês.` : 'Sem movimentos ou intervalo mensal disponível. Selecione um período para analisar.'}</p>
+        <div className="metrics executiveMetrics">
+            <Metric label="Entradas" value={current?.income || 0} tone="green" detail={monthDetail} deltaPercent={incomeDelta} favorable={incomeDelta !== null && incomeDelta > 0}/>
+            <Metric label="Saídas" value={current?.expense || 0} tone="red" detail={monthDetail} deltaPercent={expenseDelta} favorable={expenseDelta !== null && expenseDelta < 0}/>
+            <Metric label="Resultado líquido" value={current?.net || 0} detail={monthDetail} deltaPercent={netDelta} favorable={netDelta !== null && netDelta > 0}/>
+            <Metric label="Saldo das contas" value={realizedBalance} tone="amber" detail="Saldo inicial + realizados até hoje (Caixa), sem filtros"/>
+        </div>
+        <section className="card monthlySection"><div className="cardHeader"><div><h3>Linha do tempo mensal</h3><p>Deslize ou use Tab e Enter para selecionar um mês.</p></div></div>
+            {periods.length ? <MonthlyRail rows={periods} selectedKey={current?.key} onSelect={setSelectedMonth}/> : <p className="mutedText">Nenhum mês disponível. Defina um intervalo ou registre um lançamento.</p>}
+            <p className="balanceExplanation">Saldo do trilho = abertura de {money(openingBalance)} + resultados acumulados no recorte. {filters.scope === 'projected' ? 'A abertura parte do saldo realizado atual' : 'A abertura parte dos saldos iniciais das contas'} e inclui movimentos anteriores ao recorte nos mesmos filtros.</p>
+        </section>
+        <div className="dashboardGrid proDashboard"><section className="card chartCard"><div className="cardHeader"><div><h3>Evolução do fluxo</h3><p>{filters.scope === 'realized' ? 'O que já aconteceu' : filters.scope === 'projected' ? 'O que está previsto' : 'Realizado + previsto'} · {basis === 'cash' ? 'Caixa' : 'Competência'}</p></div><div className="chartSwitch" role="group" aria-label="Tipo de gráfico"><button aria-pressed={chart === 'bar'} className={chart === 'bar' ? 'active' : ''} onClick={() => setChart('bar')}>Colunas</button><button aria-pressed={chart === 'line'} className={chart === 'line' ? 'active' : ''} onClick={() => setChart('line')}>Linhas</button></div></div><TimelineChart rows={periods} kind={chart}/></section>
+            <section className="card"><div className="cardHeader"><div><h3>Despesas por grupo</h3><p>{monthDetail}</p></div></div>{expenseGroups.length ? <div className="managerDonut"><div className="donutSimple" style={{ background: `conic-gradient(${expenseGroups.map((x, i) => `hsl(${210 + i * 42} 72% 55%) ${expenseGroups.slice(0, i).reduce((s, a) => s + a.value, 0) / expenseTotal * 100}% ${(expenseGroups.slice(0, i + 1).reduce((s, a) => s + a.value, 0) / expenseTotal * 100)}%`).join(',')})` }}><span>{money(expenseTotal)}</span></div><div className="donutLegendSimple">{expenseGroups.slice(0, 7).map((x, i) => <div key={x.name}><i style={{ background: `hsl(${210 + i * 42} 72% 55%)` }}/><span>{x.name}</span><strong>{((x.value / expenseTotal) * 100).toFixed(1).replace('.', ',')}%</strong></div>)}</div></div> : <Empty icon="comparisons" title="Sem despesas" text="Não há despesas no mês selecionado."/>}</section>
+        </div>
+        <section className="card sectionGap"><div className="cardHeader"><div><h3>Alertas executivos</h3><p>Último mês do período{periods.length ? `: ${monthLabel(periods[periods.length - 1].key)}` : ''} · {basis === 'cash' ? 'Caixa' : 'Competência'}</p></div></div><div className="executiveAlerts">{alerts.length ? alerts.map((alert, index) => <article className={`executiveAlert ${alert.tone}`} key={`${alert.tone}-${index}`}><span className="alertSeverity">{alertSeverities[alert.tone]}</span><h4>{alert.title}</h4><p>{alert.message}</p></article>) : <p className="mutedText">Nenhum alerta acionado pelas regras neste período.</p>}</div></section>
+        <section className="card sectionGap"><div className="cardHeader"><div><h3>Movimentações do mês</h3><p>Até 10 registros de {monthDetail}</p></div></div>{monthRows.length ? <CashTable rows={[...monthRows].sort((a, b) => analysisDate(b, basis).localeCompare(analysisDate(a, basis))).slice(0, 10)} groups={groups} accounts={accounts} onEdit={onEdit}/> : <Empty icon="transactions" title="Sem movimentações" text="Selecione outro mês, ajuste os filtros ou registre um lançamento."/>}</section>
+    </>;
 }
-
-function PayablesPage({ transactions, groups, accounts, onEdit }: { transactions:Transaction[];groups:CategoryGroup[];accounts:Account[];onEdit:(row:Transaction)=>void }) {
-  const rows=(filterCashFlow(transactions,{scope:'projected',today:today(),periodMode:'all',groupByCategory:{}}) as Transaction[]).sort((a,b)=>cashDate(a).localeCompare(cashDate(b)))
-  const summary=summarizeCashFlow(rows)
-  return <><PageHeader title="Pagar e receber" description="Agenda gerada automaticamente pelos lançamentos previstos."/><div className="statusMetrics"><article><span>Total a pagar</span><strong>{money(summary.expense)}</strong></article><article><span>Total a receber</span><strong>{money(summary.income)}</strong></article><article><span>Resultado previsto</span><strong>{money(summary.net)}</strong></article></div><section className="card sectionGap">{rows.length?<CashTable rows={rows} groups={groups} accounts={accounts} onEdit={onEdit}/>:<Empty icon="calendar" title="Agenda livre" text="Não existem pagamentos ou recebimentos futuros previstos."/>}</section></>
+function TransactionsPage({ transactions, groups, accounts, onNew, onEdit, onDeleteMany }: {
+    transactions: Transaction[];
+    groups: CategoryGroup[];
+    accounts: Account[];
+    onNew: () => void;
+    onEdit: (row: Transaction) => void;
+    onDeleteMany: (ids: string[]) => Promise<void>;
+}) {
+    const [search, setSearch] = useState('');
+    const [scope, setScope] = useState<CashFlowScope>('consolidated');
+    const [selected, setSelected] = useState<Set<string>>(new Set());
+    const [deleting, setDeleting] = useState(false);
+    const groupByCategory = useMemo(() => Object.fromEntries(groups.flatMap((g) => g.categories.map((c) => [c.id, g.id]))), [groups]);
+    const categoryText = useMemo(() => Object.fromEntries(groups.flatMap((g) => g.categories.map((c) => [c.id, `${g.name} ${c.name}`]))), [groups]);
+    const scoped = filterCashFlow(transactions, { scope, today: today(), periodMode: 'all', groupByCategory }) as Transaction[];
+    const rows = scoped.filter((r) => `${r.description} ${r.category_id ? categoryText[r.category_id] || '' : ''} ${cleanNotes(r.notes)}`.toLowerCase().includes(search.toLowerCase())).sort((a, b) => cashDate(b).localeCompare(cashDate(a)));
+    function toggle(id: string) { setSelected((current) => { const next = new Set(current); next.has(id) ? next.delete(id) : next.add(id); return next; }); }
+    function toggleAll() { setSelected((current) => rows.every((r) => current.has(r.id)) ? new Set() : new Set(rows.map((r) => r.id))); }
+    async function remove() { if (!selected.size)
+        return; if (!window.confirm(`Excluir definitivamente ${selected.size} registro${selected.size === 1 ? '' : 's'} selecionado${selected.size === 1 ? '' : 's'}?`))
+        return; setDeleting(true); try {
+        await onDeleteMany([...selected]);
+        setSelected(new Set());
+    }
+    finally {
+        setDeleting(false);
+    } }
+    return <><PageHeader title="Lançamentos" description="Consulte, edite e exclua vários registros de uma só vez." action="Novo lançamento" onAction={onNew}/><div className="transactionCommandBar"><ScopeTabs value={scope} onChange={(v) => { setScope(v); setSelected(new Set()); }}/><label className="searchField"><Icon name="search" size={16}/><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Pesquisar descrição, categoria ou observação"/></label>{selected.size > 0 && <button className="dangerButton" onClick={remove} disabled={deleting}><Icon name="trash" size={16}/>{deleting ? 'Excluindo...' : `Excluir selecionados (${selected.size})`}</button>}</div><section className="card tableCard">{rows.length ? <CashTable rows={rows} groups={groups} accounts={accounts} selected={selected} onToggle={toggle} onToggleAll={toggleAll} onEdit={onEdit} showSelection/> : <Empty icon="transactions" title="Nenhum lançamento" text="Não há registros para a busca atual."/>}</section></>;
 }
-
-function ProjectionsPage({ transactions, accounts }: { transactions:Transaction[];accounts:Account[] }) {
-  const realizedBalance=accounts.reduce((s,a)=>s+Number(a.initial_balance||0),0)+transactions.filter((r)=>r.status==='completed').reduce((s,r)=>s+(r.type==='income'?r.amount:r.type==='expense'?-r.amount:0),0)
-  const series=buildProjectionSeries(transactions,today(),realizedBalance)
-  const projected=filterCashFlow(transactions,{scope:'projected',today:today(),periodMode:'all',groupByCategory:{}}) as Transaction[]; const summary=summarizeCashFlow(projected)
-  const finalBalance=series.length?series[series.length-1].balance:realizedBalance
-  return <><PageHeader title="Projeções" description="Fluxo futuro formado somente por movimentos realmente previstos."/><div className="metrics"><Metric label="Saldo atual" value={realizedBalance}/><Metric label="Entradas previstas" value={summary.income} tone="green"/><Metric label="Saídas previstas" value={summary.expense} tone="red"/><Metric label="Saldo projetado" value={finalBalance} tone="amber"/></div><section className="card projectionManager sectionGap"><div className="cardHeader"><div><h3>Fluxo de caixa projetado</h3><p>Saldo acumulado mês a mês</p></div></div><ProjectionChart rows={series}/></section>{series.length>0&&<section className="card sectionGap"><div className="tableScroll"><table><thead><tr><th>Mês</th><th className="right">Entradas</th><th className="right">Saídas</th><th className="right">Resultado</th><th className="right">Saldo projetado</th></tr></thead><tbody>{series.map((r)=><tr key={r.key}><td>{monthLabel(r.key)}</td><td className="right positive">{money(r.income)}</td><td className="right negative">{money(r.expense)}</td><td className="right">{money(r.net)}</td><td className="right"><strong>{money(r.balance)}</strong></td></tr>)}</tbody></table></div></section>}</>
+function PayablesPage({ transactions, groups, accounts, onEdit }: {
+    transactions: Transaction[];
+    groups: CategoryGroup[];
+    accounts: Account[];
+    onEdit: (row: Transaction) => void;
+}) {
+    const rows = (filterCashFlow(transactions, { scope: 'projected', today: today(), periodMode: 'all', groupByCategory: {} }) as Transaction[]).sort((a, b) => cashDate(a).localeCompare(cashDate(b)));
+    const summary = summarizeCashFlow(rows);
+    return <><PageHeader title="Pagar e receber" description="Agenda gerada automaticamente pelos lançamentos previstos."/><div className="statusMetrics"><article><span>Total a pagar</span><strong>{money(summary.expense)}</strong></article><article><span>Total a receber</span><strong>{money(summary.income)}</strong></article><article><span>Resultado previsto</span><strong>{money(summary.net)}</strong></article></div><section className="card sectionGap">{rows.length ? <CashTable rows={rows} groups={groups} accounts={accounts} onEdit={onEdit}/> : <Empty icon="calendar" title="Agenda livre" text="Não existem pagamentos ou recebimentos futuros previstos."/>}</section></>;
 }
-
-function ComparisonsPage({ transactions }: { transactions:Transaction[] }) {
-  const [aFrom,setAFrom]=useState('');const[aTo,setATo]=useState('');const[bFrom,setBFrom]=useState('');const[bTo,setBTo]=useState('')
-  const a=filterCashFlow(transactions,{scope:'consolidated',today:today(),periodMode:'custom',from:aFrom,to:aTo,groupByCategory:{}}) as Transaction[]
-  const b=filterCashFlow(transactions,{scope:'consolidated',today:today(),periodMode:'custom',from:bFrom,to:bTo,groupByCategory:{}}) as Transaction[]
-  const sa=summarizeCashFlow(a), sb=summarizeCashFlow(b)
-  const rows=[['Entradas',sa.income,sb.income],['Saídas',sa.expense,sb.expense],['Resultado',sa.net,sb.net]] as Array<[string,number,number]>
-  return <><PageHeader title="Comparações" description="Compare livremente dois intervalos de datas."/><div className="comparisonFilters"><section className="card"><strong>Período A</strong><div className="rangeInputs"><label>De<input type="date" value={aFrom} onChange={(e)=>setAFrom(e.target.value)}/></label><label>Até<input type="date" value={aTo} onChange={(e)=>setATo(e.target.value)}/></label></div></section><section className="card"><strong>Período B</strong><div className="rangeInputs"><label>De<input type="date" value={bFrom} onChange={(e)=>setBFrom(e.target.value)}/></label><label>Até<input type="date" value={bTo} onChange={(e)=>setBTo(e.target.value)}/></label></div></section></div><section className="card comparisonTableCard"><table className="comparisonTable"><thead><tr><th>Indicador</th><th className="right">Período A</th><th className="right">Período B</th><th className="right">Diferença</th><th className="right">Variação</th></tr></thead><tbody>{rows.map(([label,av,bv])=>{const diff=av-bv;const pct=bv?diff/bv*100:null;return <tr key={label}><td><strong>{label}</strong></td><td className="right">{money(av)}</td><td className="right">{money(bv)}</td><td className={`right ${diff>=0?'positive':'negative'}`}>{money(diff)}</td><td className="right">{pct===null?'—':`${pct.toFixed(1)}%`}</td></tr>})}</tbody></table></section></>
+function ProjectionsPage({ transactions, accounts }: {
+    transactions: Transaction[];
+    accounts: Account[];
+}) {
+    const realizedBalance = calculateRealizedBalance(transactions, accounts, today());
+    const series = buildProjectionSeries(transactions, today(), realizedBalance);
+    const projected = filterCashFlow(transactions, { scope: 'projected', today: today(), periodMode: 'all', groupByCategory: {} }) as Transaction[];
+    const summary = summarizeCashFlow(projected);
+    const finalBalance = series.length ? series[series.length - 1].balance : realizedBalance;
+    return <><PageHeader title="Projeções" description="Fluxo futuro formado somente por movimentos realmente previstos."/><div className="metrics"><Metric label="Saldo atual" value={realizedBalance}/><Metric label="Entradas previstas" value={summary.income} tone="green"/><Metric label="Saídas previstas" value={summary.expense} tone="red"/><Metric label="Saldo projetado" value={finalBalance} tone="amber"/></div><section className="card projectionManager sectionGap"><div className="cardHeader"><div><h3>Fluxo de caixa projetado</h3><p>Saldo acumulado mês a mês</p></div></div><ProjectionChart rows={series}/></section>{series.length > 0 && <section className="card sectionGap"><div className="tableScroll"><table><thead><tr><th>Mês</th><th className="right">Entradas</th><th className="right">Saídas</th><th className="right">Resultado</th><th className="right">Saldo projetado</th></tr></thead><tbody>{series.map((r) => <tr key={r.key}><td>{monthLabel(r.key)}</td><td className="right positive">{money(r.income)}</td><td className="right negative">{money(r.expense)}</td><td className="right">{money(r.net)}</td><td className="right"><strong>{money(r.balance)}</strong></td></tr>)}</tbody></table></div></section>}</>;
 }
-
-function LoansPage({ loans, borrowers, events, onNew, onPayment }: { loans:Loan[];borrowers:Borrower[];events:LoanEvent[];onNew:()=>void;onPayment:(loan:Loan)=>void }) {
-  const personMap=new Map(borrowers.map((b)=>[b.id,b]))
-  const ledgers=new Map(loans.map((loan)=>[loan.id,computeLoanLedger(loan,events,today())]))
-  const totalLent=loans.reduce((sum,loan)=>sum+(ledgers.get(loan.id)?.lent||0),0)
-  const principal=loans.reduce((sum,loan)=>sum+(ledgers.get(loan.id)?.principal||0),0)
-  const interest=loans.reduce((sum,loan)=>sum+(ledgers.get(loan.id)?.interest||0),0)
-  const total=loans.reduce((sum,loan)=>sum+(ledgers.get(loan.id)?.total||0),0)
-  return <><PageHeader title="Empréstimos" description="Contratos, juros proporcionais aos dias e pagamentos por pessoa." action="Novo empréstimo" onAction={onNew}/><div className="metrics"><Metric label="Total emprestado" value={totalLent}/><Metric label="Principal a receber" value={principal} tone="amber"/><Metric label="Juros a receber" value={interest} tone="green"/><Metric label="Total a receber" value={total} tone="blue"/></div><section className="card sectionGap"><div className="recordGrid loanRecords">{loans.map((loan)=>{const person=personMap.get(loan.borrower_id);const ledger=ledgers.get(loan.id);return <article key={loan.id}><span className="recordIcon"><Icon name="loans"/></span><div><strong>{person?.name||'Pessoa'}</strong><small>Desde {dateLabel(loan.start_date)} · {(loan.monthly_rate*100).toFixed(2)}% a.m. · juros recebidos {money(ledger?.interestPaid||0)}</small></div><b>{money(ledger?.total||0)}</b><button className="secondaryButton compact" onClick={()=>onPayment(loan)}>Registrar pagamento</button></article>})}{!loans.length&&<Empty icon="loans" title="Nenhum empréstimo" text="Cadastre um empréstimo para acompanhar principal, juros e pagamentos."/>}</div></section></>
+function ComparisonsPage({ transactions }: {
+    transactions: Transaction[];
+}) {
+    const [aFrom, setAFrom] = useState('');
+    const [aTo, setATo] = useState('');
+    const [bFrom, setBFrom] = useState('');
+    const [bTo, setBTo] = useState('');
+    const [basis, setBasis] = useState<AnalysisBasis>('cash');
+    const a = filterCashFlow(transactions, { scope: 'consolidated', today: today(), periodMode: 'custom', from: aFrom, to: aTo, dateBasis: basis, groupByCategory: {} }) as Transaction[];
+    const b = filterCashFlow(transactions, { scope: 'consolidated', today: today(), periodMode: 'custom', from: bFrom, to: bTo, dateBasis: basis, groupByCategory: {} }) as Transaction[];
+    const sa = summarizeCashFlow(a), sb = summarizeCashFlow(b);
+    const rows = [['Entradas', sa.income, sb.income], ['Saídas', sa.expense, sb.expense], ['Resultado', sa.net, sb.net]] as Array<[
+        string,
+        number,
+        number
+    ]>;
+    return <><PageHeader title="Comparações" description="Compare livremente dois intervalos de datas."/><BasisToggle value={basis} onChange={setBasis}/><p className="selectedMonthContext">Consolidado · A em relação a B · {basis === 'cash' ? 'Caixa' : 'Competência'}. Sem datas, o período inclui todos os movimentos do regime.</p><div className="comparisonFilters"><section className="card"><strong>Período A</strong><div className="rangeInputs"><label>De<input type="date" value={aFrom} onChange={(e) => setAFrom(e.target.value)}/></label><label>Até<input type="date" value={aTo} onChange={(e) => setATo(e.target.value)}/></label></div></section><section className="card"><strong>Período B</strong><div className="rangeInputs"><label>De<input type="date" value={bFrom} onChange={(e) => setBFrom(e.target.value)}/></label><label>Até<input type="date" value={bTo} onChange={(e) => setBTo(e.target.value)}/></label></div></section></div><section className="card comparisonTableCard"><table className="comparisonTable"><thead><tr><th>Indicador</th><th className="right">Período A</th><th className="right">Período B</th><th className="right">Diferença A − B</th><th className="right">Variação</th><th>Tendência</th></tr></thead><tbody>{rows.map(([label, av, bv]) => {
+        const { amount, percent } = calculateDelta(av, bv);
+        const favorable = label === 'Saídas' ? amount < 0 : amount > 0;
+        const trend = amount === 0 ? '→ Sem variação' : `${amount > 0 ? '↑' : '↓'} ${favorable ? 'Favorável' : 'Desfavorável'}`;
+        return <tr key={label}><td><strong>{label}</strong></td><td className="right">{money(av)}</td><td className="right">{money(bv)}</td><td className="right">{money(amount)}</td><td className="right">{percent === null ? 'Sem base comparável' : `${percent > 0 ? '+' : ''}${percent.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`}</td><td className={`comparisonTrend ${amount === 0 ? 'neutral' : favorable ? 'favorable' : 'unfavorable'}`}>{trend}</td></tr>;
+    })}</tbody></table></section></>;
 }
-
-function VehiclesPage({ vehicles, transactions, onNew }: { vehicles:Vehicle[];transactions:Transaction[];onNew:()=>void }) {
-  return <><PageHeader title="Veículos" description="Custos ligados a cada veículo." action="Cadastrar veículo" onAction={onNew}/><section className="card"><div className="recordGrid vehicleRecords">{vehicles.map((v)=>{const total=transactions.filter((r)=>r.vehicle_id===v.id&&r.type==='expense'&&r.status!=='cancelled').reduce((s,r)=>s+r.amount,0);return <article key={v.id}><span className="recordIcon"><Icon name="vehicles"/></span><div><strong>{v.name}</strong><small>{[v.make,v.model,v.plate].filter(Boolean).join(' · ')||'Sem detalhes'}</small></div><b>{money(total)}</b></article>})}{!vehicles.length&&<Empty icon="vehicles" title="Nenhum veículo" text="Cadastre carro ou moto para relacionar despesas."/>}</div></section></>
+function LoansPage({ loans, borrowers, events, onNew, onPayment }: {
+    loans: Loan[];
+    borrowers: Borrower[];
+    events: LoanEvent[];
+    onNew: () => void;
+    onPayment: (loan: Loan) => void;
+}) {
+    const personMap = new Map(borrowers.map((b) => [b.id, b]));
+    const ledgers = new Map(loans.map((loan) => [loan.id, computeLoanLedger(loan, events, today())]));
+    const totalLent = loans.reduce((sum, loan) => sum + (ledgers.get(loan.id)?.lent || 0), 0);
+    const principal = loans.reduce((sum, loan) => sum + (ledgers.get(loan.id)?.principal || 0), 0);
+    const interest = loans.reduce((sum, loan) => sum + (ledgers.get(loan.id)?.interest || 0), 0);
+    const total = loans.reduce((sum, loan) => sum + (ledgers.get(loan.id)?.total || 0), 0);
+    return <><PageHeader title="Empréstimos" description="Contratos, juros proporcionais aos dias e pagamentos por pessoa." action="Novo empréstimo" onAction={onNew}/><div className="metrics"><Metric label="Total emprestado" value={totalLent}/><Metric label="Principal a receber" value={principal} tone="amber"/><Metric label="Juros a receber" value={interest} tone="green"/><Metric label="Total a receber" value={total} tone="blue"/></div><section className="card sectionGap"><div className="recordGrid loanRecords">{loans.map((loan) => { const person = personMap.get(loan.borrower_id); const ledger = ledgers.get(loan.id); return <article key={loan.id}><span className="recordIcon"><Icon name="loans"/></span><div><strong>{person?.name || 'Pessoa'}</strong><small>Desde {dateLabel(loan.start_date)} · {(loan.monthly_rate * 100).toFixed(2)}% a.m. · juros recebidos {money(ledger?.interestPaid || 0)}</small></div><b>{money(ledger?.total || 0)}</b><button className="secondaryButton compact" onClick={() => onPayment(loan)}>Registrar pagamento</button></article>; })}{!loans.length && <Empty icon="loans" title="Nenhum empréstimo" text="Cadastre um empréstimo para acompanhar principal, juros e pagamentos."/>}</div></section></>;
 }
-
-function InvestmentsPage({ accounts, transactions, onNew }: { accounts:Account[];transactions:Transaction[];onNew:()=>void }) {
-  const items=accounts.filter((a)=>a.account_type==='investment');const ids=new Set(items.map((a)=>a.id));const related=transactions.filter((r)=>r.account_id&&ids.has(r.account_id));const balance=items.reduce((s,a)=>s+Number(a.initial_balance||0),0)+related.filter((r)=>r.status==='completed').reduce((s,r)=>s+(r.type==='income'?r.amount:r.type==='expense'?-r.amount:0),0)
-  return <><PageHeader title="Investimentos" description="Contas e movimentações de investimento." action="Adicionar investimento" onAction={onNew}/><div className="metrics"><Metric label="Saldo aplicado" value={balance}/><Metric label="Rendimentos registrados" value={related.filter((r)=>r.type==='income').reduce((s,r)=>s+r.amount,0)} tone="green"/><Metric label="Saídas / resgates" value={related.filter((r)=>r.type==='expense').reduce((s,r)=>s+r.amount,0)} tone="red"/><Metric label="Saldo inicial" value={items.reduce((s,a)=>s+Number(a.initial_balance||0),0)} tone="amber"/></div><section className="card sectionGap"><div className="recordGrid">{items.map((a)=><article key={a.id}><span className="recordIcon"><Icon name="investments"/></span><div><strong>{a.name}</strong><small>Conta de investimento</small></div><b>{money(a.initial_balance)}</b></article>)}{!items.length&&<Empty icon="investments" title="Nenhum investimento" text="Cadastre uma conta de investimento para começar."/>}</div></section></>
+function VehiclesPage({ vehicles, transactions }: {
+    vehicles: Vehicle[];
+    transactions: Transaction[];
+}) {
+    const [year, setYear] = useState(today().slice(0, 4));
+    const [vehicleId, setVehicleId] = useState('all');
+    const [basis, setBasis] = useState<AnalysisBasis>('cash');
+    const years = buildAnalysisYears(transactions, today().slice(0, 4));
+    const summaries = buildVehicleSummaries(vehicles, transactions, year, basis).filter((summary) => vehicleId === 'all' || summary.id === vehicleId);
+    return <><PageHeader title="Veículos" description="Leitura anual das despesas realizadas vinculadas aos veículos."><label>Ano<select value={year} onChange={(e) => setYear(e.target.value)}>{years.map((value) => <option key={value}>{value}</option>)}</select></label><label>Veículo<select value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}><option value="all">Todos</option>{vehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.id}>{vehicle.name}</option>)}</select></label><label>Regime<select value={basis} onChange={(e) => setBasis(e.target.value as AnalysisBasis)}><option value="cash">Caixa</option><option value="competence">Competência</option></select></label></PageHeader>{!vehicles.length ? <section className="card"><Empty icon="vehicles" title="Nenhum veículo cadastrado" text="Cadastre seus veículos em Configurações > Veículos para vincular despesas nos lançamentos."/></section> : <section className="card"><div className="recordGrid vehicleRecords">{summaries.map((summary) => <article key={summary.id}><span className="recordIcon"><Icon name="vehicles"/></span><div><strong>{summary.name}</strong><small>Total anual {money(summary.total)} · média mensal {money(summary.monthlyAverage)}</small><small>{summary.peakMonth ? `Maior custo: ${monthLabel(summary.peakMonth)} (${money(summary.peakAmount)})` : 'Sem despesas realizadas no ano'}</small><div className="tableScroll"><table><thead><tr>{summary.months.map((month) => <th key={month.key}>{monthLabel(month.key)}</th>)}</tr></thead><tbody><tr>{summary.months.map((month) => <td key={month.key}>{money(month.expense)}</td>)}</tr></tbody></table></div></div><b>{money(summary.total)}</b></article>)}</div></section>}</>;
 }
-
-function SettingsPage({ groups, accounts, recurringRules, profile, profiles, onSaveGroup, onSaveCategory, onSaveAccount, onCreateUser }: { groups:CategoryGroup[];accounts:Account[];recurringRules:RecurringRule[];profile:Profile|null;profiles:Profile[];onSaveGroup:(name:string,nature:Nature,id?:string)=>Promise<void>;onSaveCategory:(name:string,groupId:string,id?:string)=>Promise<void>;onSaveAccount:(name:string,type:string,balance:number,id?:string)=>Promise<void>;onCreateUser:(fullName:string,email:string,password:string)=>Promise<void> }) {
-  const [groupName,setGroupName]=useState('');const[groupNature,setGroupNature]=useState<Nature>('Saída');const[editGroup,setEditGroup]=useState<string|undefined>();const[catName,setCatName]=useState('');const[catGroup,setCatGroup]=useState(groups[0]?.id||'');const[editCat,setEditCat]=useState<string|undefined>();const[accountName,setAccountName]=useState('');const[accountType,setAccountType]=useState('checking');const[accountBalance,setAccountBalance]=useState('');const[editAccount,setEditAccount]=useState<string|undefined>();const[userName,setUserName]=useState('');const[userEmail,setUserEmail]=useState('');const[userPassword,setUserPassword]=useState('');const[message,setMessage]=useState('')
-  useEffect(()=>{if(!catGroup&&groups[0])setCatGroup(groups[0].id)},[groups,catGroup])
-  async function submitGroup(e:FormEvent){e.preventDefault();try{await onSaveGroup(groupName.trim(),groupNature,editGroup);setGroupName('');setEditGroup(undefined);setMessage('Grupo salvo.')}catch(err){setMessage(err instanceof Error?err.message:'Erro ao salvar grupo.')}}
-  async function submitCat(e:FormEvent){e.preventDefault();try{await onSaveCategory(catName.trim(),catGroup,editCat);setCatName('');setEditCat(undefined);setMessage('Categoria salva.')}catch(err){setMessage(err instanceof Error?err.message:'Erro ao salvar categoria.')}}
-  async function submitAccount(e:FormEvent){e.preventDefault();try{await onSaveAccount(accountName.trim(),accountType,parseMoney(accountBalance),editAccount);setAccountName('');setAccountBalance('');setEditAccount(undefined);setMessage('Conta salva.')}catch(err){setMessage(err instanceof Error?err.message:'Erro ao salvar conta.')}}
-  async function submitUser(e:FormEvent){e.preventDefault();try{await onCreateUser(userName.trim(),userEmail.trim(),userPassword);setUserName('');setUserEmail('');setUserPassword('');setMessage('Usuário criado e confirmado.')}catch(err){setMessage(err instanceof Error?err.message:'Erro ao criar usuário.')}}
-  return <><PageHeader title="Configurações" description="Estrutura flexível: classificações e cadastros podem ser ajustados sem perder o histórico."/>{message&&<div className="configMessage managerMessage">{message}</div>}<div className="managerSettingsGrid"><section className="card"><div className="cardHeader"><div><h3>Grupos</h3><p>Renomeie ou altere a natureza.</p></div></div><form className="miniForm" onSubmit={submitGroup}><input value={groupName} onChange={(e)=>setGroupName(e.target.value)} placeholder="Nome do grupo" required/><select value={groupNature} onChange={(e)=>setGroupNature(e.target.value as Nature)}><option>Saída</option><option>Entrada</option></select><button className="primaryButton">{editGroup?'Salvar edição':'Adicionar'}</button>{editGroup&&<button type="button" className="textButton" onClick={()=>{setEditGroup(undefined);setGroupName('')}}>Cancelar</button>}</form><div className="settingsList">{groups.map((g)=><button key={g.id} onClick={()=>{setEditGroup(g.id);setGroupName(g.name);setGroupNature(g.nature)}}><span>{g.name}</span><small>{g.nature} · {g.categories.length} categorias</small><Icon name="edit" size={14}/></button>)}</div></section><section className="card"><div className="cardHeader"><div><h3>Categorias</h3><p>Renomeie ou mova entre grupos.</p></div></div><form className="miniForm" onSubmit={submitCat}><input value={catName} onChange={(e)=>setCatName(e.target.value)} placeholder="Nome da categoria" required/><select value={catGroup} onChange={(e)=>setCatGroup(e.target.value)} required>{groups.map((g)=><option key={g.id} value={g.id}>{g.name}</option>)}</select><button className="primaryButton">{editCat?'Salvar edição':'Adicionar'}</button>{editCat&&<button type="button" className="textButton" onClick={()=>{setEditCat(undefined);setCatName('')}}>Cancelar</button>}</form><div className="settingsList categorySettingsList">{groups.flatMap((g)=>g.categories.map((c)=><button key={c.id} onClick={()=>{setEditCat(c.id);setCatName(c.name);setCatGroup(g.id)}}><span>{c.name}</span><small>{g.name}</small><Icon name="edit" size={14}/></button>))}</div></section><section className="card"><div className="cardHeader"><div><h3>Contas e investimentos</h3><p>Cadastros usados nos lançamentos.</p></div></div><form className="miniForm" onSubmit={submitAccount}><input value={accountName} onChange={(e)=>setAccountName(e.target.value)} placeholder="Nome da conta" required/><select value={accountType} onChange={(e)=>setAccountType(e.target.value)}><option value="checking">Conta corrente</option><option value="cash">Dinheiro</option><option value="savings">Poupança</option><option value="credit_card">Cartão de crédito</option><option value="investment">Investimento</option></select><input value={accountBalance} onChange={(e)=>setAccountBalance(e.target.value)} placeholder="Saldo inicial" inputMode="decimal"/><button className="primaryButton">{editAccount?'Salvar edição':'Adicionar'}</button></form><div className="settingsList">{accounts.map((a)=><button key={a.id} onClick={()=>{setEditAccount(a.id);setAccountName(a.name);setAccountType(a.account_type);setAccountBalance(String(a.initial_balance).replace('.',','))}}><span>{a.name}</span><small>{a.account_type} · {money(a.initial_balance)}</small><Icon name="edit" size={14}/></button>)}</div></section><section className="card"><div className="cardHeader"><div><h3>Recorrências</h3><p>Regras persistentes cadastradas.</p></div></div><div className="settingsList staticList">{recurringRules.map((r)=><div key={r.id}><span>{r.name}</span><small>Dia {r.day_of_month} · {money(r.amount)} · {r.active?'Ativa':'Inativa'}</small></div>)}{!recurringRules.length&&<p className="mutedText">Nenhuma recorrência cadastrada.</p>}</div></section>{profile?.is_admin&&<section className="card adminUsersCard"><div className="cardHeader"><div><h3>Usuários</h3><p>Crie acessos sem entrar no painel do Supabase.</p></div><span className="adminBadge">Administrador</span></div><form className="miniForm userForm" onSubmit={submitUser}><input value={userName} onChange={(e)=>setUserName(e.target.value)} placeholder="Nome completo" required/><input type="email" value={userEmail} onChange={(e)=>setUserEmail(e.target.value)} placeholder="E-mail" required/><input type="password" value={userPassword} onChange={(e)=>setUserPassword(e.target.value)} placeholder="Senha temporária (8+ caracteres)" minLength={8} required/><button className="primaryButton"><Icon name="users" size={16}/>Criar usuário</button></form><div className="userDirectory">{profiles.map((p)=><article key={p.id}><span>{p.full_name?.slice(0,2).toUpperCase()||'US'}</span><div><strong>{p.full_name}</strong><small>{p.email||'E-mail não disponível'}</small></div><b>{p.is_admin?'Gestor':'Usuário'}</b></article>)}</div></section>}</div></>
+function InvestmentsPage({ accounts, transactions }: {
+    accounts: Account[];
+    transactions: Transaction[];
+}) {
+    const [basis, setBasis] = useState<AnalysisBasis>('cash');
+    const summary = buildInvestmentSummary(accounts, transactions, basis);
+    return <><PageHeader title="Investimentos" description="Saldos e movimentações realizados nas contas de investimento."><label>Regime<select value={basis} onChange={(e) => setBasis(e.target.value as AnalysisBasis)}><option value="cash">Caixa</option><option value="competence">Competência</option></select></label></PageHeader>{!summary.accounts.length ? <section className="card"><Empty icon="investments" title="Nenhuma conta de investimento" text="Cadastre uma conta com tipo Investimento em Configurações > Contas para acompanhar os movimentos."/></section> : <><div className="metrics"><Metric label="Saldo calculado" value={summary.balance} detail="Saldo inicial + entradas − saídas realizadas"/><Metric label="Entradas / rendimentos" value={summary.income} tone="green" detail="Movimentos realizados"/><Metric label="Saídas / resgates" value={summary.expense} tone="red" detail="Movimentos realizados"/><Metric label="Saldo inicial" value={summary.initialBalance} tone="amber" detail="Soma das contas de investimento"/></div><section className="card sectionGap"><div className="cardHeader"><div><h3>Movimentação mensal</h3><p>Entradas e saídas realizadas no regime selecionado.</p></div></div><TimelineChart rows={summary.months} kind="bar"/></section><section className="card sectionGap"><div className="recordGrid">{summary.accounts.map((account) => <article key={account.id}><span className="recordIcon"><Icon name="investments"/></span><div><strong>{account.name}</strong><small>Saldo inicial {money(account.initialBalance)} · entradas {money(account.income)} · saídas {money(account.expense)}</small></div><b>{money(account.balance)}</b></article>)}</div></section></>}</>;
 }
-
-function TransactionEditor({ groups, accounts, editing, planned, close, onSave }: { groups:CategoryGroup[];accounts:Account[];editing?:Transaction|null;planned?:boolean;close:()=>void;onSave:(draft:TransactionDraft,editing?:Transaction|null)=>Promise<void> }) {
-  const initialGroup=groups.find((g)=>g.categories.some((c)=>c.id===editing?.category_id))?.id||''
-  const[nature,setNature]=useState<Nature>(editing?dbToNature(editing.type):'Saída');const[description,setDescription]=useState(editing?.description||'');const[amount,setAmount]=useState(editing?String(editing.amount).replace('.',','):'');const[competenceDate,setCompetenceDate]=useState(editing?.competence_date||today());const[settlementDate,setSettlementDate]=useState(editing?.settlement_date||today());const[groupId,setGroupId]=useState(initialGroup);const[categoryId,setCategoryId]=useState(editing?.category_id||'');const[accountId,setAccountId]=useState(editing?.account_id||'');const[paymentMethod,setPaymentMethod]=useState(editing?.payment_method||'Pix');const[status,setStatus]=useState<DbStatus>(editing?.status||(planned?'planned':'completed'));const[notes,setNotes]=useState(cleanNotes(editing?.notes));const[installments,setInstallments]=useState(editing?.installment_total||1);const[firstInstallmentDate,setFirstInstallmentDate]=useState(editing?.settlement_date||today());const[recurring,setRecurring]=useState(false);const[recurrenceDay,setRecurrenceDay]=useState(Number(today().slice(-2)));const[recurrenceEnd,setRecurrenceEnd]=useState('');const[seriesScope,setSeriesScope]=useState<'single'|'future'>('single');const[saving,setSaving]=useState(false);const[message,setMessage]=useState('')
-  const availableGroups=groups.filter((g)=>g.nature===nature);const selectedGroup=groups.find((g)=>g.id===groupId);const credit=nature==='Saída'&&paymentMethod==='Cartão de crédito';const hasSeries=Boolean(editing?.installment_group_id)
-  async function submit(e:FormEvent){e.preventDefault();const value=parseMoney(amount);if(value<=0||!categoryId){setMessage('Informe valor e categoria.');return}setSaving(true);try{await onSave({nature,description:description.trim(),amount:value,competenceDate,settlementDate,groupId,categoryId,accountId,paymentMethod,status,notes:notes.trim(),installments,firstInstallmentDate,recurring,recurrenceDay,recurrenceEnd,seriesScope},editing);close()}catch(err){setMessage(err instanceof Error?err.message:'Não foi possível salvar.')}finally{setSaving(false)}}
-  return <Modal title={editing?'Editar lançamento':'Novo lançamento'} description="Competência e data de caixa permanecem separadas." close={close} wide><form onSubmit={submit}><div className="natureTabs"><button type="button" className={nature==='Saída'?'active expense':''} onClick={()=>{setNature('Saída');setGroupId('');setCategoryId('')}}>Saída</button><button type="button" className={nature==='Entrada'?'active income':''} onClick={()=>{setNature('Entrada');setGroupId('');setCategoryId('')}}>Entrada</button></div><div className="formGrid"><label className="full">Descrição<input value={description} onChange={(e)=>setDescription(e.target.value)} required/></label><label>Valor<input value={amount} onChange={(e)=>setAmount(e.target.value)} inputMode="decimal" required/></label><label>Competência<input type="date" value={competenceDate} onChange={(e)=>setCompetenceDate(e.target.value)} required/></label><label>Grupo<select value={groupId} onChange={(e)=>{setGroupId(e.target.value);setCategoryId('')}} required><option value="">Selecionar</option>{availableGroups.map((g)=><option key={g.id} value={g.id}>{g.name}</option>)}</select></label><label>Categoria<select value={categoryId} onChange={(e)=>setCategoryId(e.target.value)} required><option value="">Selecionar</option>{selectedGroup?.categories.map((c)=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>{nature==='Saída'&&<label>Forma de pagamento<select value={paymentMethod} onChange={(e)=>setPaymentMethod(e.target.value)}><option>Pix</option><option>Dinheiro</option><option>Cartão de débito</option><option>Cartão de crédito</option><option>Boleto</option><option>Débito automático</option><option>Outro</option></select></label>}<label>Conta<select value={accountId} onChange={(e)=>setAccountId(e.target.value)}><option value="">Sem conta específica</option>{accounts.map((a)=><option key={a.id} value={a.id}>{a.name}</option>)}</select></label>{credit&&!editing?<><label>Parcelas<select value={installments} onChange={(e)=>setInstallments(Number(e.target.value))}>{Array.from({length:24},(_,i)=>i+1).map((n)=><option key={n} value={n}>{n}x</option>)}</select></label><label>Primeira parcela<input type="date" value={firstInstallmentDate} onChange={(e)=>setFirstInstallmentDate(e.target.value)} required/></label></>:<label>Data de {nature==='Entrada'?'recebimento':'pagamento'}<input type="date" value={settlementDate} onChange={(e)=>setSettlementDate(e.target.value)} required/></label>}<label>Situação<select value={status} onChange={(e)=>setStatus(e.target.value as DbStatus)}><option value="completed">Realizado</option><option value="planned">Previsto</option></select></label><label className="full">Observação<input value={notes} onChange={(e)=>setNotes(e.target.value)}/></label>{!editing&&!credit&&<div className="full recurrenceBox"><label className="checkLine"><input type="checkbox" checked={recurring} onChange={(e)=>setRecurring(e.target.checked)}/><span><strong>Lançamento recorrente</strong><small>Gera ocorrências futuras automaticamente.</small></span></label>{recurring&&<div className="recurrenceFields"><label>Dia do mês<input type="number" min="1" max="31" value={recurrenceDay} onChange={(e)=>setRecurrenceDay(Number(e.target.value))}/></label><label>Encerrar em<input type="date" value={recurrenceEnd} onChange={(e)=>setRecurrenceEnd(e.target.value)}/></label></div>}</div>}{hasSeries&&<div className="full recurrenceBox"><strong>Este registro pertence a uma série.</strong><label className="scopeChoice"><input type="radio" checked={seriesScope==='single'} onChange={()=>setSeriesScope('single')}/>Editar somente este</label><label className="scopeChoice"><input type="radio" checked={seriesScope==='future'} onChange={()=>setSeriesScope('future')}/>Editar este e os próximos</label></div>}{message&&<div className="error full">{message}</div>}</div><div className="dialogFooter"><button type="button" className="secondaryButton" onClick={close}>Cancelar</button><button className="primaryButton" disabled={saving}>{saving?'Salvando...':'Salvar lançamento'}</button></div></form></Modal>
+function SettingsPage({ groups, accounts, vehicles, recurringRules, profile, profiles, themePreference, onThemePreferenceChange, onSaveGroup, onSaveCategory, onSaveAccount, onSaveVehicle, onCreateUser }: {
+    groups: CategoryGroup[];
+    accounts: Account[];
+    vehicles: Vehicle[];
+    recurringRules: RecurringRule[];
+    profile: Profile | null;
+    profiles: Profile[];
+    themePreference: ThemePreference;
+    onThemePreferenceChange: (preference: ThemePreference) => void;
+    onSaveGroup: (name: string, nature: Nature, id?: string) => Promise<void>;
+    onSaveCategory: (name: string, groupId: string, id?: string) => Promise<void>;
+    onSaveAccount: (name: string, type: string, balance: number, id?: string) => Promise<void>;
+    onSaveVehicle: (name: string, make: string, model: string, plate: string, id?: string) => Promise<void>;
+    onCreateUser: (fullName: string, email: string, password: string) => Promise<void>;
+}) {
+    const [groupName, setGroupName] = useState('');
+    const [groupNature, setGroupNature] = useState<Nature>('Saída');
+    const [editGroup, setEditGroup] = useState<string | undefined>();
+    const [catName, setCatName] = useState('');
+    const [catGroup, setCatGroup] = useState(groups[0]?.id || '');
+    const [editCat, setEditCat] = useState<string | undefined>();
+    const [accountName, setAccountName] = useState('');
+    const [accountType, setAccountType] = useState('checking');
+    const [accountBalance, setAccountBalance] = useState('');
+    const [editAccount, setEditAccount] = useState<string | undefined>();
+    const [vehicleName, setVehicleName] = useState('');
+    const [vehicleMake, setVehicleMake] = useState('');
+    const [vehicleModel, setVehicleModel] = useState('');
+    const [vehiclePlate, setVehiclePlate] = useState('');
+    const [editVehicle, setEditVehicle] = useState<string | undefined>();
+    const [userName, setUserName] = useState('');
+    const [userEmail, setUserEmail] = useState('');
+    const [userPassword, setUserPassword] = useState('');
+    const [message, setMessage] = useState('');
+    useEffect(() => { if (!catGroup && groups[0])
+        setCatGroup(groups[0].id); }, [groups, catGroup]);
+    async function submitGroup(e: FormEvent) { e.preventDefault(); try {
+        await onSaveGroup(groupName.trim(), groupNature, editGroup);
+        setGroupName('');
+        setEditGroup(undefined);
+        setMessage('Grupo salvo.');
+    }
+    catch (err) {
+        setMessage(err instanceof Error ? err.message : 'Erro ao salvar grupo.');
+    } }
+    async function submitCat(e: FormEvent) { e.preventDefault(); try {
+        await onSaveCategory(catName.trim(), catGroup, editCat);
+        setCatName('');
+        setEditCat(undefined);
+        setMessage('Categoria salva.');
+    }
+    catch (err) {
+        setMessage(err instanceof Error ? err.message : 'Erro ao salvar categoria.');
+    } }
+    async function submitAccount(e: FormEvent) { e.preventDefault(); try {
+        await onSaveAccount(accountName.trim(), accountType, parseMoney(accountBalance), editAccount);
+        setAccountName('');
+        setAccountBalance('');
+        setEditAccount(undefined);
+        setMessage('Conta salva.');
+    }
+    catch (err) {
+        setMessage(err instanceof Error ? err.message : 'Erro ao salvar conta.');
+    } }
+    async function submitVehicle(e: FormEvent) { e.preventDefault(); try {
+        await onSaveVehicle(vehicleName.trim(), vehicleMake.trim(), vehicleModel.trim(), vehiclePlate.trim(), editVehicle);
+        setVehicleName('');
+        setVehicleMake('');
+        setVehicleModel('');
+        setVehiclePlate('');
+        setEditVehicle(undefined);
+        setMessage('Veículo salvo.');
+    }
+    catch (err) {
+        setMessage(err instanceof Error ? err.message : 'Erro ao salvar veículo.');
+    } }
+    async function submitUser(e: FormEvent) { e.preventDefault(); try {
+        await onCreateUser(userName.trim(), userEmail.trim(), userPassword);
+        setUserName('');
+        setUserEmail('');
+        setUserPassword('');
+        setMessage('Usuário criado e confirmado.');
+    }
+    catch (err) {
+        setMessage(err instanceof Error ? err.message : 'Erro ao criar usuário.');
+    } }
+    return <><PageHeader title="Configurações" description="Estrutura flexível: classificações e cadastros podem ser ajustados sem perder o histórico."/>{message && <div className="configMessage managerMessage">{message}</div>}<div className="managerSettingsGrid"><section className="card appearanceCard"><div className="cardHeader"><div><h3>Aparência</h3><p>Escolha o tema deste dispositivo. Automático acompanha as mudanças de aparência do sistema.</p></div></div><div className="themeOptions" role="group" aria-label="Tema da interface">{([["light", "Claro"], ["dark", "Escuro"], ["system", "Automático"]] as const).map(([preference, label]) => <button type="button" key={preference} aria-pressed={themePreference === preference} onClick={() => onThemePreferenceChange(preference)}><span aria-hidden="true">{themePreference === preference ? "✓" : "○"}</span>{label}</button>)}</div><p className="themeHelp">Preferência salva somente neste navegador, separada por usuário; não é enviada ao servidor.</p></section><section className="card"><div className="cardHeader"><div><h3>Veículos</h3><p>Cadastro auxiliar para vincular despesas aos lançamentos.</p></div></div><form className="miniForm" onSubmit={submitVehicle}><input value={vehicleName} onChange={(e) => setVehicleName(e.target.value)} placeholder="Nome do veículo" required/><input value={vehicleMake} onChange={(e) => setVehicleMake(e.target.value)} placeholder="Marca"/><input value={vehicleModel} onChange={(e) => setVehicleModel(e.target.value)} placeholder="Modelo"/><input value={vehiclePlate} onChange={(e) => setVehiclePlate(e.target.value)} placeholder="Placa"/><button className="primaryButton">{editVehicle ? 'Salvar edição' : 'Adicionar'}</button>{editVehicle && <button type="button" className="textButton" onClick={() => { setEditVehicle(undefined); setVehicleName(''); setVehicleMake(''); setVehicleModel(''); setVehiclePlate(''); }}>Cancelar</button>}</form><div className="settingsList">{vehicles.map((vehicle) => <button key={vehicle.id} onClick={() => { setEditVehicle(vehicle.id); setVehicleName(vehicle.name); setVehicleMake(vehicle.make || ''); setVehicleModel(vehicle.model || ''); setVehiclePlate(vehicle.plate || ''); }}><span>{vehicle.name}</span><small>{[vehicle.make, vehicle.model, vehicle.plate].filter(Boolean).join(' · ') || 'Sem detalhes'}</small><Icon name="edit" size={14}/></button>)}{!vehicles.length && <p className="mutedText">Nenhum veículo cadastrado.</p>}</div></section><section className="card"><div className="cardHeader"><div><h3>Grupos</h3><p>Renomeie ou altere a natureza.</p></div></div><form className="miniForm" onSubmit={submitGroup}><input value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="Nome do grupo" required/><select value={groupNature} onChange={(e) => setGroupNature(e.target.value as Nature)}><option>Saída</option><option>Entrada</option></select><button className="primaryButton">{editGroup ? 'Salvar edição' : 'Adicionar'}</button>{editGroup && <button type="button" className="textButton" onClick={() => { setEditGroup(undefined); setGroupName(''); }}>Cancelar</button>}</form><div className="settingsList">{groups.map((g) => <button key={g.id} onClick={() => { setEditGroup(g.id); setGroupName(g.name); setGroupNature(g.nature); }}><span>{g.name}</span><small>{g.nature} · {g.categories.length} categorias</small><Icon name="edit" size={14}/></button>)}</div></section><section className="card"><div className="cardHeader"><div><h3>Categorias</h3><p>Renomeie ou mova entre grupos.</p></div></div><form className="miniForm" onSubmit={submitCat}><input value={catName} onChange={(e) => setCatName(e.target.value)} placeholder="Nome da categoria" required/><select value={catGroup} onChange={(e) => setCatGroup(e.target.value)} required>{groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}</select><button className="primaryButton">{editCat ? 'Salvar edição' : 'Adicionar'}</button>{editCat && <button type="button" className="textButton" onClick={() => { setEditCat(undefined); setCatName(''); }}>Cancelar</button>}</form><div className="settingsList categorySettingsList">{groups.flatMap((g) => g.categories.map((c) => <button key={c.id} onClick={() => { setEditCat(c.id); setCatName(c.name); setCatGroup(g.id); }}><span>{c.name}</span><small>{g.name}</small><Icon name="edit" size={14}/></button>))}</div></section><section className="card"><div className="cardHeader"><div><h3>Contas e investimentos</h3><p>Cadastros usados nos lançamentos.</p></div></div><form className="miniForm" onSubmit={submitAccount}><input value={accountName} onChange={(e) => setAccountName(e.target.value)} placeholder="Nome da conta" required/><select value={accountType} onChange={(e) => setAccountType(e.target.value)}><option value="checking">Conta corrente</option><option value="cash">Dinheiro</option><option value="savings">Poupança</option><option value="credit_card">Cartão de crédito</option><option value="investment">Investimento</option></select><input value={accountBalance} onChange={(e) => setAccountBalance(e.target.value)} placeholder="Saldo inicial" inputMode="decimal"/><button className="primaryButton">{editAccount ? 'Salvar edição' : 'Adicionar'}</button></form><div className="settingsList">{accounts.map((a) => <button key={a.id} onClick={() => { setEditAccount(a.id); setAccountName(a.name); setAccountType(a.account_type); setAccountBalance(String(a.initial_balance).replace('.', ',')); }}><span>{a.name}</span><small>{a.account_type} · {money(a.initial_balance)}</small><Icon name="edit" size={14}/></button>)}</div></section><section className="card"><div className="cardHeader"><div><h3>Recorrências</h3><p>Regras persistentes cadastradas.</p></div></div><div className="settingsList staticList">{recurringRules.map((r) => <div key={r.id}><span>{r.name}</span><small>Dia {r.day_of_month} · {money(r.amount)} · {r.active ? 'Ativa' : 'Inativa'}</small></div>)}{!recurringRules.length && <p className="mutedText">Nenhuma recorrência cadastrada.</p>}</div></section>{profile?.is_admin && <section className="card adminUsersCard"><div className="cardHeader"><div><h3>Usuários</h3><p>Crie acessos sem entrar no painel do Supabase.</p></div><span className="adminBadge">Administrador</span></div><form className="miniForm userForm" onSubmit={submitUser}><input value={userName} onChange={(e) => setUserName(e.target.value)} placeholder="Nome completo" required/><input type="email" value={userEmail} onChange={(e) => setUserEmail(e.target.value)} placeholder="E-mail" required/><input type="password" value={userPassword} onChange={(e) => setUserPassword(e.target.value)} placeholder="Senha temporária (8+ caracteres)" minLength={8} required/><button className="primaryButton"><Icon name="users" size={16}/>Criar usuário</button></form><div className="userDirectory">{profiles.map((p) => <article key={p.id}><span>{p.full_name?.slice(0, 2).toUpperCase() || 'US'}</span><div><strong>{p.full_name}</strong><small>{p.email || 'E-mail não disponível'}</small></div><b>{p.is_admin ? 'Gestor' : 'Usuário'}</b></article>)}</div></section>}</div></>;
 }
-
-function SimpleEntityModal({ kind, close, onSave }: { kind:'loan'|'payment'|'vehicle'|'investment';close:()=>void;onSave:(data:Record<string,string>)=>Promise<void> }) {
-  const[a,setA]=useState('');const[b,setB]=useState('');const[c,setC]=useState('');const[d,setD]=useState('');const[saving,setSaving]=useState(false);const[msg,setMsg]=useState('')
-  async function submit(e:FormEvent){e.preventDefault();setSaving(true);try{await onSave({a,b,c,d});close()}catch(err){setMsg(err instanceof Error?err.message:'Não foi possível salvar.')}finally{setSaving(false)}}
-  const title=kind==='loan'?'Novo empréstimo':kind==='payment'?'Registrar pagamento':kind==='vehicle'?'Cadastrar veículo':'Adicionar investimento'
-  return <Modal title={title} close={close}><form onSubmit={submit}><div className="formGrid">{kind==='loan'&&<><label className="full">Pessoa<input value={a} onChange={(e)=>setA(e.target.value)} required/></label><label>Valor<input value={b} onChange={(e)=>setB(e.target.value)} required/></label><label>Taxa a.m. (%)<input value={c} onChange={(e)=>setC(e.target.value)} required/></label><label>Data<input type="date" value={d} onChange={(e)=>setD(e.target.value)} required/></label></>}{kind==='payment'&&<><label>Valor<input value={a} onChange={(e)=>setA(e.target.value)} required/></label><label>Data<input type="date" value={b} onChange={(e)=>setB(e.target.value)} required/></label><label className="full">Observação<input value={c} onChange={(e)=>setC(e.target.value)}/></label></>}{kind==='vehicle'&&<><label className="full">Nome<input value={a} onChange={(e)=>setA(e.target.value)} required/></label><label>Marca<input value={b} onChange={(e)=>setB(e.target.value)}/></label><label>Modelo<input value={c} onChange={(e)=>setC(e.target.value)}/></label><label>Placa<input value={d} onChange={(e)=>setD(e.target.value)}/></label></>}{kind==='investment'&&<><label className="full">Nome do investimento<input value={a} onChange={(e)=>setA(e.target.value)} required/></label><label>Saldo inicial<input value={b} onChange={(e)=>setB(e.target.value)}/></label></>}{msg&&<div className="error full">{msg}</div>}</div><div className="dialogFooter"><button type="button" className="secondaryButton" onClick={close}>Cancelar</button><button className="primaryButton" disabled={saving}>{saving?'Salvando...':'Salvar'}</button></div></form></Modal>
+function TransactionEditor({ groups, accounts, vehicles, editing, planned, close, onSave }: {
+    groups: CategoryGroup[];
+    accounts: Account[];
+    vehicles: Vehicle[];
+    editing?: Transaction | null;
+    planned?: boolean;
+    close: () => void;
+    onSave: (draft: TransactionDraft, editing?: Transaction | null) => Promise<void>;
+}) {
+    const initialGroup = groups.find((g) => g.categories.some((c) => c.id === editing?.category_id))?.id || '';
+    const [nature, setNature] = useState<Nature>(editing ? dbToNature(editing.type) : 'Saída');
+    const [description, setDescription] = useState(editing?.description || '');
+    const [amount, setAmount] = useState(editing ? String(editing.amount).replace('.', ',') : '');
+    const [competenceDate, setCompetenceDate] = useState(editing?.competence_date || today());
+    const [settlementDate, setSettlementDate] = useState(editing?.settlement_date || today());
+    const [groupId, setGroupId] = useState(initialGroup);
+    const [categoryId, setCategoryId] = useState(editing?.category_id || '');
+    const [accountId, setAccountId] = useState(editing?.account_id || '');
+    const [vehicleId, setVehicleId] = useState(editing?.vehicle_id || '');
+    const [paymentMethod, setPaymentMethod] = useState(editing?.payment_method || 'Pix');
+    const [status, setStatus] = useState<DbStatus>(editing?.status || (planned ? 'planned' : 'completed'));
+    const [notes, setNotes] = useState(cleanNotes(editing?.notes));
+    const [installments, setInstallments] = useState(editing?.installment_total || 1);
+    const [firstInstallmentDate, setFirstInstallmentDate] = useState(editing?.settlement_date || today());
+    const [recurring, setRecurring] = useState(false);
+    const [recurrenceDay, setRecurrenceDay] = useState(Number(today().slice(-2)));
+    const [recurrenceEnd, setRecurrenceEnd] = useState('');
+    const [seriesScope, setSeriesScope] = useState<'single' | 'future'>('single');
+    const [saving, setSaving] = useState(false);
+    const [message, setMessage] = useState('');
+    const availableGroups = groups.filter((g) => g.nature === nature);
+    const selectedGroup = groups.find((g) => g.id === groupId);
+    const credit = nature === 'Saída' && paymentMethod === 'Cartão de crédito';
+    const hasSeries = Boolean(editing?.installment_group_id);
+    async function submit(e: FormEvent) { e.preventDefault(); const value = parseMoney(amount); if (value <= 0 || !categoryId) {
+        setMessage('Informe valor e categoria.');
+        return;
+    } setSaving(true); try {
+        await onSave({ nature, description: description.trim(), amount: value, competenceDate, settlementDate, groupId, categoryId, accountId, vehicleId, paymentMethod, status, notes: notes.trim(), installments, firstInstallmentDate, recurring, recurrenceDay, recurrenceEnd, seriesScope }, editing);
+        close();
+    }
+    catch (err) {
+        setMessage(err instanceof Error ? err.message : 'Não foi possível salvar.');
+    }
+    finally {
+        setSaving(false);
+    } }
+    return <Modal title={editing ? 'Editar lançamento' : 'Novo lançamento'} description="Competência e data de caixa permanecem separadas." close={close} wide><form onSubmit={submit}><div className="natureTabs"><button type="button" className={nature === 'Saída' ? 'active expense' : ''} onClick={() => { setNature('Saída'); setGroupId(''); setCategoryId(''); }}>Saída</button><button type="button" className={nature === 'Entrada' ? 'active income' : ''} onClick={() => { setNature('Entrada'); setGroupId(''); setCategoryId(''); }}>Entrada</button></div><div className="formGrid"><label className="full">Descrição<input value={description} onChange={(e) => setDescription(e.target.value)} required/></label><label>Valor<input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" required/></label><label>Competência<input type="date" value={competenceDate} onChange={(e) => setCompetenceDate(e.target.value)} required/></label><label>Grupo<select value={groupId} onChange={(e) => { setGroupId(e.target.value); setCategoryId(''); }} required><option value="">Selecionar</option>{availableGroups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}</select></label><label>Categoria<select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required><option value="">Selecionar</option>{selectedGroup?.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>{nature === 'Saída' && <><label>Forma de pagamento<select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}><option>Pix</option><option>Dinheiro</option><option>Cartão de débito</option><option>Cartão de crédito</option><option>Boleto</option><option>Débito automático</option><option>Outro</option></select></label><label>Veículo (opcional)<select value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}><option value="">Nenhum veículo</option>{vehicles.filter((vehicle) => vehicle.status === 'active').map((vehicle) => <option key={vehicle.id} value={vehicle.id}>{vehicle.name}</option>)}</select></label></>}<label>Conta<select value={accountId} onChange={(e) => setAccountId(e.target.value)}><option value="">Sem conta específica</option>{accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>{credit && !editing ? <><label>Parcelas<select value={installments} onChange={(e) => setInstallments(Number(e.target.value))}>{Array.from({ length: 24 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n}x</option>)}</select></label><label>Primeira parcela<input type="date" value={firstInstallmentDate} onChange={(e) => setFirstInstallmentDate(e.target.value)} required/></label></> : <label>Data de {nature === 'Entrada' ? 'recebimento' : 'pagamento'}<input type="date" value={settlementDate} onChange={(e) => setSettlementDate(e.target.value)} required/></label>}<label>Situação<select value={status} onChange={(e) => setStatus(e.target.value as DbStatus)}><option value="completed">Realizado</option><option value="planned">Previsto</option></select></label><label className="full">Observação<input value={notes} onChange={(e) => setNotes(e.target.value)}/></label>{!editing && !credit && <div className="full recurrenceBox"><label className="checkLine"><input type="checkbox" checked={recurring} onChange={(e) => setRecurring(e.target.checked)}/><span><strong>Lançamento recorrente</strong><small>Gera ocorrências futuras automaticamente.</small></span></label>{recurring && <div className="recurrenceFields"><label>Dia do mês<input type="number" min="1" max="31" value={recurrenceDay} onChange={(e) => setRecurrenceDay(Number(e.target.value))}/></label><label>Encerrar em<input type="date" value={recurrenceEnd} onChange={(e) => setRecurrenceEnd(e.target.value)}/></label></div>}</div>}{hasSeries && <div className="full recurrenceBox"><strong>Este registro pertence a uma série.</strong><label className="scopeChoice"><input type="radio" checked={seriesScope === 'single'} onChange={() => setSeriesScope('single')}/>Editar somente este</label><label className="scopeChoice"><input type="radio" checked={seriesScope === 'future'} onChange={() => setSeriesScope('future')}/>Editar este e os próximos</label></div>}{message && <div className="error full">{message}</div>}</div><div className="dialogFooter"><button type="button" className="secondaryButton" onClick={close}>Cancelar</button><button className="primaryButton" disabled={saving}>{saving ? 'Salvando...' : 'Salvar lançamento'}</button></div></form></Modal>;
 }
-
-function AppShell({ session }: { session:Session }) {
-  const initial=(location.hash.replace('#/','') as PageId)||'dashboard';const[page,setPage]=useState<PageId>(pages.some((p)=>p.id===initial)||initial==='settings'?initial:'dashboard');const[menuOpen,setMenuOpen]=useState(false);const[loading,setLoading]=useState(true);const[groups,setGroups]=useState<CategoryGroup[]>([]);const[accounts,setAccounts]=useState<Account[]>([]);const[transactions,setTransactions]=useState<Transaction[]>([]);const[vehicles,setVehicles]=useState<Vehicle[]>([]);const[borrowers,setBorrowers]=useState<Borrower[]>([]);const[loans,setLoans]=useState<Loan[]>([]);const[events,setEvents]=useState<LoanEvent[]>([]);const[recurringRules,setRecurringRules]=useState<RecurringRule[]>([]);const[profile,setProfile]=useState<Profile|null>(null);const[profiles,setProfiles]=useState<Profile[]>([]);const[editor,setEditor]=useState<{open:boolean;row?:Transaction|null;planned?:boolean}>({open:false});const[entity,setEntity]=useState<{kind:'loan'|'payment'|'vehicle'|'investment'|null;loan?:Loan}>({kind:null})
-
-  async function loadAll(){if(!supabase)return;setLoading(true);let profileResult=await supabase.from('profiles').select('id,full_name,email,is_admin').eq('id',session.user.id).maybeSingle();if(!profileResult.data){await supabase.from('profiles').upsert({id:session.user.id,full_name:session.user.user_metadata?.full_name||session.user.email?.split('@')[0]||'Usuário',email:session.user.email||null,is_admin:false});profileResult=await supabase.from('profiles').select('id,full_name,email,is_admin').eq('id',session.user.id).maybeSingle()}const currentProfile=profileResult.data as Profile|null;setProfile(currentProfile);let g=await supabase.from('category_groups').select('id,name,nature,active').eq('active',true).order('sort_order');if(!g.error&&(!g.data||!g.data.length)){await supabase.rpc('create_default_financial_categories');g=await supabase.from('category_groups').select('id,name,nature,active').eq('active',true).order('sort_order')}const[cats,acc,tx,veh,bor,loa,ev,rec]=await Promise.all([supabase.from('categories').select('id,group_id,name,active').eq('active',true).order('name'),supabase.from('accounts').select('id,name,account_type,initial_balance,active').eq('active',true).order('created_at'),supabase.from('transactions').select('id,account_id,category_id,type,status,description,notes,payment_method,amount,competence_date,settlement_date,installment_group_id,installment_number,installment_total,vehicle_id,source,source_ref').order('competence_date',{ascending:false}),supabase.from('vehicles').select('id,name,plate,make,model,model_year,status').eq('status','active'),supabase.from('borrowers').select('id,name,document,contact,notes'),supabase.from('loans').select('id,borrower_id,monthly_rate,start_date,status,notes'),supabase.from('loan_events').select('id,loan_id,event_date,event_type,amount,interest_component,principal_component,notes'),supabase.from('recurring_rules').select('id,name,type,amount,category_id,account_id,payment_method,day_of_month,start_date,end_date,active,notes').order('created_at')]);const categories=(cats.data||[]) as Category[];setGroups((g.data||[]).map((row)=>({id:String(row.id),name:String(row.name),nature:row.nature==='income'?'Entrada':'Saída',active:Boolean(row.active),categories:categories.filter((c)=>c.group_id===row.id)})));setAccounts((acc.data||[]).map((r)=>({...r,initial_balance:Number(r.initial_balance||0)})) as Account[]);setTransactions((tx.data||[]).map((r)=>({...r,amount:Number(r.amount||0)})) as Transaction[]);setVehicles((veh.data||[]) as Vehicle[]);setBorrowers((bor.data||[]) as Borrower[]);setLoans((loa.data||[]).map((r)=>({...r,monthly_rate:Number(r.monthly_rate||0)})) as Loan[]);setEvents((ev.data||[]).map((r)=>({...r,amount:Number(r.amount||0),interest_component:Number(r.interest_component||0),principal_component:Number(r.principal_component||0)})) as LoanEvent[]);setRecurringRules((rec.data||[]).map((r)=>({...r,amount:Number(r.amount||0)})) as RecurringRule[]);if(currentProfile?.is_admin){const all=await supabase.from('profiles').select('id,full_name,email,is_admin').order('full_name');setProfiles((all.data||[]) as Profile[])}else setProfiles(currentProfile?[currentProfile]:[]);setLoading(false)}
-  useEffect(()=>{void loadAll()},[session.user.id])
-  function navigate(next:PageId){setPage(next);setMenuOpen(false);location.hash=`/${next}`;window.scrollTo({top:0,behavior:'smooth'})}
-  async function saveTransaction(draft:TransactionDraft,editing?:Transaction|null){if(!supabase)throw new Error('Banco indisponível.');const base={account_id:draft.accountId||null,category_id:draft.categoryId,type:natureToDb(draft.nature),status:draft.status,description:draft.description,notes:draft.notes||null,payment_method:draft.nature==='Saída'?draft.paymentMethod:null,amount:draft.amount,competence_date:draft.competenceDate,settlement_date:draft.settlementDate,source:'manual'};if(editing){const ids=draft.seriesScope==='future'&&editing.installment_group_id?transactions.filter((r)=>r.installment_group_id===editing.installment_group_id&&cashDate(r)>=cashDate(editing)).map((r)=>r.id):[editing.id];const{error}=await supabase.from('transactions').update(base).in('id',ids);if(error)throw error;await loadAll();return}if(draft.recurring){const rule=await supabase.from('recurring_rules').insert({user_id:session.user.id,name:draft.description,type:natureToDb(draft.nature),amount:draft.amount,category_id:draft.categoryId,account_id:draft.accountId||null,payment_method:draft.nature==='Saída'?draft.paymentMethod:null,day_of_month:draft.recurrenceDay,start_date:draft.settlementDate,end_date:draft.recurrenceEnd||null,notes:draft.notes||null}).select('id').single();if(rule.error)throw rule.error;const seriesId=String(rule.data.id);const end=draft.recurrenceEnd||addMonths(draft.settlementDate,35,draft.recurrenceDay);const rows=[] as Array<Record<string,unknown>>;let index=0;let settlement=addMonths(draft.settlementDate,0,draft.recurrenceDay);while(settlement<=end&&index<120){rows.push({...base,user_id:session.user.id,notes:`${RECURRENCE_MARKER}${draft.notes?`\n${draft.notes}`:''}`,settlement_date:settlement,competence_date:addMonths(draft.competenceDate,index),status:index===0?draft.status:'planned',installment_group_id:seriesId,installment_number:index+1,source:'recurring'});index++;settlement=addMonths(draft.settlementDate,index,draft.recurrenceDay)}rows.forEach((r)=>r.installment_total=rows.length);const inserted=await supabase.from('transactions').insert(rows);if(inserted.error)throw inserted.error;await loadAll();return}if(draft.nature==='Saída'&&draft.paymentMethod==='Cartão de crédito'&&draft.installments>1){const seriesId=uuid();const cents=Math.round(draft.amount*100);const each=Math.floor(cents/draft.installments);const remainder=cents-each*draft.installments;const rows=Array.from({length:draft.installments},(_,index)=>({...base,user_id:session.user.id,amount:(each+(index===0?remainder:0))/100,settlement_date:addMonths(draft.firstInstallmentDate,index),installment_group_id:seriesId,installment_number:index+1,installment_total:draft.installments,status:index===0?draft.status:'planned',source:'installment'}));const inserted=await supabase.from('transactions').insert(rows);if(inserted.error)throw inserted.error;await loadAll();return}const inserted=await supabase.from('transactions').insert({...base,user_id:session.user.id});if(inserted.error)throw inserted.error;await loadAll()}
-  async function deleteMany(ids:string[]){if(!supabase||!ids.length)return;const{error}=await supabase.from('transactions').delete().in('id',ids);if(error)throw error;await loadAll()}
-  async function saveGroup(name:string,nature:Nature,id?:string){if(!supabase)return;const q=id?supabase.from('category_groups').update({name,nature:natureToDb(nature)}).eq('id',id):supabase.from('category_groups').insert({user_id:session.user.id,name,nature:natureToDb(nature)});const{error}=await q;if(error)throw error;await loadAll()}
-  async function saveCategory(name:string,groupId:string,id?:string){if(!supabase)return;const q=id?supabase.from('categories').update({name,group_id:groupId}).eq('id',id):supabase.from('categories').insert({user_id:session.user.id,name,group_id:groupId});const{error}=await q;if(error)throw error;await loadAll()}
-  async function saveAccount(name:string,type:string,balance:number,id?:string){if(!supabase)return;const q=id?supabase.from('accounts').update({name,account_type:type,initial_balance:balance}).eq('id',id):supabase.from('accounts').insert({user_id:session.user.id,name,account_type:type,initial_balance:balance});const{error}=await q;if(error)throw error;await loadAll()}
-  async function createUser(fullName:string,email:string,password:string){if(!supabase)throw new Error('Banco indisponível.');const{data,error}=await supabase.functions.invoke('admin-create-user',{body:{fullName,email,password}});if(error)throw error;if(data?.error)throw new Error(String(data.error));await loadAll()}
-  async function saveEntity(data:Record<string,string>){if(!supabase||!entity.kind)return;if(entity.kind==='vehicle'){const{error}=await supabase.from('vehicles').insert({user_id:session.user.id,name:data.a,make:data.b||null,model:data.c||null,plate:data.d||null});if(error)throw error}else if(entity.kind==='investment'){const{error}=await supabase.from('accounts').insert({user_id:session.user.id,name:data.a,account_type:'investment',initial_balance:parseMoney(data.b)});if(error)throw error}else if(entity.kind==='loan'){const person=await supabase.from('borrowers').insert({user_id:session.user.id,name:data.a}).select('id').single();if(person.error)throw person.error;const loan=await supabase.from('loans').insert({user_id:session.user.id,borrower_id:person.data.id,monthly_rate:Number(data.c.replace(',','.'))/100,start_date:data.d,status:'active'}).select('id').single();if(loan.error)throw loan.error;const event=await supabase.from('loan_events').insert({user_id:session.user.id,loan_id:loan.data.id,event_date:data.d,event_type:'disbursement',amount:parseMoney(data.b),principal_component:parseMoney(data.b),interest_component:0});if(event.error)throw event.error}else if(entity.kind==='payment'&&entity.loan){const{error}=await supabase.from('loan_events').insert({user_id:session.user.id,loan_id:entity.loan.id,event_date:data.b,event_type:'payment',amount:parseMoney(data.a),notes:data.c||null,principal_component:0,interest_component:0});if(error)throw error}await loadAll()}
-  async function signOut(){await supabase?.auth.signOut()}
-  const content:Record<PageId,ReactNode>={dashboard:<DashboardPage transactions={transactions} groups={groups} accounts={accounts} onNew={()=>setEditor({open:true})} onEdit={(row)=>setEditor({open:true,row})}/>,transactions:<TransactionsPage transactions={transactions} groups={groups} accounts={accounts} onNew={()=>setEditor({open:true})} onEdit={(row)=>setEditor({open:true,row})} onDeleteMany={deleteMany}/>,payables:<PayablesPage transactions={transactions} groups={groups} accounts={accounts} onEdit={(row)=>setEditor({open:true,row})}/>,loans:<LoansPage loans={loans} borrowers={borrowers} events={events} onNew={()=>setEntity({kind:'loan'})} onPayment={(loan)=>setEntity({kind:'payment',loan})}/>,vehicles:<VehiclesPage vehicles={vehicles} transactions={transactions} onNew={()=>setEntity({kind:'vehicle'})}/>,investments:<InvestmentsPage accounts={accounts} transactions={transactions} onNew={()=>setEntity({kind:'investment'})}/>,comparisons:<ComparisonsPage transactions={transactions}/>,projections:<ProjectionsPage transactions={transactions} accounts={accounts}/>,settings:<SettingsPage groups={groups} accounts={accounts} recurringRules={recurringRules} profile={profile} profiles={profiles} onSaveGroup={saveGroup} onSaveCategory={saveCategory} onSaveAccount={saveAccount} onCreateUser={createUser}/>}
-  const label=[...pages,{id:'settings' as PageId,label:'Configurações'}].find((p)=>p.id===page)?.label||'Meu Fluxo'
-  return <div className="appShell proShell managerShell"><aside className={menuOpen?'open':''}><Brand/><span className="navSection">Principal</span><nav>{pages.map((p)=><button key={p.id} className={page===p.id?'active':''} onClick={()=>navigate(p.id)}><Icon name={p.id}/>{p.label}</button>)}</nav><span className="navSection">Conta</span><nav><button className={page==='settings'?'active':''} onClick={()=>navigate('settings')}><Icon name="settings"/>Configurações</button></nav><div className="profile"><span>{(profile?.full_name||session.user.email||'US').slice(0,2).toUpperCase()}</span><div><strong>{profile?.full_name||session.user.email?.split('@')[0]||'Usuário'}</strong><small>{profile?.is_admin?'Gestor':'Usuário'}</small></div><button onClick={signOut}>Sair</button></div></aside>{menuOpen&&<button className="menuOverlay" onClick={()=>setMenuOpen(false)}/>}<main className="workspace"><header className="topbar"><button className="mobileMenu" onClick={()=>setMenuOpen(true)}><Icon name="menu"/></button><div><small>{pageHelp[page]}</small><h1>{label}</h1></div><div className="topActions"><button className="primaryButton topNew" onClick={()=>setEditor({open:true})}><Icon name="plus" size={16}/>Novo lançamento</button></div></header><div className="workspaceContent">{loading?<div className="card loadingCard">Carregando seus dados...</div>:content[page]}</div></main>{editor.open&&<TransactionEditor groups={groups} accounts={accounts} editing={editor.row} planned={editor.planned} close={()=>setEditor({open:false})} onSave={saveTransaction}/>} {entity.kind&&<SimpleEntityModal kind={entity.kind} close={()=>setEntity({kind:null})} onSave={saveEntity}/>}</div>
+function SimpleEntityModal({ kind, close, onSave }: {
+    kind: 'loan' | 'payment';
+    close: () => void;
+    onSave: (data: Record<string, string>) => Promise<void>;
+}) {
+    const [a, setA] = useState('');
+    const [b, setB] = useState('');
+    const [c, setC] = useState('');
+    const [d, setD] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [msg, setMsg] = useState('');
+    async function submit(e: FormEvent) { e.preventDefault(); setSaving(true); try {
+        await onSave({ a, b, c, d });
+        close();
+    }
+    catch (err) {
+        setMsg(err instanceof Error ? err.message : 'Não foi possível salvar.');
+    }
+    finally {
+        setSaving(false);
+    } }
+    const title = kind === 'loan' ? 'Novo empréstimo' : 'Registrar pagamento';
+    return <Modal title={title} close={close}><form onSubmit={submit}><div className="formGrid">{kind === 'loan' && <><label className="full">Pessoa<input value={a} onChange={(e) => setA(e.target.value)} required/></label><label>Valor<input value={b} onChange={(e) => setB(e.target.value)} required/></label><label>Taxa a.m. (%)<input value={c} onChange={(e) => setC(e.target.value)} required/></label><label>Data<input type="date" value={d} onChange={(e) => setD(e.target.value)} required/></label></>}{kind === 'payment' && <><label>Valor<input value={a} onChange={(e) => setA(e.target.value)} required/></label><label>Data<input type="date" value={b} onChange={(e) => setB(e.target.value)} required/></label><label className="full">Observação<input value={c} onChange={(e) => setC(e.target.value)}/></label></>}{msg && <div className="error full">{msg}</div>}</div><div className="dialogFooter"><button type="button" className="secondaryButton" onClick={close}>Cancelar</button><button className="primaryButton" disabled={saving}>{saving ? 'Salvando...' : 'Salvar'}</button></div></form></Modal>;
 }
-
-function Login(){const[email,setEmail]=useState('');const[password,setPassword]=useState('');const[loading,setLoading]=useState(false);const[message,setMessage]=useState('');async function submit(e:FormEvent){e.preventDefault();if(!supabase)return;setLoading(true);setMessage('');const{error}=await supabase.auth.signInWithPassword({email,password});setLoading(false);if(error)setMessage('Não foi possível entrar. Confira e-mail e senha.')}async function forgot(){if(!supabase||!email.trim()){setMessage('Informe seu e-mail primeiro.');return}const{error}=await supabase.auth.resetPasswordForEmail(email.trim(),{redirectTo:`${location.origin}${location.pathname}`});setMessage(error?'Não foi possível enviar o link.':'Link de recuperação enviado.')}return <main className="loginPage"><section className="loginIntro"><Brand/><div><span className="eyebrow">Controle financeiro pessoal</span><h1>Decisões melhores começam com números organizados.</h1><p>Histórico, projeções e gestão financeira em uma única base.</p></div><small>Os dados permanecem isolados por usuário.</small></section><section className="loginPanel"><form className="loginCard" onSubmit={submit}><h2>Entrar</h2><p>Acesse seu cenário financeiro.</p><label>E-mail<input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required/></label><label>Senha<input type="password" value={password} onChange={(e)=>setPassword(e.target.value)} required/></label>{message&&<div className="configMessage loginMessage">{message}</div>}<button className="primaryButton" disabled={loading}>{loading?'Entrando...':'Entrar'}</button><button type="button" className="textButton" onClick={forgot}>Esqueci minha senha</button></form></section></main>}
-function MissingConfig(){return <main className="systemUnavailable"><section><Brand/><span className="status">Configuração necessária</span><h1>O painel financeiro não conseguiu iniciar.</h1><p>As variáveis públicas do Supabase não estão disponíveis nesta publicação.</p></section></main>}
-
-export default function AppV3(){const[session,setSession]=useState<Session|null>(null);const[loading,setLoading]=useState(hasSupabaseConfig);useEffect(()=>{if(!supabase)return;supabase.auth.getSession().then(({data})=>{setSession(data.session);setLoading(false)});const{data}=supabase.auth.onAuthStateChange((_event,next)=>setSession(next));return()=>data.subscription.unsubscribe()},[]);if(!hasSupabaseConfig)return <MissingConfig/>;if(loading)return <main className="loading">Carregando...</main>;return session?<AppShell session={session}/>:<Login/>}
+function AppShell({ session }: {
+    session: Session;
+}) {
+    const [themePreference, setThemePreference] = useState<ThemePreference>(() => {
+        try {
+            return normalizeThemePreference(window.localStorage.getItem(themeStorageKey(session.user.id)));
+        } catch {
+            return 'system';
+        }
+    });
+    function changeThemePreference(preference: ThemePreference) {
+        setThemePreference(preference);
+        try {
+            window.localStorage.setItem(themeStorageKey(session.user.id), preference);
+        } catch {
+            // Private browsing or blocked storage must not prevent a local theme change.
+        }
+    }
+    useEffect(() => {
+        const applyTheme = (systemDark: boolean) => {
+            const theme = resolveTheme(themePreference, systemDark);
+            document.documentElement.dataset.theme = theme;
+            document.documentElement.style.colorScheme = theme;
+        };
+        applyTheme(false);
+        if (themePreference !== 'system') return;
+        try {
+            const media = window.matchMedia('(prefers-color-scheme: dark)');
+            applyTheme(media.matches);
+            const onChange = (event: MediaQueryListEvent) => applyTheme(event.matches);
+            if (typeof media.addEventListener === 'function') {
+                media.addEventListener('change', onChange);
+                return () => media.removeEventListener('change', onChange);
+            }
+            // Older browsers expose the same subscription through addListener.
+            if (typeof media.addListener === 'function') {
+                media.addListener(onChange);
+                return () => media.removeListener(onChange);
+            }
+        } catch {
+            // No matchMedia support: Automático has a safe light fallback.
+        }
+    }, [themePreference]);
+    const initial = (location.hash.replace('#/', '') as PageId) || 'dashboard';
+    const [page, setPage] = useState<PageId>(pages.some((p) => p.id === initial) || initial === 'settings' ? initial : 'dashboard');
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [groups, setGroups] = useState<CategoryGroup[]>([]);
+    const [accounts, setAccounts] = useState<Account[]>([]);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+    const [borrowers, setBorrowers] = useState<Borrower[]>([]);
+    const [loans, setLoans] = useState<Loan[]>([]);
+    const [events, setEvents] = useState<LoanEvent[]>([]);
+    const [recurringRules, setRecurringRules] = useState<RecurringRule[]>([]);
+    const [profile, setProfile] = useState<Profile | null>(null);
+    const [profiles, setProfiles] = useState<Profile[]>([]);
+    const [editor, setEditor] = useState<{
+        open: boolean;
+        row?: Transaction | null;
+        planned?: boolean;
+    }>({ open: false });
+    const [entity, setEntity] = useState<{
+        kind: 'loan' | 'payment' | null;
+        loan?: Loan;
+    }>({ kind: null });
+    async function loadAll() { if (!supabase)
+        return; setLoading(true); let profileResult = await supabase.from('profiles').select('id,full_name,email,is_admin').eq('id', session.user.id).maybeSingle(); if (!profileResult.data) {
+        await supabase.from('profiles').upsert({ id: session.user.id, full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário', email: session.user.email || null, is_admin: false });
+        profileResult = await supabase.from('profiles').select('id,full_name,email,is_admin').eq('id', session.user.id).maybeSingle();
+    } const currentProfile = profileResult.data as Profile | null; setProfile(currentProfile); let g = await supabase.from('category_groups').select('id,name,nature,active').eq('active', true).order('sort_order'); if (!g.error && (!g.data || !g.data.length)) {
+        await supabase.rpc('create_default_financial_categories');
+        g = await supabase.from('category_groups').select('id,name,nature,active').eq('active', true).order('sort_order');
+    } const [cats, acc, tx, veh, bor, loa, ev, rec] = await Promise.all([supabase.from('categories').select('id,group_id,name,active').eq('active', true).order('name'), supabase.from('accounts').select('id,name,account_type,initial_balance,active').eq('active', true).order('created_at'), supabase.from('transactions').select('id,account_id,category_id,type,status,description,notes,payment_method,amount,competence_date,settlement_date,installment_group_id,installment_number,installment_total,vehicle_id,source,source_ref').order('competence_date', { ascending: false }), supabase.from('vehicles').select('id,name,plate,make,model,model_year,status').eq('status', 'active'), supabase.from('borrowers').select('id,name,document,contact,notes'), supabase.from('loans').select('id,borrower_id,monthly_rate,start_date,status,notes'), supabase.from('loan_events').select('id,loan_id,event_date,event_type,amount,interest_component,principal_component,notes'), supabase.from('recurring_rules').select('id,name,type,amount,category_id,account_id,payment_method,day_of_month,start_date,end_date,active,notes').order('created_at')]); const categories = (cats.data || []) as Category[]; setGroups((g.data || []).map((row) => ({ id: String(row.id), name: String(row.name), nature: row.nature === 'income' ? 'Entrada' : 'Saída', active: Boolean(row.active), categories: categories.filter((c) => c.group_id === row.id) }))); setAccounts((acc.data || []).map((r) => ({ ...r, initial_balance: Number(r.initial_balance || 0) })) as Account[]); setTransactions((tx.data || []).map((r) => ({ ...r, amount: Number(r.amount || 0) })) as Transaction[]); setVehicles((veh.data || []) as Vehicle[]); setBorrowers((bor.data || []) as Borrower[]); setLoans((loa.data || []).map((r) => ({ ...r, monthly_rate: Number(r.monthly_rate || 0) })) as Loan[]); setEvents((ev.data || []).map((r) => ({ ...r, amount: Number(r.amount || 0), interest_component: Number(r.interest_component || 0), principal_component: Number(r.principal_component || 0) })) as LoanEvent[]); setRecurringRules((rec.data || []).map((r) => ({ ...r, amount: Number(r.amount || 0) })) as RecurringRule[]); if (currentProfile?.is_admin) {
+        const all = await supabase.from('profiles').select('id,full_name,email,is_admin').order('full_name');
+        setProfiles((all.data || []) as Profile[]);
+    }
+    else
+        setProfiles(currentProfile ? [currentProfile] : []); setLoading(false); }
+    useEffect(() => { void loadAll(); }, [session.user.id]);
+    function navigate(next: PageId) { setPage(next); setMenuOpen(false); location.hash = `/${next}`; window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    async function saveTransaction(draft: TransactionDraft, editing?: Transaction | null) { if (!supabase)
+        throw new Error('Banco indisponível.'); const expenseFinancialInput = { type: 'expense' as const, amount: draft.amount, competenceDate: draft.competenceDate, settlementDate: draft.settlementDate, categoryId: draft.categoryId, vehicleId: draft.vehicleId, status: draft.status, source: editing?.source }; const financialInput = draft.nature === 'Saída' ? expenseFinancialInput : { type: 'income' as const, amount: draft.amount, competenceDate: draft.competenceDate, settlementDate: draft.settlementDate, categoryId: draft.categoryId, status: draft.status, source: editing?.source }; const [financialRow] = buildTransactionFinancialRows(financialInput); const base = { account_id: draft.accountId || null, type: natureToDb(draft.nature), description: draft.description, notes: draft.notes || null, payment_method: draft.nature === 'Saída' ? draft.paymentMethod : null, ...financialRow }; if (editing) {
+        const ids = draft.seriesScope === 'future' && editing.installment_group_id ? transactions.filter((r) => r.installment_group_id === editing.installment_group_id && cashDate(r) >= cashDate(editing)).map((r) => r.id) : [editing.id];
+        const { error } = await supabase.from('transactions').update(base).in('id', ids);
+        if (error)
+            throw error;
+        await loadAll();
+        return;
+    } if (draft.recurring) {
+        const rule = await supabase.from('recurring_rules').insert({ user_id: session.user.id, name: draft.description, type: natureToDb(draft.nature), amount: draft.amount, category_id: draft.categoryId, account_id: draft.accountId || null, payment_method: draft.nature === 'Saída' ? draft.paymentMethod : null, day_of_month: draft.recurrenceDay, start_date: draft.settlementDate, end_date: draft.recurrenceEnd || null, notes: draft.notes || null }).select('id').single();
+        if (rule.error)
+            throw rule.error;
+        const seriesId = String(rule.data.id);
+        const end = draft.recurrenceEnd || addMonths(draft.settlementDate, 35, draft.recurrenceDay);
+        const rows = [] as Array<Record<string, unknown>>;
+        let index = 0;
+        let settlement = addMonths(draft.settlementDate, 0, draft.recurrenceDay);
+        while (settlement <= end && index < 120) {
+            rows.push({ ...base, user_id: session.user.id, notes: `${RECURRENCE_MARKER}${draft.notes ? `\n${draft.notes}` : ''}`, settlement_date: settlement, competence_date: addMonths(draft.competenceDate, index), status: index === 0 ? draft.status : 'planned', installment_group_id: seriesId, installment_number: index + 1, source: 'recurring' });
+            index++;
+            settlement = addMonths(draft.settlementDate, index, draft.recurrenceDay);
+        }
+        rows.forEach((r) => r.installment_total = rows.length);
+        const inserted = await supabase.from('transactions').insert(rows);
+        if (inserted.error)
+            throw inserted.error;
+        await loadAll();
+        return;
+    } if (draft.nature === 'Saída' && draft.paymentMethod === 'Cartão de crédito' && draft.installments > 1) {
+        const seriesId = uuid();
+        const financialRows = buildTransactionFinancialRows(expenseFinancialInput, { count: draft.installments, firstSettlementDate: draft.firstInstallmentDate, installmentGroupId: seriesId });
+        const rows = financialRows.map((financial) => ({ ...base, user_id: session.user.id, ...financial }));
+        const inserted = await supabase.from('transactions').insert(rows);
+        if (inserted.error)
+            throw inserted.error;
+        await loadAll();
+        return;
+    } const inserted = await supabase.from('transactions').insert({ ...base, user_id: session.user.id }); if (inserted.error)
+        throw inserted.error; await loadAll(); }
+    async function deleteMany(ids: string[]) { if (!supabase || !ids.length)
+        return; const { error } = await supabase.from('transactions').delete().in('id', ids); if (error)
+        throw error; await loadAll(); }
+    async function saveGroup(name: string, nature: Nature, id?: string) { if (!supabase)
+        return; const q = id ? supabase.from('category_groups').update({ name, nature: natureToDb(nature) }).eq('id', id) : supabase.from('category_groups').insert({ user_id: session.user.id, name, nature: natureToDb(nature) }); const { error } = await q; if (error)
+        throw error; await loadAll(); }
+    async function saveCategory(name: string, groupId: string, id?: string) { if (!supabase)
+        return; const q = id ? supabase.from('categories').update({ name, group_id: groupId }).eq('id', id) : supabase.from('categories').insert({ user_id: session.user.id, name, group_id: groupId }); const { error } = await q; if (error)
+        throw error; await loadAll(); }
+    async function saveAccount(name: string, type: string, balance: number, id?: string) { if (!supabase)
+        return; const q = id ? supabase.from('accounts').update({ name, account_type: type, initial_balance: balance }).eq('id', id) : supabase.from('accounts').insert({ user_id: session.user.id, name, account_type: type, initial_balance: balance }); const { error } = await q; if (error)
+        throw error; await loadAll(); }
+    async function saveVehicle(name: string, make: string, model: string, plate: string, id?: string) { if (!supabase)
+        return; const vehicle = { name, make: make || null, model: model || null, plate: plate || null }; const q = id ? supabase.from('vehicles').update(vehicle).eq('id', id) : supabase.from('vehicles').insert({ user_id: session.user.id, ...vehicle }); const { error } = await q; if (error)
+        throw error; await loadAll(); }
+    async function createUser(fullName: string, email: string, password: string) { if (!supabase)
+        throw new Error('Banco indisponível.'); const { data, error } = await supabase.functions.invoke('admin-create-user', { body: { fullName, email, password } }); if (error)
+        throw error; if (data?.error)
+        throw new Error(String(data.error)); await loadAll(); }
+    async function saveEntity(data: Record<string, string>) { if (!supabase || !entity.kind)
+        return; if (entity.kind === 'loan') {
+        const person = await supabase.from('borrowers').insert({ user_id: session.user.id, name: data.a }).select('id').single();
+        if (person.error)
+            throw person.error;
+        const loan = await supabase.from('loans').insert({ user_id: session.user.id, borrower_id: person.data.id, monthly_rate: Number(data.c.replace(',', '.')) / 100, start_date: data.d, status: 'active' }).select('id').single();
+        if (loan.error)
+            throw loan.error;
+        const event = await supabase.from('loan_events').insert({ user_id: session.user.id, loan_id: loan.data.id, event_date: data.d, event_type: 'disbursement', amount: parseMoney(data.b), principal_component: parseMoney(data.b), interest_component: 0 });
+        if (event.error)
+            throw event.error;
+    }
+    else if (entity.kind === 'payment' && entity.loan) {
+        const { error } = await supabase.from('loan_events').insert({ user_id: session.user.id, loan_id: entity.loan.id, event_date: data.b, event_type: 'payment', amount: parseMoney(data.a), notes: data.c || null, principal_component: 0, interest_component: 0 });
+        if (error)
+            throw error;
+    } await loadAll(); }
+    async function signOut() { await supabase?.auth.signOut(); }
+    const content: Record<PageId, ReactNode> = { dashboard: <DashboardPage transactions={transactions} groups={groups} accounts={accounts} onNew={() => setEditor({ open: true })} onEdit={(row) => setEditor({ open: true, row })}/>, transactions: <TransactionsPage transactions={transactions} groups={groups} accounts={accounts} onNew={() => setEditor({ open: true })} onEdit={(row) => setEditor({ open: true, row })} onDeleteMany={deleteMany}/>, payables: <PayablesPage transactions={transactions} groups={groups} accounts={accounts} onEdit={(row) => setEditor({ open: true, row })}/>, loans: <LoansPage loans={loans} borrowers={borrowers} events={events} onNew={() => setEntity({ kind: 'loan' })} onPayment={(loan) => setEntity({ kind: 'payment', loan })}/>, vehicles: <VehiclesPage vehicles={vehicles} transactions={transactions}/>, investments: <InvestmentsPage accounts={accounts} transactions={transactions}/>, comparisons: <ComparisonsPage transactions={transactions}/>, projections: <ProjectionsPage transactions={transactions} accounts={accounts}/>, settings: <SettingsPage groups={groups} accounts={accounts} vehicles={vehicles} recurringRules={recurringRules} profile={profile} profiles={profiles} themePreference={themePreference} onThemePreferenceChange={changeThemePreference} onSaveGroup={saveGroup} onSaveCategory={saveCategory} onSaveAccount={saveAccount} onSaveVehicle={saveVehicle} onCreateUser={createUser}/> };
+    const label = [...pages, { id: 'settings' as PageId, label: 'Configurações' }].find((p) => p.id === page)?.label || 'Meu Fluxo';
+    return <div className="appShell proShell managerShell"><aside className={menuOpen ? 'open' : ''}><Brand /><span className="navSection">Principal</span><nav>{pages.map((p) => <button key={p.id} className={page === p.id ? 'active' : ''} onClick={() => navigate(p.id)}><Icon name={p.id}/>{p.label}</button>)}</nav><span className="navSection">Conta</span><nav><button className={page === 'settings' ? 'active' : ''} onClick={() => navigate('settings')}><Icon name="settings"/>Configurações</button></nav><div className="profile"><span>{(profile?.full_name || session.user.email || 'US').slice(0, 2).toUpperCase()}</span><div><strong>{profile?.full_name || session.user.email?.split('@')[0] || 'Usuário'}</strong><small>{profile?.is_admin ? 'Gestor' : 'Usuário'}</small></div><button onClick={signOut}>Sair</button></div></aside>{menuOpen && <button className="menuOverlay" aria-label="Fechar menu de navegação" onClick={() => setMenuOpen(false)}/>}<main className="workspace"><header className="topbar"><button className="mobileMenu" aria-label="Abrir menu de navegação" onClick={() => setMenuOpen(true)}><Icon name="menu"/></button><div><small>{pageHelp[page]}</small><h1>{label}</h1></div><div className="topActions"><button className="primaryButton topNew" onClick={() => setEditor({ open: true })}><Icon name="plus" size={16}/>Novo lançamento</button></div></header><div className="workspaceContent">{loading ? <div className="card loadingCard">Carregando seus dados...</div> : content[page]}</div></main>{editor.open && <TransactionEditor groups={groups} accounts={accounts} vehicles={vehicles} editing={editor.row} planned={editor.planned} close={() => setEditor({ open: false })} onSave={saveTransaction}/>} {entity.kind && <SimpleEntityModal kind={entity.kind} close={() => setEntity({ kind: null })} onSave={saveEntity}/>}</div>;
+}
+function Login() { const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [loading, setLoading] = useState(false); const [message, setMessage] = useState(''); async function submit(e: FormEvent) { e.preventDefault(); if (!supabase)
+    return; setLoading(true); setMessage(''); const { error } = await supabase.auth.signInWithPassword({ email, password }); setLoading(false); if (error)
+    setMessage('Não foi possível entrar. Confira e-mail e senha.'); } async function forgot() { if (!supabase || !email.trim()) {
+    setMessage('Informe seu e-mail primeiro.');
+    return;
+} const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: `${location.origin}${location.pathname}` }); setMessage(error ? 'Não foi possível enviar o link.' : 'Link de recuperação enviado.'); } return <main className="loginPage"><section className="loginIntro"><Brand /><div><span className="eyebrow">Controle financeiro pessoal</span><h1>Decisões melhores começam com números organizados.</h1><p>Histórico, projeções e gestão financeira em uma única base.</p></div><small>Os dados permanecem isolados por usuário.</small></section><section className="loginPanel"><form className="loginCard" onSubmit={submit}><h2>Entrar</h2><p>Acesse seu cenário financeiro.</p><label>E-mail<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required/></label><label>Senha<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required/></label>{message && <div className="configMessage loginMessage">{message}</div>}<button className="primaryButton" disabled={loading}>{loading ? 'Entrando...' : 'Entrar'}</button><button type="button" className="textButton" onClick={forgot}>Esqueci minha senha</button></form></section></main>; }
+function MissingConfig() { return <main className="systemUnavailable"><section><Brand /><span className="status">Configuração necessária</span><h1>O painel financeiro não conseguiu iniciar.</h1><p>As variáveis públicas do Supabase não estão disponíveis nesta publicação.</p></section></main>; }
+export default function AppV3() { const [session, setSession] = useState<Session | null>(null); const [loading, setLoading] = useState(hasSupabaseConfig); useEffect(() => { if (!supabase)
+    return; supabase.auth.getSession().then(({ data }) => { setSession(data.session); setLoading(false); }); const { data } = supabase.auth.onAuthStateChange((_event, next) => setSession(next)); return () => data.subscription.unsubscribe(); }, []); if (!hasSupabaseConfig)
+    return <MissingConfig />; if (loading)
+    return <main className="loading">Carregando...</main>; return session ? <AppShell key={session.user.id} session={session}/> : <Login />; }
