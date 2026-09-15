@@ -5,6 +5,7 @@ import './styles.css'
 import './enhancements.css'
 import './professional.css'
 import './managerial.css'
+import './executive.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
