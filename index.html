@@ -1,4 +1,86 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+/* ============ v11: interface enxuta e móvel ============ */
+/* hierarquia: títulos de cartão mais firmes, respiro consistente */
+.card-head h2{font-size:.98rem;font-weight:650;letter-spacing:-.005em}
+.card{border-color:color-mix(in srgb,var(--border) 80%,transparent)}
+.topbar{background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px)}
+.kpi-value{font-size:1.6rem}
+.kpi-label{letter-spacing:.005em}
+
+/* botão de filtros: só no celular */
+.btn-filtros{display:none;gap:7px}
+.btn-filtros .n{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--accent);color:#fff;
+  font-size:.72rem;font-weight:700;display:inline-grid;place-items:center}
+.btn-filtros[aria-expanded="true"]{border-color:var(--accent);color:var(--brand-2)}
+.filtros-barra{display:flex;justify-content:flex-end;margin-bottom:10px}
+
+/* barra inferior: só no celular */
+.tabbar{display:none}
+
+@media (max-width:900px){
+  .btn-filtros{display:inline-flex}
+  .filtros-mob:not(.aberto){display:none !important}
+  .filtros-mob.aberto{animation:abreFiltros .16s ease-out}
+  .scope-quick{justify-content:space-between;margin-bottom:10px}
+  .scope-quick>.tiny.muted:first-child{display:none}
+  .scope-quick #escopoResumo{order:3;flex-basis:100%;margin-top:-2px}
+
+  /* Visão geral no celular: KPIs e gráficos primeiro */
+  #page-visao-geral.page.active{display:flex;flex-direction:column}
+  #page-visao-geral>.scope-quick{order:1}
+  #page-visao-geral>#vgFiltros{order:2;margin-bottom:12px !important}
+  #page-visao-geral>#scopeNote{order:3}
+  #page-visao-geral>#kpis{order:4}
+  #page-visao-geral>#cardEvo{order:5;margin-top:12px !important}
+  #page-visao-geral>#cardCategoria{order:6;margin-top:12px !important}
+  #page-visao-geral>#fraseDia{order:7;margin:12px 0 0}
+  #page-visao-geral>#cardAtencao{order:8;margin-top:12px !important}
+  #page-visao-geral>#cardUltimos{order:9;margin-top:12px !important}
+
+  /* os quatro KPIs cabem na primeira tela */
+  #kpis.kpi-row.scroller{display:grid;grid-template-columns:1fr 1fr;gap:8px;overflow:visible;padding-bottom:0;margin-bottom:0}
+  #kpis.kpi-row.scroller .kpi{flex:none;padding:11px 12px;gap:4px}
+  #kpis .kpi-value{font-size:1.14rem}
+  #kpis .kpi-label{font-size:.74rem}
+  #kpis .kpi-foot{font-size:.7rem}
+  #kpis .kpi-foot>span:not(.trend):not(.badge){display:none}
+  #kpis .kpi-value-row svg,#kpis .kpi>.tiny.muted{display:none}
+
+  /* barra inferior ao alcance do polegar */
+  .menu-btn{display:none !important}
+  .tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:40;
+    background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    border-top:1px solid var(--border);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
+  .tabbar button{display:grid;justify-items:center;gap:3px;border:0;background:transparent;color:var(--ink-2);
+    font:inherit;font-size:.68rem;padding:4px 2px;border-radius:10px;cursor:pointer;min-height:48px}
+  .tabbar button svg{width:22px;height:22px}
+  .tabbar button[aria-current="page"]{color:var(--brand-2);font-weight:650}
+  :root[data-theme="dark"] .tabbar button[aria-current="page"],:root:not([data-theme="light"]) .tabbar button[aria-current="page"]{color:var(--accent)}
+  .tabbar button:focus-visible{box-shadow:var(--focus)}
+  .tabbar .tab-novo{align-self:center}
+  .tabbar .tab-novo span.bola{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:var(--brand-2);color:#fff;
+    box-shadow:0 6px 16px -6px rgba(12,31,37,.55);margin-top:-18px}
+  .tabbar .tab-novo span.bola svg{width:24px;height:24px}
+  .content{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+  .toasts{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+
+  /* formulário: rodapé fixo e só o essencial à vista */
+  .modal-card .modal-foot{position:sticky;bottom:0;background:var(--surface);padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+}
+@media (max-width:900px) and (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .btn-filtros[aria-expanded="true"]{color:var(--accent)}
+}
+@keyframes abreFiltros{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.filtros-mob.aberto{animation:none}}
+
+/* "Mais opções" no formulário */
+.mais-opcoes{grid-column:1/-1;border:1px dashed var(--border);border-radius:var(--r-sm);padding:2px 12px}
+.mais-opcoes>summary{cursor:pointer;padding:9px 0;font-size:.86rem;color:var(--ink-2);font-weight:550;list-style:none}
+.mais-opcoes>summary::-webkit-details-marker{display:none}
+.mais-opcoes>summary::before{content:"+ ";font-weight:700}
+.mais-opcoes[open]>summary::before{content:"− "}
+.mais-opcoes .form-grid{padding-bottom:10px}
+</style></head><body>
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="auto">
 <head>
@@ -143,6 +225,12 @@ button,input,select,textarea{font:inherit; color:inherit}
 .tag-toggle{border:1px solid var(--border);background:var(--surface-2);cursor:pointer;font:inherit;font-size:.72rem;
   padding:2px 9px;border-radius:999px;color:var(--ink-2)}
 .tag-toggle:hover{border-color:var(--accent);color:var(--ink)}
+.veic-lista{display:grid;gap:6px;padding:4px 14px 10px}
+.veic-item{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 11px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface-2)}
+.kv-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:4px 14px 10px}
+.kv-row>div{display:grid;gap:2px}
+.kv-row b{font-size:1.05rem;font-variant-numeric:tabular-nums}
+@media (max-width:560px){.kv-row{grid-template-columns:1fr 1fr}}
 .tag-toggle:focus-visible{box-shadow:var(--focus)}
 .tag-toggle.ok{background:var(--accent-soft);border-color:var(--accent);color:var(--brand-2);font-weight:600}
 :root[data-theme="dark"] .tag-toggle.ok,:root:not([data-theme="light"]) .tag-toggle.ok{color:var(--accent)}
@@ -348,7 +436,7 @@ table.tbl td.r,table.tbl th.r{text-align:right}
 .tl-foot .money{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
 .tl-prev{font-size:.69rem;color:var(--ink-3)}
 .tl-card.tl-hoje{box-shadow:0 0 0 2px var(--accent) inset}
-.tl-flag{font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent)}
+.tl-flag{font-size:.7rem;font-weight:650;color:var(--accent);background:var(--accent-soft);padding:1px 7px;border-radius:999px}
 
 /* ============ 10. Estados ============ */
 .empty{display:grid;gap:8px;place-items:center;text-align:center;padding:34px 20px;color:var(--ink-2)}
@@ -569,13 +657,14 @@ body.modo-impressao-relatorio #relatorioImpressao{display:block;padding:24px;max
       </button>
     </header>
 
+    <nav class="tabbar" id="tabbar" aria-label="Navegação principal"></nav>
     <main class="content" id="content">
       <div class="aviso-senha" id="avisoSenha" role="status" hidden></div>
       <div class="casal-bar hide" id="casalBar" role="status"></div>
       <!-- ============ Visão geral ============ -->
       <section class="page active" id="page-visao-geral" tabindex="-1">
         <div class="frase-dia" id="fraseDia" role="note" hidden></div>
-        <div class="card" style="margin-bottom:14px">
+        <div class="card" id="vgFiltros" style="margin-bottom:14px">
           <div class="filterbar">
             <div class="field"><label for="fAno">Ano</label><select id="fAno" class="input"></select></div>
             <div class="field"><label for="fMes">Mês</label><select id="fMes" class="input"></select></div>
@@ -614,7 +703,7 @@ body.modo-impressao-relatorio #relatorioImpressao{display:block;padding:24px;max
           <span class="tiny muted" id="escopoResumo"></span>
         </div>
         <div class="kpi-row scroller" id="kpis"></div>
-        <div class="card" style="margin-top:14px">
+        <div class="card" id="cardEvo" style="margin-top:14px">
           <div class="card-head">
             <h2>Evolução mensal</h2>
             <div class="seg" id="segEvo" role="group" aria-label="Formato da evolução mensal">
@@ -641,7 +730,7 @@ body.modo-impressao-relatorio #relatorioImpressao{display:block;padding:24px;max
           <div class="card-head"><h2>Pontos de atenção</h2></div>
           <div class="card-pad" id="atencaoList"></div>
         </div>
-        <div class="card" style="margin-top:14px">
+        <div class="card" id="cardUltimos" style="margin-top:14px">
           <div class="card-head"><h2>Últimos lançamentos</h2><button class="pill-link" data-goto="lancamentos">Ver todos os lançamentos</button></div>
           <div class="table-wrap to-cards" id="ultimosWrap"></div>
         </div>
@@ -775,7 +864,8 @@ function catGrupo(catId){const c=CATEGORIAS.find(x=>x.id===catId);return c?c.gru
    - docs_privados: o histórico completo de cada pessoa, Empréstimos e
      Capital. As regras de acesso do banco (RLS) só entregam as linhas da
      própria conta, qualquer que seja a forma de consulta.
-   - docs_casal: catálogo e AGREGADOS mensais a partir de setembro/2026,
+   - docs_casal: catálogo, AGREGADOS mensais (completos a partir de set/2026;
+     antes disso, só a parte marcada como Casal) e custo mensal por veículo,
      sem registro individual. Os dois leem; cada um grava só o próprio.
    Os caminhos internos continuam no formato antigo (data/users/<conta>/...,
    casal/<perfil>/...) e o adaptador criarDbSupabase os traduz.
@@ -994,7 +1084,8 @@ let ULTIMO={};           // caminho -> JSON canônico do que está salvo
 function docsDoPerfil(id,d){
   const P=caminhoPerfil(id),out={};
   out[P]={v:1,grupos:d.grupos,categorias:d.categorias,formas:d.formas,instituicoes:d.instituicoes,veiculos:d.veiculos,
-    cartoes:d.cartoes,recorrencias:d.recorrencias,perfil:d.perfil,prefs:d.prefs,notifLidas:!!d.notifLidas};
+    cartoes:d.cartoes,recorrencias:d.recorrencias,perfil:d.perfil,prefs:d.prefs,
+    notifLidas:Array.isArray(d.notifLidas)?d.notifLidas.slice(-60):!!d.notifLidas};
   out[P+'/mod/emprestimos']=d.emprestimos;
   out[P+'/mod/capital']=d.capital;
   const porMes={};
@@ -1002,16 +1093,41 @@ function docsDoPerfil(id,d){
   Object.keys(porMes).forEach(m=>{
     const itens=porMes[m].slice().sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
     out[P+'/lanc/'+m]={itens};
+    /* Regra do modo casal (v11):
+       - a partir de set/2026: totais completos do mês (entram no consolidado);
+       - antes de set/2026: SÓ a parte marcada como do casal (entra apenas na
+         Análise do casal). Meses antigos sem nada marcado não são publicados. */
     if(m>=MES_INICIO_CASAL)out['casal/'+id+'/agg/'+m]=agregarMes(itens);
+    else{const a=agregarMes(itens,{soCasal:true});if(a.buckets.length)out['casal/'+id+'/agg/'+m]=a;}
   });
   out['casal/'+id]={nome:d.perfil.nome,catalogo:{grupos:d.grupos,categorias:d.categorias}};
+  out['casal/'+id+'/veiculos']=agregarVeiculos(d);
   // meses que ficaram vazios continuam existindo, agora zerados
   Object.keys(ULTIMO).forEach(p=>{
     if(p in out)return;
     if(p.startsWith(P+'/lanc/'))out[p]={itens:[]};
-    if(p.startsWith('casal/'+id+'/agg/'))out[p]={v:2,buckets:[]};
+    if(p.startsWith('casal/'+id+'/agg/'))out[p]={v:3,buckets:[]};
   });
   return out;
+}
+/* Veículos no contexto do casal: a lista de veículos (nome e tipo, sem placa)
+   e, por mês, o custo de cada um. Só entram lançamentos que JÁ estão
+   vinculados a um veículo; nada é atribuído por suposição. */
+function agregarVeiculos(d){
+  const meses={};
+  d.lancamentos.forEach(l=>{
+    if(!l.veiculoId||l.tipo!=='saida'||situacao(l)==='cancelado')return;
+    if(!d.veiculos.some(v=>v.id===l.veiculoId))return;
+    const m=String(l.dataParcela||'').slice(0,7);if(!m)return;
+    const mv=(meses[m]=meses[m]||{});
+    const r=(mv[l.veiculoId]=mv[l.veiculoId]||{total:0,operacional:0,qtd:0,futuro:0,cats:{}});
+    const v=+l.valor||0;
+    r.total=round2(r.total+v);r.qtd++;
+    if(l.incluiCustoVeiculo!==false)r.operacional=round2(r.operacional+v);
+    if(situacao(l)==='futuro')r.futuro=round2(r.futuro+v);
+    r.cats[l.categoriaId||'']=round2((r.cats[l.categoriaId||'']||0)+v);
+  });
+  return {v:1,veiculos:d.veiculos.map(v=>({id:v.id,nome:v.nome,tipo:v.tipo||''})),meses};
 }
 /* ---------------------------------------------------------------------------
    Agregado mensal publicado no caminho COMPARTILHADO casal/<perfil>/agg/<mês>.
@@ -1021,11 +1137,12 @@ function docsDoPerfil(id,d){
    (tipo, grupo, categoria) do mês, com a parte marcada como do casal e a
    contagem de registros que formaram cada soma.
    --------------------------------------------------------------------------- */
-function agregarMes(itens){
+function agregarMes(itens,{soCasal=false}={}){
   const mapa=new Map();
   itens.forEach(l=>{
     if(situacao(l)==='cancelado')return;
-    if(!l.dataParcela||l.dataParcela<INICIO_CASAL)return;
+    if(!l.dataParcela)return;
+    if(soCasal&&!(l.casal&&l.tipo==='saida'))return;
     const k=l.tipo+'|'+(l.grupoId||'g-out')+'|'+(l.categoriaId||'');
     let b=mapa.get(k);
     if(!b){b={tipo:l.tipo,grupoId:l.grupoId||'g-out',categoriaId:l.categoriaId||'',total:0,casal:0,qtd:0,qtdCasal:0,futuro:0};mapa.set(k,b);}
@@ -1034,8 +1151,10 @@ function agregarMes(itens){
     if(situacao(l)==='futuro')b.futuro=round2(b.futuro+(+l.valor||0));
     if(l.casal){b.casal=round2(b.casal+(+l.valor||0));b.qtdCasal++;}
   });
-  const buckets=[...mapa.values()].sort((a,b)=>a.tipo<b.tipo?-1:a.tipo>b.tipo?1:(b.total-a.total));
-  return {v:2,buckets};
+  let buckets=[...mapa.values()].sort((a,b)=>a.tipo<b.tipo?-1:a.tipo>b.tipo?1:(b.total-a.total));
+  // antes de set/2026 sai só a parte do casal: sem total geral nem contagem geral do mês
+  if(soCasal)buckets=buckets.map(b=>({tipo:b.tipo,grupoId:b.grupoId,categoriaId:b.categoriaId,casal:b.casal,qtdCasal:b.qtdCasal}));
+  return soCasal?{v:3,escopo:'casal',buckets}:{v:3,buckets};
 }
 function aplicarBase(d,base){
   ['grupos','categorias','formas','instituicoes','veiculos','cartoes','recorrencias','prefs','notifLidas'].forEach(k=>{if(base[k]!==undefined)d[k]=base[k];});
@@ -1055,6 +1174,10 @@ async function carregarPerfil(id){
   meses.sort((a,b)=>a.id<b.id?1:-1).forEach(m=>{const it=(m.data&&m.data.itens)||[];ULTIMO[P+'/lanc/'+m.id]=estavel({itens:it});d.lancamentos.push(...it);});
   d.lancamentos.sort((a,b)=>a.dataParcela<b.dataParcela?1:-1);
   const pub=await ARM.get('casal/'+id);if(pub)ULTIMO['casal/'+id]=estavel(pub);
+  /* Os totais já publicados entram no controle de alterações: se um mês deixar
+     de ter dados (lançamento excluído, data mudada, marcação retirada), o
+     total publicado é zerado em vez de ficar desatualizado para o parceiro. */
+  try{(await ARM.list('casal/'+id+'/agg')).forEach(m=>{ULTIMO['casal/'+id+'/agg/'+m.id]=estavel(m.data);});}catch(e){}
   const pc=perfilCasa(id);d.perfil.papel=pc.papel;
   if(!d.prefs)d.prefs={};if(d.prefs.modoCasal===undefined)d.prefs.modoCasal=false;
   return {d,novo:!base&&!meses.length&&!emp&&!cap};
@@ -1094,24 +1217,41 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 window.addEventListener('pagehide',()=>{if(PENDENTE)descarregar();});
 
 /* ---- dados do parceiro (modo casal) ---- */
-let PARCEIRO={id:null,nome:'',catalogo:null,meses:{},lista:[]};
+let PARCEIRO={id:null,nome:'',catalogo:null,meses:{},lista:[],veic:null};
 /* Cada bucket do agregado do parceiro vira UMA entrada sintética, datada no
    dia 1º do mês. Serve para somar em KPIs, evolução, grupos e categorias sem
    que exista qualquer registro individual dele(a) neste aparelho. */
+/* Cada bucket do agregado do parceiro vira entrada sintética (nunca vira linha).
+   - Mês passado: tudo realizado. Mês futuro: tudo previsto. Mês corrente: a
+     parte prevista vai para o último dia do mês, para os KPIs de "realizado"
+     não contarem como paga uma conta que ainda vai vencer.
+   - Agregado "só casal" (antes de set/2026) gera entradas _soCasal, que ficam
+     FORA do consolidado e entram apenas na Análise do casal. */
 function entradasDoAgregado(mes,agg,dono){
-  const dia=mes+'-01';
-  return (agg&&agg.buckets||[]).map((b,i)=>({
-    id:'agg:'+dono+':'+mes+':'+i,
-    _dono:dono,_agregado:true,_qtd:b.qtd|0,_qtdCasal:b.qtdCasal|0,
-    tipo:b.tipo,valor:b.total,casalValor:b.casal||0,casal:(b.casal||0)>0,
-    grupoId:b.grupoId,categoriaId:b.categoriaId,
-    dataParcela:dia,dataOriginal:dia,
-    observacao:'',formaPagamento:'—',situacaoManual:null,_futuro:b.futuro||0
-  }));
+  const d1=mes+'-01',ult=mes+'-'+pad(new Date(Date.UTC(+mes.slice(0,4),+mes.slice(5,7),0)).getUTCDate());
+  const soCasal=!!(agg&&agg.escopo==='casal');
+  const mesIdx=mesIndex(d1);
+  const out=[];
+  (agg&&agg.buckets||[]).forEach((b,i)=>{
+    const base={_dono:dono,_agregado:true,_soCasal:soCasal,grupoId:b.grupoId,categoriaId:b.categoriaId,tipo:b.tipo,
+      observacao:'',formaPagamento:'—',situacaoManual:null};
+    if(soCasal){
+      out.push({...base,id:'agg:'+dono+':'+mes+':'+i,valor:b.casal||0,casalValor:b.casal||0,casal:true,
+        _qtd:b.qtdCasal|0,_qtdCasal:b.qtdCasal|0,dataParcela:d1,dataOriginal:d1});
+      return;
+    }
+    const total=+b.total||0,fut=mesIdx>MES_ATUAL?total:(mesIdx<MES_ATUAL?0:Math.min(+b.futuro||0,total));
+    const real=round2(total-fut);
+    if(real>0||fut===0)out.push({...base,id:'agg:'+dono+':'+mes+':'+i,valor:real,casalValor:b.casal||0,casal:(b.casal||0)>0,
+      _qtd:b.qtd|0,_qtdCasal:b.qtdCasal|0,dataParcela:mesIdx>MES_ATUAL?ult:d1,dataOriginal:d1});
+    if(fut>0)out.push({...base,id:'agg:'+dono+':'+mes+':'+i+':f',valor:round2(fut),casalValor:real>0?0:(b.casal||0),casal:real>0?false:(b.casal||0)>0,
+      _qtd:0,_qtdCasal:real>0?0:(b.qtdCasal|0),dataParcela:ult,dataOriginal:d1});
+  });
+  return out;
 }
 function recalcParceiro(){
   const id=PARCEIRO.id;
-  PARCEIRO.lista=Object.keys(PARCEIRO.meses).filter(m=>m>=MES_INICIO_CASAL).sort()
+  PARCEIRO.lista=Object.keys(PARCEIRO.meses).sort()
     .flatMap(m=>entradasDoAgregado(m,PARCEIRO.meses[m],id));
   VER++;
 }
@@ -1127,24 +1267,33 @@ async function limparCompartilhadoAntigo(id){
   }catch(e){console.warn('Não foi possível limpar o compartilhamento antigo.',e);}
 }
 async function carregarParceiro(id){
-  PARCEIRO={id,nome:perfilCasa(id)?.nome||'',catalogo:null,meses:{},lista:[]};
+  PARCEIRO={id,nome:perfilCasa(id)?.nome||'',catalogo:null,meses:{},lista:[],veic:null};
   try{
     const pub=await ARM.get('casal/'+id);if(pub){PARCEIRO.catalogo=pub.catalogo||null;if(pub.nome)PARCEIRO.nome=pub.nome;}
+    PARCEIRO.veic=await ARM.get('casal/'+id+'/veiculos');
     (await ARM.list('casal/'+id+'/agg')).forEach(m=>{PARCEIRO.meses[m.id]=m.data||null;});
   }catch(e){console.warn('Não foi possível ler os dados compartilhados.',e);}
   recalcParceiro();
 }
 const nomeParceiro=()=>PARCEIRO.nome||perfilCasa(PARCEIRO.id)?.nome||'parceiro(a)';
 const modoCasal=()=>!!(DB.usuarioAtual&&DB.dados[DB.usuarioAtual]&&DB.dados[DB.usuarioAtual].prefs.modoCasal);
-/* Lançamentos visíveis: os seus, mais os do parceiro a partir de set/2026 no modo casal */
-function LV(){const own=D().lancamentos;return modoCasal()&&PARCEIRO.lista.length?own.concat(PARCEIRO.lista):own;}
+/* Lançamentos visíveis no modo casal: consolidado dos dois a partir de set/2026 (ver LV) */
+/* Base de cálculo das telas. No modo casal, o CONSOLIDADO usa os dois perfis
+   a partir de 01/09/2026 (antes, só o histórico de quem estava conectado
+   entrava, o que misturava períodos). As despesas marcadas como Casal usam
+   todo o histórico, mas apenas na Análise do casal (baseCasal). */
+function LV(){
+  const own=D().lancamentos;
+  if(!modoCasal())return own;
+  return own.filter(l=>l.dataParcela>=INICIO_CASAL).concat(PARCEIRO.lista.filter(l=>!l._soCasal));
+}
 /* Toda lista que mostra REGISTRO por registro passa por aqui: as entradas
    sintéticas do parceiro somam nos totais e gráficos, mas nunca viram linha. */
 const soRegistros=lista=>lista.filter(l=>!l._agregado);
 const agregadosDoParceiro=lista=>lista.filter(l=>l._agregado);
 const ehMeu=l=>!l||!l._dono;
 const ehAdmin=()=>!!(perfilCasa(DB.usuarioAtual)||{}).admin;
-const rotuloRelatorio=()=>D()?(D().perfil.nome+(modoCasal()?' + '+nomeParceiro()+' (modo casal, a partir de set/2026)':'')):'';
+const rotuloRelatorio=()=>D()?(D().perfil.nome+(modoCasal()?' + '+nomeParceiro()+' (consolidado a partir de set/2026)':'')):'';
 
 /* ---- ouvintes em tempo real (outros aparelhos e parceiro) ---- */
 let OUVINTES=[],RENDER_ADIADO=false,T_RENDER=null;
@@ -1169,6 +1318,8 @@ function ouvir(){
     OUVINTES.push(db.doc('casal/'+par).onSnapshot(s=>{
       const d=s.exists?s.data():null;PARCEIRO.catalogo=d&&d.catalogo?clone(d.catalogo):null;
       if(d&&d.nome)PARCEIRO.nome=d.nome;VER++;if(modoCasal())reRenderRemoto();},erro));
+    OUVINTES.push(db.doc('casal/'+par+'/veiculos').onSnapshot(s=>{
+      PARCEIRO.veic=s.exists?clone(s.data()):null;VER++;if(modoCasal())reRenderRemoto();},erro));
     OUVINTES.push(db.collection('casal/'+par+'/agg').limit(1000).onSnapshot(q=>{
       PARCEIRO.meses={};q.docs.forEach(d=>{PARCEIRO.meses[d.id]=clone(d.data()||null);});
       recalcParceiro();if(modoCasal())reRenderRemoto();},erro));
@@ -1356,7 +1507,10 @@ function toast(msg,tipo='ok'){
   $('#toasts').appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s';setTimeout(()=>t.remove(),320);},3400);
 }
 let modalAnterior=null, modalAoFechar=null;
-function abrirModal({titulo,corpo,rodape='',pequeno=false,aoAbrir=null,aoFechar=null}){
+let T_FECHA_MODAL=null;
+function abrirModal({titulo,corpo,rodape='',pequeno=false,aoAbrir=null,aoFechar=null,foco=null}){
+  // um fechamento ainda em andamento não pode apagar o modal que está abrindo agora
+  clearTimeout(T_FECHA_MODAL);
   modalAnterior=document.activeElement;modalAoFechar=aoFechar;
   const m=$('#modal');m.hidden=false;
   m.innerHTML=`<div class="modal-card ${pequeno?'sm':''}">
@@ -1367,7 +1521,7 @@ function abrirModal({titulo,corpo,rodape='',pequeno=false,aoAbrir=null,aoFechar=
   document.body.style.overflow='hidden';
   m.querySelectorAll('[data-fechar]').forEach(b=>b.onclick=fecharModal);
   if(aoAbrir)aoAbrir(m);
-  const f=m.querySelector('input,select,textarea,button:not([data-fechar])');if(f)setTimeout(()=>f.focus(),80);
+  const f=(foco&&m.querySelector(foco))||m.querySelector('input,select,textarea,button:not([data-fechar])');if(f)setTimeout(()=>f.focus(),80);
   return m;
 }
 function fecharModal(){
@@ -1375,7 +1529,7 @@ function fecharModal(){
   const cb=modalAoFechar;modalAoFechar=null;
   m.classList.remove('on');$('#scrim').classList.remove('on');
   document.body.style.overflow='';
-  setTimeout(()=>{m.hidden=true;m.innerHTML='';},180);
+  T_FECHA_MODAL=setTimeout(()=>{m.hidden=true;m.innerHTML='';},180);
   if(modalAnterior&&modalAnterior.focus)modalAnterior.focus();
   if(cb)cb();
   setTimeout(renderAdiado,220);
@@ -1603,7 +1757,7 @@ const PAGINAS=[
   {id:'visao-geral',nome:'Visão geral',ico:ICO.visao,sub:'Painel do período selecionado',novo:true},
   {id:'lancamentos',nome:'Lançamentos',ico:ICO.lanc,sub:'Base de lançamentos — origem dos demais painéis',novo:true},
   {id:'analises',nome:'Análises',ico:ICO.ana,sub:'Comparações, projeções e leituras automáticas',novo:false},
-  {id:'casal',nome:'Análise do casal',ico:ICO.casal,sub:'Despesas marcadas como do casal, a partir de setembro/2026',novo:false,soCasal:true},
+  {id:'casal',nome:'Análise do casal',ico:ICO.casal,sub:'Despesas marcadas como do casal, em todo o histórico',novo:false,soCasal:true},
   {id:'investimentos',nome:'Investimentos',ico:ICO.inv,sub:'Derivado dos lançamentos financeiros',novo:true},
   {id:'veiculos',nome:'Veículos',ico:ICO.vei,sub:'Derivado dos lançamentos com veículo vinculado',novo:true},
   {id:'emprestimos',nome:'Empréstimos',ico:ICO.emp,sub:'Módulo independente da base de lançamentos',novo:false},
@@ -1746,7 +1900,7 @@ async function sair(){
   pararOuvintes();
   try{if(SB)await SB.auth.signOut();}catch(e){}
   ARM.modo='sem-sessao';ARM.uid=null;ARM.db=null;
-  DB={usuarioAtual:null,dados:{}};ULTIMO={};PARCEIRO={id:null,nome:'',catalogo:null,meses:{},lista:[]};
+  DB={usuarioAtual:null,dados:{}};ULTIMO={};PARCEIRO={id:null,nome:'',catalogo:null,meses:{},lista:[],veic:null};
   limparGraficos();
   $('#app').classList.add('hide');$('#login').classList.remove('hide');
   LOGIN.etapa='escolher';LOGIN.perfil=null;LOGIN.msg='';renderLogin();aplicarTema('auto');
@@ -1871,7 +2025,7 @@ function alternarCasal(v){
   if(!paginaPermitida(PAGINA)){irPara('visao-geral');}
   else renderPagina();
   atualizarNotif();
-  toast(casal?`Modo casal: somando com ${nomeParceiro()} a partir de setembro/2026.`:'Modo individual: só os seus dados.','ok');
+  toast(casal?`Modo casal: consolidado com ${nomeParceiro()} a partir de setembro/2026.`:'Modo individual: só os seus dados.','ok');
 }
 function atualizarBarraCasal(){
   const seg=$('#segCasal'),bar=$('#casalBar');if(!seg||!bar)return;
@@ -1882,24 +2036,92 @@ function atualizarBarraCasal(){
   const nome=nomeParceiro(),pron=(perfilCasa(PARCEIRO.id)||{}).pron||'ele(a)';
   bar.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><circle cx="16.5" cy="9.5" r="2.6"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><path d="M14.5 14.6c2.6-.4 5 1.1 5.8 4.4"/></svg>
     <span>${PARCEIRO.lista.length
-      ?`<b>Modo casal:</b> seus dados somados aos de ${esc(nome)} a partir de setembro/2026. De ${esc(nome)} chegam apenas totais por grupo e categoria — os registros individuais ${pron==='ela'?'dela':'dele'} não saem do perfil ${pron==='ela'?'dela':'dele'}. Lançamentos, Empréstimos e Capital ficam indisponíveis neste modo.`
+      ?`<b>Modo casal:</b> seus dados somados aos de ${esc(nome)} a partir de setembro/2026; em Análise do casal, as despesas marcadas como Casal aparecem em todo o histórico. De ${esc(nome)} chegam apenas totais por grupo e categoria — os registros individuais ${pron==='ela'?'dela':'dele'} não saem do perfil ${pron==='ela'?'dela':'dele'}. Lançamentos, Empréstimos e Capital ficam indisponíveis neste modo.`
       :`<b>Modo casal:</b> ${esc(nome)} ainda não tem movimentação a partir de setembro/2026 — por enquanto aparecem só os seus números.`}</span>`;
   bar.classList.remove('hide');
 }
 
 /* ---------- navegação ---------- */
+
+/* ============ v11: filtros recolhíveis no celular ============
+   Um único mecanismo para todas as telas: o primeiro cartão de filtros da
+   tela ativa ganha, no celular, um botão "Filtros (n)" que o recolhe. O
+   estado aberto/fechado é lembrado por tela. No computador nada muda. */
+const FILT_ABERTO={};
+function contarFiltrosAtivos(card){
+  let n=0;
+  card.querySelectorAll('select').forEach(sel=>{if(sel.id==='fAno'||sel.id==='fMes')return;
+    const o0=sel.options[0];if(!o0)return;
+    const padrao=/^(Todos|Todas|Todos os|Todas as)/i.test(o0.textContent.trim())?o0.value:null;
+    if(padrao!==null&&sel.value!==padrao)n++;});
+  card.querySelectorAll('input[type=search],input[type=text]').forEach(i=>{if(i.value.trim())n++;});
+  return n;
+}
+function compactarFiltros(){
+  const sec=document.querySelector('.page.active');if(!sec)return;
+  const card=[...sec.querySelectorAll('.card')].find(c=>c.querySelector(':scope > .filterbar'));
+  if(!card)return;
+  const chave=sec.id+(sec.id==='page-analises'?':'+(ANA&&ANA.aba||''):'');
+  card.classList.add('filtros-mob');
+  card.classList.toggle('aberto',!!FILT_ABERTO[chave]);
+  if(!card.id)card.id='filtros-'+chave.replace(/[^a-z0-9]+/gi,'-');
+  let bt=sec.querySelector('.btn-filtros[data-alvo="'+card.id+'"]');
+  if(!bt){
+    bt=document.createElement('button');bt.type='button';bt.className='btn btn-filtros';bt.dataset.alvo=card.id;
+    bt.setAttribute('aria-controls',card.id);
+    const quick=sec.querySelector(':scope > .scope-quick');
+    if(quick)quick.appendChild(bt);
+    else{const barra=document.createElement('div');barra.className='filtros-barra';barra.appendChild(bt);card.parentNode.insertBefore(barra,card);}
+    bt.onclick=()=>{FILT_ABERTO[chave]=!FILT_ABERTO[chave];card.classList.toggle('aberto',FILT_ABERTO[chave]);
+      bt.setAttribute('aria-expanded',String(!!FILT_ABERTO[chave]));
+      if(FILT_ABERTO[chave]){const f=card.querySelector('select,input');if(f)f.focus({preventScroll:true});}};
+  }
+  const n=contarFiltrosAtivos(card);
+  bt.setAttribute('aria-expanded',String(!!FILT_ABERTO[chave]));
+  bt.setAttribute('aria-label',n?`Filtros, ${n} ativo(s)`:'Filtros');
+  bt.innerHTML=`<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filtros${n?` <span class="n">${n}</span>`:''}`;
+}
+let T_COMPACTA=null;
+function vigiarFiltros(){
+  const alvo=$('#content');if(!alvo||vigiarFiltros.ok)return;vigiarFiltros.ok=true;
+  new MutationObserver(()=>{clearTimeout(T_COMPACTA);T_COMPACTA=setTimeout(compactarFiltros,30);})
+    .observe(alvo,{childList:true,subtree:true});
+  document.addEventListener('change',e=>{if(e.target.closest&&e.target.closest('.filtros-mob')){clearTimeout(T_COMPACTA);T_COMPACTA=setTimeout(compactarFiltros,30);}});
+}
+
+/* ============ v11: barra de navegação inferior (celular) ============ */
+const ICO_MAIS='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>';
+const ICO_NOVO='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+function montarTabbar(){
+  const tb=$('#tabbar');if(!tb||!D())return;
+  const principais=(modoCasal()?['visao-geral','analises','casal']:['visao-geral','lancamentos','analises'])
+    .map(id=>PAGINAS.find(p=>p.id===id)).filter(p=>p&&paginaPermitida(p.id));
+  const botao=p=>`<button type="button" data-tab="${p.id}" aria-current="${PAGINA===p.id?'page':'false'}">${p.ico}<span>${p.id==='visao-geral'?'Início':p.id==='casal'?'Casal':p.nome}</span></button>`;
+  tb.innerHTML=botao(principais[0])+botao(principais[1])+
+    `<button type="button" class="tab-novo" data-tab="novo" aria-label="Novo lançamento"><span class="bola">${ICO_NOVO}</span></button>`+
+    (principais[2]?botao(principais[2]):'<span></span>')+
+    `<button type="button" data-tab="mais" aria-label="Mais módulos e perfil">${ICO_MAIS}<span>Mais</span></button>`;
+  tb.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{
+    const t=b.dataset.tab;
+    if(t==='novo')abrirFormLancamento();
+    else if(t==='mais'){$('#sidebar').classList.add('on');$('#scrim').classList.add('on');}
+    else irPara(t);
+  });
+}
+function marcarTabbar(){$$('#tabbar [data-tab]').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===PAGINA?'page':'false'));}
 function montarNav(){
   $('#nav').innerHTML=PAGINAS.filter(p=>paginaPermitida(p.id)).map(p=>`<button class="nav-item" data-pg="${p.id}">${p.ico}<span>${p.nome}</span></button>`).join('');
   $$('#nav .nav-item').forEach(b=>b.onclick=()=>{irPara(b.dataset.pg);$('#sidebar').classList.remove('on');$('#scrim').classList.remove('on');});
   const d=D();$('#topAvatar').textContent=d.perfil.iniciais;$('#topNome').textContent=d.perfil.nome;
   $('#sideModo').textContent=(ARM.modo==='nuvem'?'Sincronizado':'Somente neste aparelho')+' · '+(ehAdmin()?'Administrador':'Usuária');
   const ss=$('#syncStatus');if(ss)ss.dataset.modo=ARM.modo;statusSync(ESTADO_SYNC);
-  atualizarNotif();
+  atualizarNotif();montarTabbar();vigiarFiltros();
 }
 function irPara(id){
   if(!PAGINAS.some(x=>x.id===id)||!paginaPermitida(id))id='visao-geral';
   PAGINA=id;const p=PAGINAS.find(x=>x.id===id);
   $$('#nav .nav-item').forEach(b=>b.setAttribute('aria-current',b.dataset.pg===id?'page':'false'));
+  marcarTabbar();
   $$('.page').forEach(s=>s.classList.toggle('active',s.id==='page-'+id));
   $('#pageTitle').textContent=p.nome;$('#pageSub').textContent=p.sub;
   $('#btnNovoTop').classList.toggle('hide',!p.novo);
@@ -1916,6 +2138,7 @@ function renderPagina(){
   if(!paginaPermitida(PAGINA))PAGINA='visao-geral';
   limparGraficos();
   atualizarBarraCasal();
+  setTimeout(atualizarNotif,0);   // o sino acompanha toda alteração local (criar, editar, excluir, marcar)
   const map={'visao-geral':renderDashboard,'lancamentos':renderLancamentos,'analises':renderAnalises,'casal':renderCasal,
     'investimentos':renderInvestimentos,'veiculos':renderVeiculos,'emprestimos':renderEmprestimos,
     'capital':renderCapital,'configuracoes':renderConfig};
@@ -2386,7 +2609,7 @@ function renderLancamentos(){
     [null,'Parcela'],[null,'Recorrência'],[null,'Instituição'],[null,'Veículo'],[null,'Custo do veículo'],['casal','Casal'],['situacao','Situação'],[null,'Ações']];
 
   $('#page-lancamentos').innerHTML=`
-  <div class="note info" style="margin-bottom:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
+  <div class="note info desk-only" style="margin-bottom:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
     <span>Esta é a base que alimenta Visão geral, Investimentos, Veículos e Análises. Empréstimos e Capital e Liquidez são módulos separados.</span></div>
   <div class="card" style="margin-bottom:14px">
     <div class="filterbar">
@@ -2587,23 +2810,25 @@ function abrirFormLancamento(id=null,preset={}){
           <button type="button" data-v="entrada" aria-pressed="${base.tipo==='entrada'}">Entrada</button>
           <button type="button" data-v="saida" aria-pressed="${base.tipo==='saida'}">Saída</button></div></div>
       <div class="field"><label for="fValor">Valor</label>
-        <div class="with-prefix"><span class="prefix">R$</span><input id="fValor" class="input input-money" inputmode="numeric" placeholder="0,00" value="${base.valor?NUM.format(base.valor):''}"></div>
+        <div class="with-prefix"><span class="prefix">R$</span><input id="fValor" class="input input-money" inputmode="decimal" enterkeyhint="next" placeholder="0,00" value="${base.valor?NUM.format(base.valor):''}"></div>
         <span class="err" id="eValor"></span></div>
       <div class="field"><label for="fData">Data</label><input id="fData" class="input" type="date" value="${base.dataParcela}"><span class="err" id="eData"></span></div>
       <div class="field"><label for="fGrupo">Grupo</label><select id="fGrupo" class="input"></select></div>
       <div class="field"><label for="fCategoria">Categoria</label><select id="fCategoria" class="input"></select><span class="err" id="eCategoria"></span></div>
       <div class="field"><label for="fForma">Forma de pagamento</label><select id="fForma" class="input">${opcoes(D().formas,{selecionado:base.formaPagamento})}</select></div>
-      <div class="field"><label for="fSituacao">Situação</label><select id="fSituacao" class="input">
-        <option value="">Automática pela data</option><option value="realizado"${base.situacaoManual==='realizado'?' selected':''}>Realizado</option>
-        <option value="futuro"${base.situacaoManual==='futuro'?' selected':''}>Futuro</option>
-        <option value="cancelado"${base.situacaoManual==='cancelado'?' selected':''}>Cancelado</option></select></div>
+
       <div class="field full"><label for="fObs">Observação (opcional)</label>
         <input id="fObs" class="input" value="${esc(base.observacao||'')}" placeholder="Ex.: Mercado São Jorge, parcela do notebook, posto da avenida"></div>
 
       <div class="field full" id="boxCasal">
         <label class="check"><input type="checkbox" id="fCasal" ${base.casal?'checked':''}>
           <span>É do casal<br><span class="tiny muted">Entra no recorte de Análise do casal. O lançamento continua sendo seu: ${esc(nomeParceiro())} vê o total, nunca o registro.</span></span></label>
-        <span class="tiny muted hide" id="avisoCasalData">Vale a partir de 1º de setembro de 2026 — antes disso a marcação fica guardada, mas não entra nas análises do casal.</span></div>
+</div>
+      <details class="mais-opcoes" id="boxMais"${base.situacaoManual?' open':''}><summary>Mais opções${base.situacaoManual?'':' — situação automática pela data'}</summary>
+        <div class="form-grid"><div class="field"><label for="fSituacao">Situação</label><select id="fSituacao" class="input">
+        <option value="">Automática pela data</option><option value="realizado"${base.situacaoManual==='realizado'?' selected':''}>Realizado</option>
+        <option value="futuro"${base.situacaoManual==='futuro'?' selected':''}>Futuro</option>
+        <option value="cancelado"${base.situacaoManual==='cancelado'?' selected':''}>Cancelado</option></select></div></div></details>
 
       <div class="field full hide" id="boxCartao">
         <div class="card card-pad" style="background:var(--surface-2)">
@@ -2647,7 +2872,9 @@ function abrirFormLancamento(id=null,preset={}){
    </form>`;
   const rodape=`<button class="btn" data-fechar>Cancelar</button>
     <button class="btn btn-primary" id="salvarLanc">${edit?'Salvar alterações':'Salvar lançamento'}</button>`;
-  abrirModal({titulo:edit?'Editar lançamento':'Novo lançamento',corpo,rodape,aoAbrir:m=>montarFormLancamento(m,base,edit)});
+  // novo lançamento: o cursor já começa no valor, que é o primeiro dado a informar
+  abrirModal({titulo:edit?'Editar lançamento':'Novo lançamento',corpo,rodape,foco:(!edit&&!preset.valor)?'#fValor':null,
+    aoAbrir:m=>montarFormLancamento(m,base,edit)});
 }
 
 function montarFormLancamento(m,base,edit){
@@ -2709,8 +2936,7 @@ function montarFormLancamento(m,base,edit){
   fValor.addEventListener('input',()=>{if($('#fForma',m).value==='Cartão de crédito')previewParcelas();previewRec();});
   const fRec=$('#fRec',m);
   if(fRec){fRec.onchange=previewRec;['#fFreq','#fRecIni','#fRecFim','#fRecQtd','#fRecSemFim'].forEach(s=>{const el=$(s,m);if(el)el.onchange=previewRec;});}
-  const avisoCasal=()=>{const a=$('#avisoCasalData',m),dt=$('#fData',m).value;
-    if(a)a.classList.toggle('hide',!($('#fCasal',m)&&$('#fCasal',m).checked&&dt&&dt<INICIO_CASAL));};
+  const avisoCasal=()=>{};
   if($('#fCasal',m))$('#fCasal',m).onchange=avisoCasal;
   $('#fData',m).onchange=()=>{const p=$('#fPrimeira',m);if(p&&!p.disabled)p.value=$('#fData',m).value;
     const ri=$('#fRecIni',m);if(ri)ri.value=$('#fData',m).value;previewParcelas();previewRec();avisoCasal();};
@@ -4376,8 +4602,8 @@ async function preencherUsuariosCasa(eu,outro){
       <p class="tiny muted" style="margin:0">Função de administrador, para quando ${esc(outro.nome)} esquecer a senha. Você define uma senha nova e passa para ${outro.pron==='ela'?'ela':'ele'}; a senha atual não é mostrada a ninguém, e nenhum dado ${outro.pron==='ela'?'dela':'dele'} é aberto.</p>`:''}
     <div class="note info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
       <span>${eu.admin
-        ?`${esc(outro.nome)} tem os mesmos módulos que você, com dados próprios, e não vê o seu histórico. No modo casal, cada um vê apenas os totais do outro a partir de setembro/2026.`
-        :`Você vê os seus lançamentos e, no modo casal, os totais de ${esc(outro.nome)} a partir de setembro/2026. Empréstimos e Capital e Liquidez são seus, com dados próprios.`}</span></div>`;
+        ?`${esc(outro.nome)} tem os mesmos módulos que você, com dados próprios, e não vê o seu histórico. No modo casal, cada um vê os totais do outro a partir de setembro/2026 e as despesas marcadas como Casal em todo o histórico.`
+        :`Você vê os seus lançamentos e, no modo casal, os totais de ${esc(outro.nome)} a partir de setembro/2026 e as despesas marcadas como Casal em todo o histórico. Empréstimos e Capital e Liquidez são seus, com dados próprios.`}</span></div>`;
   const rb=$('#pfRedefinir');
   if(rb)rb.onclick=()=>abrirModal({titulo:'Nova senha para '+outro.nome,pequeno:true,
     corpo:`<p class="small muted">${esc(outro.nome)} passa a entrar com esta senha e pode trocá-la depois em Configurações. A senha anterior deixa de valer.</p>
@@ -4432,7 +4658,7 @@ function cfgDados(){
     </div></div>
     <div class="card"><div class="card-head"><h2>Onde os dados ficam</h2></div><div class="card-pad stack">
       <p class="small">${ARM.modo==='nuvem'
-        ?'Sincronizado entre aparelhos pelo banco do Meu Fluxo. O seu histórico, Empréstimos e Capital só podem ser lidos pela sua conta — a regra está no próprio banco, não na tela. No modo casal, '+esc(nomeParceiro())+' recebe apenas totais mensais por grupo e categoria a partir de setembro/2026, nunca os seus registros.'
+        ?'Sincronizado entre aparelhos pelo banco do Meu Fluxo. O seu histórico, Empréstimos e Capital só podem ser lidos pela sua conta — a regra está no próprio banco, não na tela. No modo casal, '+esc(nomeParceiro())+' recebe apenas totais mensais: completos a partir de setembro/2026, só a parte marcada como Casal antes disso, e o custo mensal de cada veículo. Nunca os seus registros.'
         :'Modo local: os dados ficam apenas neste navegador e não aparecem em outros aparelhos. Faça backups com frequência.'}</p>
       <hr style="border:0;border-top:1px solid var(--border);margin:4px 0">
       <p class="small muted">Apagar remove todos os lançamentos, cadastros, empréstimos e contas do seu perfil. A sua conta e a senha continuam as mesmas.</p>
@@ -4467,11 +4693,18 @@ function cfgDados(){
 }
 
 /* ---------------------- notificações ---------------------- */
+/* Notificações são SEMPRE recalculadas a partir dos lançamentos atuais:
+   - vencimentos vêm só dos lançamentos DESTE perfil (nunca dos totais do
+     parceiro), um aviso por lançamento, identificado por id+data+valor;
+   - mudar data, valor ou situação gera outra chave, então o aviso antigo some
+     e o novo aparece como não lido; excluir remove o aviso. */
+function chaveNotif(a){return a.chave||('t:'+a.titulo+'|'+a.texto);}
 function listaNotificacoes(){
   const out=[];
-  const proximas=LV().filter(l=>situacao(l)==='futuro'&&l.dataParcela<=addMeses(HOJE,1))
-    .sort((a,b)=>a.dataParcela<b.dataParcela?-1:1).slice(0,5);
-  proximas.forEach(l=>out.push({nivel:l.tipo==='entrada'?'pos':'warn',
+  const limite=addMeses(HOJE,1);
+  const proximas=soRegistros(D().lancamentos).filter(l=>situacao(l)==='futuro'&&l.dataParcela<=limite)
+    .sort((a,b)=>a.dataParcela<b.dataParcela?-1:a.dataParcela>b.dataParcela?1:(a.id<b.id?-1:1)).slice(0,5);
+  proximas.forEach(l=>out.push({chave:'v:'+l.id+':'+l.dataParcela+':'+l.valor+':'+l.tipo,nivel:l.tipo==='entrada'?'pos':'warn',
     titulo:`${l.tipo==='entrada'?'Entrada prevista':'Saída prevista'} em ${fmtData(l.dataParcela)}`,
     texto:`${l.observacao||nomeCat(l.categoriaId)} — ${fmt(l.valor)}${l.parcelasTotal?` (parcela ${l.parcelaAtual} de ${l.parcelasTotal})`:''}`}));
   const iv={ini:MES_ATUAL,fim:MES_ATUAL};
@@ -4482,22 +4715,28 @@ function listaNotificacoes(){
     texto:`${emAberto.length} ${emAberto.length===1?'contrato soma':'contratos somam'} ${fmt(round2(emAberto.reduce((a,r)=>a+r.saldo,0)))} a receber.`});
   return out;
 }
+/* "Lido" é guardado por aviso (lista de chaves vistas), não mais como um
+   único sim/não: um aviso novo ou alterado volta a acender o ponto. */
+function notifVistas(){const v=D().notifLidas;return Array.isArray(v)?v:[];}
 function atualizarNotif(){
-  if(!DB.usuarioAtual)return;
-  const n=listaNotificacoes().length;
-  $('#notifDot').classList.toggle('hide',!(n&&!D().notifLidas));
-  $('#btnNotif').setAttribute('aria-label',`Notificações (${n})`);
+  if(!DB.usuarioAtual||!D())return;
+  const itens=listaNotificacoes(),vistas=new Set(notifVistas());
+  const naoLidas=itens.filter(a=>!vistas.has(chaveNotif(a))).length;
+  $('#notifDot').classList.toggle('hide',!naoLidas);
+  $('#btnNotif').setAttribute('aria-label',naoLidas?`Notificações: ${naoLidas} nova(s) de ${itens.length}`:`Notificações (${itens.length})`);
 }
 function abrirNotificacoes(){
   const itens=listaNotificacoes();
-  D().notifLidas=true;salvar();atualizarNotif();
+  const chaves=itens.map(chaveNotif),antes=notifVistas();
+  if(chaves.some(k=>!antes.includes(k))||antes.length!==chaves.length){D().notifLidas=chaves;salvar();}
+  atualizarNotif();
   abrirDrawer(`<div class="modal-head"><h2>Notificações</h2>
       <button class="icon-btn" data-fechar aria-label="Fechar notificações"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
     <div class="modal-body">${itens.length?itens.map(a=>`<div class="alert-item">
       <span class="alert-ico a-${a.nivel}" aria-hidden="true">${a.nivel==='neg'?'!':a.nivel==='pos'?'✓':a.nivel==='warn'?'▲':'i'}</span>
       <div><p><b>${esc(a.titulo)}</b></p><p class="small muted">${esc(a.texto)}</p></div></div>`).join('')
       :'<p class="muted small">Nada por aqui no momento.</p>'}
-      <p class="tiny muted" style="margin-top:14px">Avisos calculados a partir dos seus lançamentos${modoCasal()?' e, no modo casal, dos lançamentos compartilhados':''}. Nada é enviado por e-mail ou mensagem.</p></div>`);
+      <p class="tiny muted" style="margin-top:14px">Avisos calculados a partir dos seus próprios lançamentos, inclusive no modo casal. Nada é enviado por e-mail ou mensagem.</p></div>`);
 }
 
 /* ---------------------- inicialização ---------------------- */
@@ -4550,31 +4789,44 @@ function bindGlobal(){
    mensal publicado no caminho compartilhado. Nenhum registro individual da
    outra pessoa existe aqui.
    ========================================================================== */
-const CAS={de:null,ate:null,vista:'bar'};
-const MES_INI_CASAL_IDX=mesIdxDe(2026,9);
+const CAS={de:null,ate:null,vista:'bar',veic:'todos'};
+const MES_INI_CASAL_IDX=mesIdxDe(2026,9);   // início do CONSOLIDADO; as marcações usam todo o histórico
 
 /* Uma linha por (mês, tipo, grupo, categoria, dono) já filtrada pelo recorte. */
 function baseCasal(){
   const meus=D().lancamentos
-    .filter(l=>l.casal&&l.tipo==='saida'&&l.dataParcela>=INICIO_CASAL&&situacao(l)!=='cancelado')
+    .filter(l=>l.casal&&l.tipo==='saida'&&situacao(l)!=='cancelado')
     .map(l=>({mes:mesIndex(l.dataParcela),tipo:'saida',grupoId:l.grupoId,categoriaId:l.categoriaId,
       valor:+l.valor||0,qtd:1,dono:DB.usuarioAtual,futuro:situacao(l)==='futuro'?+l.valor||0:0}));
   const deles=PARCEIRO.lista
     .filter(l=>l.tipo==='saida'&&(l.casalValor||0)>0)
     .map(l=>({mes:mesIndex(l.dataParcela),tipo:'saida',grupoId:l.grupoId,categoriaId:l.categoriaId,
       valor:l.casalValor,qtd:l._qtdCasal||0,dono:PARCEIRO.id,futuro:0}));
-  return meus.concat(deles).filter(x=>x.mes>=MES_INI_CASAL_IDX);
+  return meus.concat(deles);
+}
+/* Veículos dos dois perfis, com o dono de cada um. Os meus vêm dos meus
+   lançamentos; os do parceiro, do total mensal publicado por ele(a). */
+function veiculosCasal(){
+  const eu=DB.usuarioAtual,out=[];
+  const meus=agregarVeiculos(D());
+  meus.veiculos.forEach(v=>out.push({...v,dono:eu,chave:eu+':'+v.id}));
+  const pv=PARCEIRO.veic;
+  if(pv&&Array.isArray(pv.veiculos))pv.veiculos.forEach(v=>out.push({...v,dono:PARCEIRO.id,chave:PARCEIRO.id+':'+v.id}));
+  const linhas=[];
+  const add=(fonte,dono)=>Object.entries(fonte&&fonte.meses||{}).forEach(([m,vs])=>
+    Object.entries(vs).forEach(([vid,r])=>linhas.push({mes:mesIndex(m+'-01'),chave:dono+':'+vid,dono,total:+r.total||0,
+      operacional:+r.operacional||0,qtd:r.qtd|0,cats:r.cats||{}})));
+  add(meus,eu);add(pv,PARCEIRO.id);
+  return {veiculos:out,linhas};
 }
 function periodoCasal(){
-  const b=baseCasal();
-  const disp=b.map(x=>x.mes);
-  const min=disp.length?Math.min(...disp):MES_INI_CASAL_IDX;
+  const disp=baseCasal().map(x=>x.mes).concat(veiculosCasal().linhas.map(x=>x.mes));
+  const min=disp.length?Math.min(...disp):MES_ATUAL;
   const max=Math.max(MES_ATUAL,disp.length?Math.max(...disp):MES_ATUAL);
-  let de=CAS.de==null?Math.max(MES_INI_CASAL_IDX,min):CAS.de;
-  let ate=CAS.ate==null?max:CAS.ate;
-  if(de<MES_INI_CASAL_IDX)de=MES_INI_CASAL_IDX;
+  let de=CAS.de==null?min:Math.max(min,CAS.de);
+  let ate=CAS.ate==null?max:Math.min(max,CAS.ate);
   if(ate<de)ate=de;
-  return {de,ate,min:Math.max(MES_INI_CASAL_IDX,min),max};
+  return {de,ate,min,max};
 }
 /* Dias realmente cobertos pelo período, para a média diária ser honesta:
    o mês corrente conta só até hoje. */
@@ -4610,6 +4862,41 @@ function nomeGrupoCasal(id){
   return g?g.nome:'Sem grupo';
 }
 
+function renderVeiculosCasal(de,ate){
+  const box=$('#casVeic_corpo'),sel=$('#casVeic');if(!box||!sel)return;
+  const {veiculos,linhas}=veiculosCasal();
+  const nomeDono=d=>d===DB.usuarioAtual?'Você':nomeParceiro();
+  if(!veiculos.length){sel.parentElement.hidden=true;
+    box.innerHTML=vazio('Nenhum veículo cadastrado','Cadastre um veículo em Configurações › Cadastros e vincule a ele as despesas do veículo no formulário de lançamento.');return;}
+  if(CAS.veic!=='todos'&&!veiculos.some(v=>v.chave===CAS.veic))CAS.veic='todos';
+  sel.innerHTML=`<option value="todos">Todos os veículos</option>`+veiculos.map(v=>
+    `<option value="${esc(v.chave)}"${v.chave===CAS.veic?' selected':''}>${esc(v.nome)} — ${esc(nomeDono(v.dono))}</option>`).join('');
+  sel.onchange=e=>{CAS.veic=e.target.value;renderVeiculosCasal(de,ate);};
+  const alvo=linhas.filter(x=>(CAS.veic==='todos'||x.chave===CAS.veic)&&x.mes>=de&&x.mes<=ate);
+  const tot=round2(alvo.reduce((a,x)=>a+x.total,0)),oper=round2(alvo.reduce((a,x)=>a+x.operacional,0));
+  const nM=ate-de+1;
+  const lista=veiculos.filter(v=>CAS.veic==='todos'||v.chave===CAS.veic);
+  box.innerHTML=`<div class="veic-lista">${lista.map(v=>{
+      const t=round2(alvo.filter(x=>x.chave===v.chave).reduce((a,x)=>a+x.total,0));
+      return `<div class="veic-item"><b>${esc(v.nome)}</b><span class="tag">${esc(v.tipo||'Veículo')}</span>
+        <span class="tag ${v.dono===DB.usuarioAtual?'ok':''}">${v.dono===DB.usuarioAtual?'Seu':'De '+esc(nomeParceiro())}</span>
+        <span class="money" style="margin-left:auto">${fmt(t)}</span></div>`;}).join('')}</div>
+    <div class="kv-row"><div><span class="tiny muted">Custo total no período</span><b class="money">${fmt(tot)}</b></div>
+      <div><span class="tiny muted">Custo operacional</span><b class="money">${fmt(oper)}</b></div>
+      <div><span class="tiny muted">Média mensal operacional</span><b class="money">${fmt(round2(oper/nM))}</b></div></div>
+    <p class="tiny muted" style="margin:0 14px 8px">Custo operacional exclui compra, transferência e vistoria de compra. Só contam despesas vinculadas a um veículo no lançamento.</p>
+    <div class="chart-box"><div class="chart-canvas" id="casVeicEvoBox"></div></div>`;
+  if(!alvo.length){$('#casVeicEvoBox').innerHTML=vazio('Sem despesas de veículo no período','Amplie o período ou escolha outro veículo.');return;}
+  const meses=[];for(let i=de;i<=ate;i++)meses.push(i);
+  const donos=[...new Set(lista.map(v=>v.dono))];
+  const cores={[DB.usuarioAtual]:PALETA[0],[PARCEIRO.id]:'#7D6BA8'};
+  $('#casVeicEvoBox').innerHTML='<canvas id="casVeicEvo" role="img" aria-label="Custo mensal dos veículos"></canvas>';
+  desenharGrafico('casVeicEvo',{type:'bar',
+    data:{labels:meses.map(i=>mesLabel(i)),datasets:donos.map(d=>({label:nomeDono(d),stack:'v',borderRadius:4,backgroundColor:cores[d]||PALETA[2],
+      data:meses.map(i=>round2(alvo.filter(x=>x.mes===i&&x.dono===d).reduce((a,x)=>a+x.total,0)))}))},
+    options:{scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>fmtCompacto(v)},grid:{color:cssVar('--border')}}},
+      plugins:{legend:{display:donos.length>1,position:'bottom'},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmt(c.parsed.y)}`}}}}});
+}
 function renderCasal(){
   const sec=$('#page-casal');
   const todas=baseCasal();
@@ -4620,12 +4907,13 @@ function renderCasal(){
   const mediaMes=round2(total/nMeses), mediaDia=round2(total/dias);
   // período anterior de mesmo tamanho, sem cruzar o início do recorte
   const antDe=de-nMeses, antAte=de-1;
-  const temAnterior=antDe>=MES_INI_CASAL_IDX;
+  const temAnterior=antDe>=min;
   const totalAnt=temAnterior?somaCasal(todas.filter(x=>x.mes>=antDe&&x.mes<=antAte)):null;
   const varPct=temAnterior?variacao(total,totalAnt):null;
   const meuTotal=somaCasal(linhas.filter(x=>x.dono===DB.usuarioAtual));
   const deleTotal=round2(total-meuTotal);
-  const consolidado=totais(filtrarLista(LV(),{intervalo:{ini:de,fim:ate}}));
+  const consIni=Math.max(de,MES_INI_CASAL_IDX);
+  const consolidado=ate>=MES_INI_CASAL_IDX?totais(filtrarLista(LV(),{intervalo:{ini:consIni,fim:ate}})):null;
 
   const opcM=(sel)=>{let o='';for(let i=min;i<=max;i++)o+=`<option value="${i}"${i===sel?' selected':''}>${mesLabel(i,false)}</option>`;return o;};
 
@@ -4635,11 +4923,11 @@ function renderCasal(){
       <div class="field"><label for="casAte">Até</label><select id="casAte" class="input">${opcM(ate)}</select></div>
       <button class="btn btn-ghost" id="casLimpar">Todo o período</button>
       <div class="spacer desk-only"></div>
-      <span class="tiny muted">O recorte começa em 1º de setembro de 2026.</span>
+      <span class="tiny muted">Despesas do casal: todo o histórico. Consolidado: a partir de 01/09/2026.</span>
     </div></div>
 
     <div class="note info" style="margin-bottom:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
-      <span><b>Duas leituras diferentes.</b> O <b>total consolidado</b> soma tudo o que você e ${esc(nomeParceiro())} movimentaram no período (${fmt(consolidado.saidas)} em saídas). As <b>despesas marcadas como do casal</b> são o subconjunto que vocês dois escolheram apontar como compartilhado (${fmt(total)}). Cada despesa entra uma única vez em cada uma das duas contas.</span></div>
+      <span><b>Duas leituras diferentes.</b> As <b>despesas marcadas como do casal</b> são as que vocês escolheram apontar como compartilhadas, em todo o histórico (${fmt(total)} no período). O <b>total consolidado</b> soma tudo o que os dois movimentaram, e só existe a partir de 01/09/2026 (${consolidado?fmt(consolidado.saidas)+' em saídas de '+mesLabel(consIni,false)+' a '+mesLabel(ate,false):'fora do período escolhido'}). Cada despesa entra uma única vez em cada leitura.</span></div>
 
     <div class="kpi-row scroller">
       <div class="kpi k-neg"><div class="kpi-label">Despesas do casal no período</div>
@@ -4673,6 +4961,12 @@ function renderCasal(){
         <div class="chart-box"><div class="chart-canvas" id="casCatBox"></div></div></div>
     </div>
 
+    <div class="card" style="margin-top:14px" id="casVeicCard">
+      <div class="card-head"><h2>Veículos do casal</h2>
+        <div class="field" style="min-width:180px"><label for="casVeic" class="sr-only">Veículo</label><select id="casVeic" class="input"></select></div></div>
+      <div id="casVeic_corpo"></div>
+    </div>
+
     <div class="card" style="margin-top:14px">
       <div class="card-head"><h2>Onde o orçamento do casal pesa mais</h2>
         <span class="tiny muted">Categorias agregadas — sem registros individuais</span></div>
@@ -4686,6 +4980,7 @@ function renderCasal(){
   $('#casAte').onchange=e=>{CAS.ate=+e.target.value;if(CAS.de!=null&&CAS.de>CAS.ate)CAS.de=CAS.ate;renderCasal();};
   $('#casLimpar').onclick=()=>{CAS.de=null;CAS.ate=null;renderCasal();};
   $$('#segCas button').forEach(b=>b.onclick=()=>{CAS.vista=b.dataset.v;renderCasal();});
+  renderVeiculosCasal(de,ate);
 
   if(!todas.length){
     $('#casEvo').innerHTML=vazio('Nenhuma despesa marcada ainda',
