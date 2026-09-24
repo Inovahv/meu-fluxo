@@ -1,86 +1,3 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
-/* ============ v11: interface enxuta e móvel ============ */
-/* hierarquia: títulos de cartão mais firmes, respiro consistente */
-.card-head h2{font-size:.98rem;font-weight:650;letter-spacing:-.005em}
-.card{border-color:color-mix(in srgb,var(--border) 80%,transparent)}
-.topbar{background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px)}
-.kpi-value{font-size:1.6rem}
-.kpi-label{letter-spacing:.005em}
-
-/* botão de filtros: só no celular */
-.btn-filtros{display:none;gap:7px}
-.btn-filtros .n{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--accent);color:#fff;
-  font-size:.72rem;font-weight:700;display:inline-grid;place-items:center}
-.btn-filtros[aria-expanded="true"]{border-color:var(--accent);color:var(--brand-2)}
-.filtros-barra{display:flex;justify-content:flex-end;margin-bottom:10px}
-
-/* barra inferior: só no celular */
-.tabbar{display:none}
-
-@media (max-width:900px){
-  .btn-filtros{display:inline-flex}
-  .filtros-mob:not(.aberto){display:none !important}
-  .filtros-mob.aberto{animation:abreFiltros .16s ease-out}
-  .scope-quick{justify-content:space-between;margin-bottom:10px}
-  .scope-quick>.tiny.muted:first-child{display:none}
-  .scope-quick #escopoResumo{order:3;flex-basis:100%;margin-top:-2px}
-
-  /* Visão geral no celular: KPIs e gráficos primeiro */
-  #page-visao-geral.page.active{display:flex;flex-direction:column}
-  #page-visao-geral>.scope-quick{order:1}
-  #page-visao-geral>#vgFiltros{order:2;margin-bottom:12px !important}
-  #page-visao-geral>#scopeNote{order:3}
-  #page-visao-geral>#kpis{order:4}
-  #page-visao-geral>#cardEvo{order:5;margin-top:12px !important}
-  #page-visao-geral>#cardCategoria{order:6;margin-top:12px !important}
-  #page-visao-geral>#fraseDia{order:7;margin:12px 0 0}
-  #page-visao-geral>#cardAtencao{order:8;margin-top:12px !important}
-  #page-visao-geral>#cardUltimos{order:9;margin-top:12px !important}
-
-  /* os quatro KPIs cabem na primeira tela */
-  #kpis.kpi-row.scroller{display:grid;grid-template-columns:1fr 1fr;gap:8px;overflow:visible;padding-bottom:0;margin-bottom:0}
-  #kpis.kpi-row.scroller .kpi{flex:none;padding:11px 12px;gap:4px}
-  #kpis .kpi-value{font-size:1.14rem}
-  #kpis .kpi-label{font-size:.74rem}
-  #kpis .kpi-foot{font-size:.7rem}
-  #kpis .kpi-foot>span:not(.trend):not(.badge){display:none}
-  #kpis .kpi-value-row svg,#kpis .kpi>.tiny.muted{display:none}
-
-  /* barra inferior ao alcance do polegar */
-  .menu-btn{display:none !important}
-  .tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:40;
-    background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-    border-top:1px solid var(--border);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
-  .tabbar button{display:grid;justify-items:center;gap:3px;border:0;background:transparent;color:var(--ink-2);
-    font:inherit;font-size:.68rem;padding:4px 2px;border-radius:10px;cursor:pointer;min-height:48px}
-  .tabbar button svg{width:22px;height:22px}
-  .tabbar button[aria-current="page"]{color:var(--brand-2);font-weight:650}
-  :root[data-theme="dark"] .tabbar button[aria-current="page"],:root:not([data-theme="light"]) .tabbar button[aria-current="page"]{color:var(--accent)}
-  .tabbar button:focus-visible{box-shadow:var(--focus)}
-  .tabbar .tab-novo{align-self:center}
-  .tabbar .tab-novo span.bola{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:var(--brand-2);color:#fff;
-    box-shadow:0 6px 16px -6px rgba(12,31,37,.55);margin-top:-18px}
-  .tabbar .tab-novo span.bola svg{width:24px;height:24px}
-  .content{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}
-  .toasts{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
-
-  /* formulário: rodapé fixo e só o essencial à vista */
-  .modal-card .modal-foot{position:sticky;bottom:0;background:var(--surface);padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
-}
-@media (max-width:900px) and (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]) .btn-filtros[aria-expanded="true"]{color:var(--accent)}
-}
-@keyframes abreFiltros{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.filtros-mob.aberto{animation:none}}
-
-/* "Mais opções" no formulário */
-.mais-opcoes{grid-column:1/-1;border:1px dashed var(--border);border-radius:var(--r-sm);padding:2px 12px}
-.mais-opcoes>summary{cursor:pointer;padding:9px 0;font-size:.86rem;color:var(--ink-2);font-weight:550;list-style:none}
-.mais-opcoes>summary::-webkit-details-marker{display:none}
-.mais-opcoes>summary::before{content:"+ ";font-weight:700}
-.mais-opcoes[open]>summary::before{content:"− "}
-.mais-opcoes .form-grid{padding-bottom:10px}
-</style></head><body>
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="auto">
 <head>
@@ -225,6 +142,20 @@ button,input,select,textarea{font:inherit; color:inherit}
 .tag-toggle{border:1px solid var(--border);background:var(--surface-2);cursor:pointer;font:inherit;font-size:.72rem;
   padding:2px 9px;border-radius:999px;color:var(--ink-2)}
 .tag-toggle:hover{border-color:var(--accent);color:var(--ink)}
+.inst-nova>summary{cursor:pointer;color:var(--accent);list-style:none;margin-top:6px}
+.tag.viagem{background:color-mix(in srgb,#C77D2E 16%,transparent);color:#8A5316;border-color:color-mix(in srgb,#C77D2E 35%,transparent)}
+:root[data-theme="dark"] .tag.viagem,:root:not([data-theme="light"]) .tag.viagem{color:#E7AE6B}
+.chips-inst{display:flex;flex-wrap:wrap;gap:8px}
+.chip-inst{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;border:1px solid var(--border);
+  background:var(--surface);color:var(--ink-2);font:inherit;font-size:.84rem;cursor:pointer;min-height:36px}
+.chip-inst[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--ink);font-weight:600}
+.chip-inst .bolinha{width:10px;height:10px;border-radius:50%}
+.chip-inst:focus-visible{box-shadow:var(--focus)}
+.tbl tr.tot td{border-top:2px solid var(--border)}
+.inst-nova>summary::-webkit-details-marker{display:none}
+.mini-card.tocavel{cursor:pointer;transition:background .12s}
+.mini-card.tocavel:active{background:var(--surface-2)}
+.mini-card.tocavel:focus-visible{box-shadow:var(--focus);outline:none}
 .veic-lista{display:grid;gap:6px;padding:4px 14px 10px}
 .veic-item{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 11px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface-2)}
 .kv-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:4px 14px 10px}
@@ -600,6 +531,99 @@ body.modo-impressao-relatorio #relatorioImpressao{display:block;padding:24px;max
 .menu-pop button svg{width:16px;height:16px;flex:none;color:var(--ink-2)}
 .menu-pop button.perigo svg{color:var(--neg)}
 .menu-sep{height:1px;background:var(--border);margin:4px 6px}
+
+/* herdadas do invólucro removido: oculto é sempre oculto; imagens não estouram a largura */
+[hidden]:not([hidden=until-found i]){display:none!important}
+img{max-width:100%}
+/* ============ v11: interface enxuta e móvel ============ */
+/* hierarquia: títulos de cartão mais firmes, respiro consistente */
+.card-head h2{font-size:.98rem;font-weight:650;letter-spacing:-.005em}
+.card{border-color:color-mix(in srgb,var(--border) 80%,transparent)}
+.topbar{background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px)}
+@media (min-width:901px){.kpi-value{font-size:1.6rem}}
+.kpi-label{letter-spacing:.005em}
+
+/* botão de filtros: só no celular */
+.btn.btn-filtros{display:none;gap:7px}
+.btn-filtros .n{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--accent);color:#fff;
+  font-size:.72rem;font-weight:700;display:inline-grid;place-items:center}
+.btn-filtros[aria-expanded="true"]{border-color:var(--accent);color:var(--brand-2)}
+.filtros-barra{display:none}
+
+/* barra inferior: só no celular */
+.tabbar{display:none}
+
+@media (max-width:900px){
+  .btn.btn-filtros{display:inline-flex}
+  .filtros-barra{display:flex;justify-content:flex-end;margin-bottom:10px}
+  .filtros-mob:not(.aberto){display:none !important}
+  .filtros-mob.aberto{animation:abreFiltros .16s ease-out}
+  .scope-quick{justify-content:space-between;margin-bottom:10px}
+  .scope-quick>.tiny.muted:first-child{display:none}
+  .scope-quick #escopoResumo{order:3;flex-basis:100%;margin-top:-2px}
+
+  /* Visão geral no celular: KPIs e gráficos primeiro */
+  #page-visao-geral.page.active{display:flex;flex-direction:column}
+  #page-visao-geral>.scope-quick{order:1}
+  #page-visao-geral>#vgFiltros{order:2;margin-bottom:12px !important}
+  #page-visao-geral>#scopeNote{order:3}
+  #page-visao-geral>#kpis{order:4}
+  #page-visao-geral>#cardEvo{order:5;margin-top:12px !important}
+  #page-visao-geral>#cardCategoria{order:6;margin-top:12px !important}
+  #page-visao-geral>#fraseDia{order:7;margin:12px 0 0}
+  #page-visao-geral>#cardAtencao{order:8;margin-top:12px !important}
+  #page-visao-geral>#cardUltimos{order:9;margin-top:12px !important}
+
+  /* os quatro KPIs cabem na primeira tela */
+  #kpis.kpi-row.scroller{display:grid;grid-template-columns:1fr 1fr;gap:8px;overflow:visible;padding-bottom:0;margin-bottom:0}
+  #kpis.kpi-row.scroller .kpi{flex:none;padding:11px 12px;gap:4px}
+  #kpis .kpi-value{font-size:1.14rem}
+  #kpis .kpi-label{font-size:.74rem}
+  #kpis .kpi-foot{font-size:.7rem}
+  #kpis .kpi-foot>span:not(.trend):not(.badge){display:none}
+  #kpis .kpi-value-row svg,#kpis .kpi>.tiny.muted{display:none}
+
+  /* barra inferior ao alcance do polegar */
+  .menu-btn{display:none !important}
+  .tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:40;
+    background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    border-top:1px solid var(--border);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
+  .tabbar button{display:grid;justify-items:center;gap:3px;border:0;background:transparent;color:var(--ink-2);
+    font:inherit;font-size:.68rem;padding:4px 2px;border-radius:10px;cursor:pointer;min-height:48px}
+  .tabbar button svg{width:22px;height:22px}
+  .tabbar button[aria-current="page"]{color:var(--brand-2);font-weight:650}
+  :root[data-theme="dark"] .tabbar button[aria-current="page"],:root:not([data-theme="light"]) .tabbar button[aria-current="page"]{color:var(--accent)}
+  .tabbar button:focus-visible{box-shadow:var(--focus)}
+  .tabbar .tab-novo{align-self:center}
+  .tabbar .tab-novo span.bola{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:var(--brand-2);color:#fff;
+    box-shadow:0 6px 16px -6px rgba(12,31,37,.55);margin-top:-18px}
+  .tabbar .tab-novo span.bola svg{width:24px;height:24px}
+  .content{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+  .toasts{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+
+  /* formulário: rodapé fixo e só o essencial à vista */
+  .modal-card .modal-foot{position:sticky;bottom:0;background:var(--surface);padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+}
+@media (max-width:900px) and (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .btn-filtros[aria-expanded="true"]{color:var(--accent)}
+}
+/* celular: avisos longos ocupam duas linhas e abrem com um toque */
+@media (max-width:900px){
+  .casal-bar>span,.page>.note.info>span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .casal-bar.aberta>span,.page>.note.info.aberta>span{display:block}
+  .casal-bar,.page>.note.info{cursor:pointer}
+  .casal-bar:not(.aberta)::after,.page>.note.info:not(.aberta)::after{content:"mais";align-self:flex-end;font-size:.72rem;font-weight:650;color:var(--accent);margin-left:auto;padding-left:6px}
+}
+@keyframes abreFiltros{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.filtros-mob.aberto{animation:none}}
+
+/* "Mais opções" no formulário */
+.mais-opcoes{grid-column:1/-1;border:1px dashed var(--border);border-radius:var(--r-sm);padding:2px 12px}
+.mais-opcoes>summary{cursor:pointer;padding:9px 0;font-size:.86rem;color:var(--ink-2);font-weight:550;list-style:none}
+.mais-opcoes>summary::-webkit-details-marker{display:none}
+.mais-opcoes>summary::before{content:"+ ";font-weight:700}
+.mais-opcoes[open]>summary::before{content:"− "}
+.mais-opcoes .form-grid{padding-bottom:10px}
 </style>
 </head>
 <body>
@@ -844,7 +868,7 @@ function novoPerfil(id){
   const p=perfilCasa(id);
   return {
     grupos:clone(GRUPOS),categorias:clone(CATEGORIAS),formas:[...FORMAS],
-    instituicoes:[],veiculos:[],cartoes:[],
+    instituicoes:[],veiculos:[],cartoes:[],viagens:[],
     lancamentos:[],recorrencias:[],
     emprestimos:{pessoas:[],contratos:[]},
     capital:{contas:[]},
@@ -1084,7 +1108,7 @@ let ULTIMO={};           // caminho -> JSON canônico do que está salvo
 function docsDoPerfil(id,d){
   const P=caminhoPerfil(id),out={};
   out[P]={v:1,grupos:d.grupos,categorias:d.categorias,formas:d.formas,instituicoes:d.instituicoes,veiculos:d.veiculos,
-    cartoes:d.cartoes,recorrencias:d.recorrencias,perfil:d.perfil,prefs:d.prefs,
+    cartoes:d.cartoes,viagens:d.viagens||[],recorrencias:d.recorrencias,perfil:d.perfil,prefs:d.prefs,
     notifLidas:Array.isArray(d.notifLidas)?d.notifLidas.slice(-60):!!d.notifLidas};
   out[P+'/mod/emprestimos']=d.emprestimos;
   out[P+'/mod/capital']=d.capital;
@@ -1120,12 +1144,13 @@ function agregarVeiculos(d){
     if(!d.veiculos.some(v=>v.id===l.veiculoId))return;
     const m=String(l.dataParcela||'').slice(0,7);if(!m)return;
     const mv=(meses[m]=meses[m]||{});
-    const r=(mv[l.veiculoId]=mv[l.veiculoId]||{total:0,operacional:0,qtd:0,futuro:0,cats:{}});
-    const v=+l.valor||0;
+    const r=(mv[l.veiculoId]=mv[l.veiculoId]||{total:0,operacional:0,qtd:0,futuro:0,cats:{},fora:{},fut:{}});
+    const v=+l.valor||0,c=l.categoriaId||'';
     r.total=round2(r.total+v);r.qtd++;
     if(l.incluiCustoVeiculo!==false)r.operacional=round2(r.operacional+v);
-    if(situacao(l)==='futuro')r.futuro=round2(r.futuro+v);
-    r.cats[l.categoriaId||'']=round2((r.cats[l.categoriaId||'']||0)+v);
+    else r.fora[c]=round2((r.fora[c]||0)+v);
+    if(situacao(l)==='futuro'){r.futuro=round2(r.futuro+v);r.fut[c]=round2((r.fut[c]||0)+v);}
+    r.cats[c]=round2((r.cats[c]||0)+v);
   });
   return {v:1,veiculos:d.veiculos.map(v=>({id:v.id,nome:v.nome,tipo:v.tipo||''})),meses};
 }
@@ -1143,9 +1168,10 @@ function agregarMes(itens,{soCasal=false}={}){
     if(situacao(l)==='cancelado')return;
     if(!l.dataParcela)return;
     if(soCasal&&!(l.casal&&l.tipo==='saida'))return;
-    const k=l.tipo+'|'+(l.grupoId||'g-out')+'|'+(l.categoriaId||'');
+    const vg=nomeViagem(l);
+    const k=l.tipo+'|'+(l.grupoId||'g-out')+'|'+(l.categoriaId||'')+'|'+vg;
     let b=mapa.get(k);
-    if(!b){b={tipo:l.tipo,grupoId:l.grupoId||'g-out',categoriaId:l.categoriaId||'',total:0,casal:0,qtd:0,qtdCasal:0,futuro:0};mapa.set(k,b);}
+    if(!b){b={tipo:l.tipo,grupoId:l.grupoId||'g-out',categoriaId:l.categoriaId||'',total:0,casal:0,qtd:0,qtdCasal:0,futuro:0};if(vg)b.viagem=vg;mapa.set(k,b);}
     b.total=round2(b.total+(+l.valor||0));
     b.qtd++;
     if(situacao(l)==='futuro')b.futuro=round2(b.futuro+(+l.valor||0));
@@ -1153,11 +1179,12 @@ function agregarMes(itens,{soCasal=false}={}){
   });
   let buckets=[...mapa.values()].sort((a,b)=>a.tipo<b.tipo?-1:a.tipo>b.tipo?1:(b.total-a.total));
   // antes de set/2026 sai só a parte do casal: sem total geral nem contagem geral do mês
-  if(soCasal)buckets=buckets.map(b=>({tipo:b.tipo,grupoId:b.grupoId,categoriaId:b.categoriaId,casal:b.casal,qtdCasal:b.qtdCasal}));
+  if(soCasal)buckets=buckets.map(b=>{const o={tipo:b.tipo,grupoId:b.grupoId,categoriaId:b.categoriaId,casal:b.casal,qtdCasal:b.qtdCasal};if(b.viagem)o.viagem=b.viagem;return o;});
   return soCasal?{v:3,escopo:'casal',buckets}:{v:3,buckets};
 }
 function aplicarBase(d,base){
-  ['grupos','categorias','formas','instituicoes','veiculos','cartoes','recorrencias','prefs','notifLidas'].forEach(k=>{if(base[k]!==undefined)d[k]=base[k];});
+  ['grupos','categorias','formas','instituicoes','veiculos','cartoes','viagens','recorrencias','prefs','notifLidas'].forEach(k=>{if(base[k]!==undefined)d[k]=base[k];});
+  if(!Array.isArray(d.viagens))d.viagens=[];
   if(base.perfil)d.perfil={...d.perfil,...base.perfil};
 }
 async function carregarPerfil(id){
@@ -1234,7 +1261,7 @@ function entradasDoAgregado(mes,agg,dono){
   const out=[];
   (agg&&agg.buckets||[]).forEach((b,i)=>{
     const base={_dono:dono,_agregado:true,_soCasal:soCasal,grupoId:b.grupoId,categoriaId:b.categoriaId,tipo:b.tipo,
-      observacao:'',formaPagamento:'—',situacaoManual:null};
+      _viagem:b.viagem||'',observacao:'',formaPagamento:'—',situacaoManual:null};
     if(soCasal){
       out.push({...base,id:'agg:'+dono+':'+mes+':'+i,valor:b.casal||0,casalValor:b.casal||0,casal:true,
         _qtd:b.qtdCasal|0,_qtdCasal:b.qtdCasal|0,dataParcela:d1,dataOriginal:d1});
@@ -2062,8 +2089,16 @@ function compactarFiltros(){
   const card=[...sec.querySelectorAll('.card')].find(c=>c.querySelector(':scope > .filterbar'));
   if(!card)return;
   const chave=sec.id+(sec.id==='page-analises'?':'+(ANA&&ANA.aba||''):'');
-  card.classList.add('filtros-mob');
-  card.classList.toggle('aberto',!!FILT_ABERTO[chave]);
+  /* Só a barra de filtros (e o painel de filtros avançados, quando existe) é
+     recolhida. Se o cartão tiver qualquer outro conteúdo — lista, tabela,
+     gráfico —, esse conteúdo continua visível. O cartão só some inteiro
+     quando não contém nada além dos filtros. */
+  const eFiltro=el=>el.matches('.filterbar,.adv,#advChips,.filter-chips');
+  const pecas=[...card.children].filter(eFiltro);
+  const soFiltros=[...card.children].every(el=>eFiltro(el)||el.hidden||el.classList.contains('hide'));
+  const alvos=soFiltros?[card]:pecas;
+  card.classList.remove('filtros-mob','aberto');
+  alvos.forEach(el=>{el.classList.add('filtros-mob');el.classList.toggle('aberto',!!FILT_ABERTO[chave]);});
   if(!card.id)card.id='filtros-'+chave.replace(/[^a-z0-9]+/gi,'-');
   let bt=sec.querySelector('.btn-filtros[data-alvo="'+card.id+'"]');
   if(!bt){
@@ -2072,7 +2107,8 @@ function compactarFiltros(){
     const quick=sec.querySelector(':scope > .scope-quick');
     if(quick)quick.appendChild(bt);
     else{const barra=document.createElement('div');barra.className='filtros-barra';barra.appendChild(bt);card.parentNode.insertBefore(barra,card);}
-    bt.onclick=()=>{FILT_ABERTO[chave]=!FILT_ABERTO[chave];card.classList.toggle('aberto',FILT_ABERTO[chave]);
+    bt.onclick=()=>{FILT_ABERTO[chave]=!FILT_ABERTO[chave];
+      sec.querySelectorAll('.filtros-mob').forEach(el=>el.classList.toggle('aberto',FILT_ABERTO[chave]));
       bt.setAttribute('aria-expanded',String(!!FILT_ABERTO[chave]));
       if(FILT_ABERTO[chave]){const f=card.querySelector('select,input');if(f)f.focus({preventScroll:true});}};
   }
@@ -2081,6 +2117,12 @@ function compactarFiltros(){
   bt.setAttribute('aria-label',n?`Filtros, ${n} ativo(s)`:'Filtros');
   bt.innerHTML=`<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filtros${n?` <span class="n">${n}</span>`:''}`;
 }
+document.addEventListener('click',e=>{
+  if(window.innerWidth>900)return;
+  const n=e.target.closest&&e.target.closest('.casal-bar,.page>.note.info');
+  if(!n||e.target.closest('a,button'))return;
+  n.classList.toggle('aberta');n.setAttribute('aria-expanded',String(n.classList.contains('aberta')));
+});
 let T_COMPACTA=null;
 function vigiarFiltros(){
   const alvo=$('#content');if(!alvo||vigiarFiltros.ok)return;vigiarFiltros.ok=true;
@@ -2166,7 +2208,8 @@ function linhasLancamento(l,{selecionavel=false,completa=false}={}){
     ${completa?`<td>${parc}</td><td>${recor}</td><td>${l.instituicaoId?esc(nomeInst(l.instituicaoId)):'—'}</td>
       <td>${l.veiculoId?esc(nomeVeic(l.veiculoId)):'—'}</td>
       <td>${l.veiculoId?(l.incluiCustoVeiculo?'<span class="tag ok">Inclui</span>':'<span class="tag">Fora</span>'):'—'}</td>
-      <td>${ehMeu(l)?`<button class="tag tag-toggle${l.casal?' ok':''}" data-casal="${l.id}" aria-pressed="${!!l.casal}" title="Marcar ou desmarcar como despesa do casal">${l.casal?'Casal':'—'}</button>`:(l.casal?'<span class="tag ok">Casal</span>':'—')}</td>`:''}
+      <td>${ehMeu(l)?`<button class="tag tag-toggle${l.casal?' ok':''}" data-casal="${l.id}" aria-pressed="${!!l.casal}" title="Marcar ou desmarcar como despesa do casal">${l.casal?'Casal':'—'}</button>`:(l.casal?'<span class="tag ok">Casal</span>':'—')}</td>
+      <td>${nomeViagem(l)?'<span class="tag viagem">Viagem — '+esc(nomeViagem(l))+'</span>':'—'}</td>`:''}
     <td>${tagSituacao(l)}</td>
     ${completa?`<td class="r">${ehMeu(l)?`<button class="icon-btn-sm" data-acoes="${l.id}" aria-haspopup="true" aria-expanded="false" aria-label="Mais ações do lançamento">${SVG_MAIS}</button>`:soLeitura(l)}</td>`:''}
   </tr>`;
@@ -2185,7 +2228,7 @@ function cardLancamento(l,{selecionavel=false,acoes=false}={}){
       ${l.veiculoId?`<span>·</span><span>${esc(nomeVeic(l.veiculoId))}</span>`:''}
       ${l.instituicaoId?`<span>·</span><span>${esc(nomeInst(l.instituicaoId))}</span>`:''}
     </div>
-    <div class="row" style="justify-content:space-between"><span class="row" style="gap:6px">${tagSituacao(l)}${tagDono(l)}</span>
+    <div class="row" style="justify-content:space-between"><span class="row" style="gap:6px">${tagSituacao(l)}${tagDono(l)}${nomeViagem(l)?'<span class="tag viagem">Viagem — '+esc(nomeViagem(l))+'</span>':''}</span>
       ${acoes?(ehMeu(l)?`<button class="icon-btn-sm" data-acoes="${l.id}" aria-haspopup="true" aria-expanded="false" aria-label="Mais ações do lançamento">${SVG_MAIS}</button>`:soLeitura(l)):''}
     </div></div>`;
 }
@@ -2560,7 +2603,7 @@ function exportarPdfDashboard(tK,acum,pc,atencao,ult){
 /* =========================================================================
    Bloco 4: Base de Lançamentos e formulário de lançamento
    ========================================================================= */
-const LF={busca:'',tipo:'',grupo:'',categoria:'',forma:'',inst:'',veiculo:'',situacao:'',
+const LF={busca:'',tipo:'',grupo:'',categoria:'',forma:'',inst:'',veiculo:'',situacao:'',viagem:'',
   deMes:'',deAno:'',ateMes:'',ateAno:'',ord:'dataParcela',dir:-1,pag:1,porPag:25};
 
 function lancamentosFiltrados(){
@@ -2572,6 +2615,8 @@ function lancamentosFiltrados(){
   if(LF.inst)l=l.filter(x=>x.instituicaoId===LF.inst);
   if(LF.veiculo)l=l.filter(x=>x.veiculoId===LF.veiculo);
   if(LF.situacao)l=l.filter(x=>situacao(x)===LF.situacao);
+  if(LF.viagem==='__qualquer')l=l.filter(x=>!!x.viagemId);
+  else if(LF.viagem)l=l.filter(x=>x.viagemId===LF.viagem);
   if(LF.busca)l=l.filter(x=>(x.observacao||'').toLowerCase().includes(LF.busca.toLowerCase()));
   if(LF.deMes&&LF.deAno)l=l.filter(x=>mesIndex(x.dataParcela)>=mesIdxDe(+LF.deAno,+LF.deMes));
   if(LF.ateMes&&LF.ateAno)l=l.filter(x=>mesIndex(x.dataParcela)<=mesIdxDe(+LF.ateAno,+LF.ateMes));
@@ -2606,7 +2651,7 @@ function renderLancamentos(){
   const pagina=todos.slice((LF.pag-1)*LF.porPag,LF.pag*LF.porPag);
   const cabecalhos=[['tipo','Tipo'],['valor','Valor'],['dataOriginal','Data original'],['dataParcela','Data da parcela'],
     ['grupoId','Grupo'],['categoriaId','Categoria'],['observacao','Observação'],['formaPagamento','Pagamento'],
-    [null,'Parcela'],[null,'Recorrência'],[null,'Instituição'],[null,'Veículo'],[null,'Custo do veículo'],['casal','Casal'],['situacao','Situação'],[null,'Ações']];
+    [null,'Parcela'],[null,'Recorrência'],[null,'Instituição'],[null,'Veículo'],[null,'Custo do veículo'],['casal','Casal'],[null,'Viagem'],['situacao','Situação'],[null,'Ações']];
 
   $('#page-lancamentos').innerHTML=`
   <div class="note info desk-only" style="margin-bottom:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
@@ -2621,6 +2666,9 @@ function renderLancamentos(){
       <div class="field"><label for="lCategoria">Categoria</label><select id="lCategoria" class="input">${opcoes(D().categorias.filter(c=>!LF.grupo||c.grupoId===LF.grupo),{vazio:'Todas',selecionado:LF.categoria})}</select></div>
       <div class="field"><label for="lForma">Pagamento</label><select id="lForma" class="input">${opcoes(D().formas,{vazio:'Todas',selecionado:LF.forma})}</select></div>
       <div class="field"><label for="lInst">Instituição</label><select id="lInst" class="input">${opcoes(D().instituicoes,{vazio:'Todas',selecionado:LF.inst})}</select></div>
+      <div class="field"><label for="lViagem">Viagem</label><select id="lViagem" class="input"><option value="">Todas</option>
+        <option value="__qualquer"${LF.viagem==='__qualquer'?' selected':''}>Qualquer viagem</option>
+        ${(D().viagens||[]).map(v=>`<option value="${esc(v.id)}"${LF.viagem===v.id?' selected':''}>Viagem — ${esc(v.nome)}</option>`).join('')}</select></div>
       <div class="field"><label for="lVeiculo">Veículo</label><select id="lVeiculo" class="input">${opcoes(veiculosVisiveis(),{vazio:'Todos',selecionado:LF.veiculo})}</select></div>
       <div class="field"><label for="lSituacao">Situação</label><select id="lSituacao" class="input"><option value="">Todas</option>
         <option value="realizado"${LF.situacao==='realizado'?' selected':''}>Realizado</option>
@@ -2635,6 +2683,8 @@ function renderLancamentos(){
       <div class="spacer desk-only"></div>
       <button class="btn btn-primary" id="lNovo">Novo lançamento</button>
     </div>
+  </div>
+  <div class="card" id="lLista">
     ${SEL.size?`<div class="bulkbar"><span>${SEL.size} ${SEL.size===1?'lançamento selecionado':'lançamentos selecionados'}</span>
       <button class="btn btn-sm" id="lSelLimpar">Limpar seleção</button>
       <button class="btn btn-sm btn-danger" id="lSelExcluir">Excluir selecionados</button></div>`:''}
@@ -2663,7 +2713,7 @@ function renderLancamentos(){
   $('#lDeMes').value=LF.deMes;$('#lDeAno').value=LF.deAno;$('#lAteMes').value=LF.ateMes;$('#lAteAno').value=LF.ateAno;
   const bind=(id,campo)=>{const el=$(id);if(el)el.onchange=()=>{LF[campo]=el.value;if(campo==='grupo')LF.categoria='';LF.pag=1;renderLancamentos();};};
   bind('#lTipo','tipo');bind('#lGrupo','grupo');bind('#lCategoria','categoria');bind('#lForma','forma');
-  bind('#lInst','inst');bind('#lVeiculo','veiculo');bind('#lSituacao','situacao');
+  bind('#lInst','inst');bind('#lViagem','viagem');bind('#lVeiculo','veiculo');bind('#lSituacao','situacao');
   bind('#lDeMes','deMes');bind('#lDeAno','deAno');bind('#lAteMes','ateMes');bind('#lAteAno','ateAno');
   let tb;$('#lBusca').oninput=e=>{clearTimeout(tb);tb=setTimeout(()=>{LF.busca=e.target.value;LF.pag=1;renderLancamentos();$('#lBusca').focus();},350);};
   const limpar=()=>{Object.assign(LF,{busca:'',tipo:'',grupo:'',categoria:'',forma:'',inst:'',veiculo:'',situacao:'',deMes:'',deAno:'',ateMes:'',ateAno:'',pag:1});renderLancamentos();};
@@ -2686,6 +2736,16 @@ function renderLancamentos(){
       D().lancamentos=D().lancamentos.filter(l=>!SEL.has(l.id));SEL.clear();salvar();toast(`${n} ${n===1?'lançamento excluído':'lançamentos excluídos'}.`,'ok');renderLancamentos();}
   };
   $$('#lTabela [data-casal]').forEach(b=>b.onclick=e=>{e.stopPropagation();alternarMarcaCasal(b.dataset.casal);});
+  /* Celular: tocar no cartão abre o lançamento para ver ou editar (antes era
+     preciso achar o botão "⋯" e depois "Editar"). Toques em botões, caixas de
+     seleção e links continuam fazendo só o que fazem. */
+  $$('#lTabela .cards-list .mini-card').forEach(c=>{
+    const l=D().lancamentos.find(x=>x.id===c.dataset.id);if(!l||!ehMeu(l))return;
+    c.classList.add('tocavel');c.tabIndex=0;c.setAttribute('role','button');
+    c.setAttribute('aria-label','Abrir lançamento: '+(l.observacao||nomeCat(l.categoriaId))+', '+fmt(l.valor)+', '+fmtData(l.dataParcela));
+    c.onclick=e=>{if(e.target.closest('button,input,a,label'))return;abrirFormLancamento(l.id);};
+    c.onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&e.target===c){e.preventDefault();abrirFormLancamento(l.id);}};
+  });
   $$('#lTabela [data-acoes]').forEach(b=>b.onclick=e=>{e.stopPropagation();const id=b.dataset.acoes;
     menuAcoes(b,[
       {texto:'Editar',icone:SVG_EDITAR,aoClicar:()=>abrirFormLancamento(id)},
@@ -2820,6 +2880,14 @@ function abrirFormLancamento(id=null,preset={}){
       <div class="field full"><label for="fObs">Observação (opcional)</label>
         <input id="fObs" class="input" value="${esc(base.observacao||'')}" placeholder="Ex.: Mercado São Jorge, parcela do notebook, posto da avenida"></div>
 
+      <div class="field full" id="boxViagem">
+        <label for="fViagem">Viagem</label>
+        <select id="fViagem" class="input"><option value="">Não é despesa de viagem</option>
+          ${(D().viagens||[]).map(v=>`<option value="${esc(v.id)}"${base.viagemId===v.id?' selected':''}>Viagem — ${esc(v.nome)}</option>`).join('')}</select>
+        <details class="inst-nova"><summary class="tiny">Nova viagem</summary>
+          <div class="row" style="gap:8px;margin-top:6px"><input id="fViagemNova" class="input" placeholder="Destino, ex.: Bahia" aria-label="Nome da nova viagem">
+          <button type="button" class="btn btn-sm" id="fViagemAdd">Adicionar</button></div></details>
+        <span class="tiny muted">A categoria continua a mesma; a viagem é uma classificação a mais, para analisar os gastos dela separadamente.</span></div>
       <div class="field full" id="boxCasal">
         <label class="check"><input type="checkbox" id="fCasal" ${base.casal?'checked':''}>
           <span>É do casal<br><span class="tiny muted">Entra no recorte de Análise do casal. O lançamento continua sendo seu: ${esc(nomeParceiro())} vê o total, nunca o registro.</span></span></label>
@@ -2843,9 +2911,13 @@ function abrirFormLancamento(id=null,preset={}){
           <div class="preview-list" id="previewParcelas"></div>
         </div></div>
 
-      <div class="field hide" id="boxInst"><label for="fInst">Instituição financeira</label>
-        <select id="fInst" class="input">${opcoes(D().instituicoes,{vazio:'Não informar',selecionado:base.instituicaoId||''})}</select>
-        <span class="tiny muted">Campo estruturado, usado pelo painel de Investimentos.</span></div>
+      <div class="field hide" id="boxInst"><label for="fInst">Banco ou instituição financeira</label>
+        <select id="fInst" class="input">${opcoes(D().instituicoes,{vazio:'Escolha a instituição',selecionado:base.instituicaoId||''})}</select>
+        <span class="err" id="eInst"></span>
+        <details class="inst-nova"><summary class="tiny">Instituição ainda não cadastrada? Cadastrar agora</summary>
+          <div class="row" style="gap:8px;margin-top:6px"><input id="fInstNova" class="input" placeholder="Nome, ex.: Banco Inter" aria-label="Nome da nova instituição">
+          <button type="button" class="btn btn-sm" id="fInstAdd">Adicionar</button></div></details>
+        <span class="tiny muted">Obrigatória para rendimento, aporte, resgate e taxa: é o que permite analisar cada banco.</span></div>
       <div class="field hide" id="boxVeic"><label for="fVeic">Veículo</label>
         <select id="fVeic" class="input">${opcoes(D().veiculos,{vazio:'Não informar',selecionado:base.veiculoId||''})}</select></div>
       <div class="field full hide" id="boxCusto">
@@ -2942,9 +3014,35 @@ function montarFormLancamento(m,base,edit){
     const ri=$('#fRecIni',m);if(ri)ri.value=$('#fData',m).value;previewParcelas();previewRec();avisoCasal();};
   avisoCasal();
 
+  const fViagemAdd=$('#fViagemAdd',m);
+  if(fViagemAdd)fViagemAdd.onclick=()=>{
+    const n=$('#fViagemNova',m).value.trim();if(!n){toast('Informe o destino da viagem.','err');return;}
+    const dup=(D().viagens||[]).find(v=>normViagem(v.nome)===normViagem(n));
+    if(dup){$('#fViagem',m).value=dup.id;$('#fViagemNova',m).value='';toast(`A viagem “${dup.nome}” já existia e foi selecionada.`,'ok');return;}
+    const o={id:uid('vg'),nome:n};(D().viagens=D().viagens||[]).push(o);
+    $('#fViagem',m).insertAdjacentHTML('beforeend',`<option value="${esc(o.id)}">Viagem — ${esc(o.nome)}</option>`);
+    $('#fViagem',m).value=o.id;$('#fViagemNova',m).value='';m.querySelector('#boxViagem .inst-nova').open=false;
+    toast(`Viagem “${n}” criada.`,'ok');};
+  // o campo Viagem só aparece em despesas
+  const ajustaViagem=()=>{const b=m.querySelector('#fTipo button[aria-pressed="true"]');
+    const bv=$('#boxViagem',m);if(bv)bv.classList.toggle('hide',!!b&&b.dataset.v==='entrada');};
+  m.addEventListener('click',e=>{if(e.target.closest('#fTipo'))setTimeout(ajustaViagem,0);});
+  ajustaViagem();
+  const fInstAdd=$('#fInstAdd',m);
+  if(fInstAdd)fInstAdd.onclick=()=>{
+    const n=$('#fInstNova',m).value.trim();if(!n){toast('Informe o nome da instituição.','err');return;}
+    const dup=instituicaoDuplicada(n);
+    if(dup){$('#fInst',m).value=dup.id;$('#fInstNova',m).value='';toast(`“${dup.nome}” já estava cadastrada e foi selecionada.`,'ok');return;}
+    const o={id:uid('i'),nome:n};D().instituicoes.push(o);
+    $('#fInst',m).insertAdjacentHTML('beforeend',`<option value="${esc(o.id)}">${esc(o.nome)}</option>`);
+    $('#fInst',m).value=o.id;$('#fInstNova',m).value='';m.querySelector('.inst-nova').open=false;
+    toast(`Instituição “${n}” cadastrada no seu perfil.`,'ok');};
   $('#salvarLanc',m).onclick=()=>{
     const valor=lerMoeda(fValor),data=$('#fData',m).value,categoriaId=fCat.value;
     let erro=false;
+    const eI=$('#eInst',m);if(eI)eI.textContent='';
+    if(!$('#boxInst',m).classList.contains('hide')&&!$('#fInst',m).value){
+      if(eI)eI.textContent='Escolha o banco ou instituição deste investimento.';erro=true;}
     $('#eValor',m).textContent='';$('#eData',m).textContent='';$('#eCategoria',m).textContent='';
     if(!valor){$('#eValor',m).textContent='Informe um valor maior que zero.';fValor.setAttribute('aria-invalid','true');erro=true;}else fValor.removeAttribute('aria-invalid');
     if(!data){$('#eData',m).textContent='Informe a data.';erro=true;}
@@ -2957,7 +3055,8 @@ function montarFormLancamento(m,base,edit){
       instituicaoId:$('#boxInst',m).classList.contains('hide')?null:($('#fInst',m).value||null),
       veiculoId:$('#boxVeic',m).classList.contains('hide')?null:($('#fVeic',m).value||null),
       incluiCustoVeiculo:$('#fCusto',m)?$('#fCusto',m).checked:true,
-      casal:!!($('#fCasal',m)&&$('#fCasal',m).checked)};
+      casal:!!($('#fCasal',m)&&$('#fCasal',m).checked),
+      viagemId:($('#boxViagem',m)&&!$('#boxViagem',m).classList.contains('hide')&&$('#fViagem',m).value)||null};
     if(edit){
       if(edit.recorrenciaId){
         const todos=irmaosRecorrencia(edit), depois=todos.filter(x=>x.dataParcela>=edit.dataParcela);
@@ -3488,6 +3587,82 @@ function lancamentosFinanceiros(){
     if(INV.categoria&&l.categoriaId!==INV.categoria)return false;
     return true;});
 }
+/* ---------- Rendimentos por instituição ----------
+   Usa só os lançamentos do próprio perfil que TÊM instituição informada.
+   Rendimento, aporte, resgate e taxa ficam separados; saldo não é calculado,
+   porque os lançamentos não informam saldo. Mês sem lançamento aparece como
+   "sem registro", nunca como rendimento zero estimado. */
+const RINST={sel:null,vista:'acum'};
+function renderRendInst(){
+  const box=$('#rendInstCard');if(!box)return;
+  const {de,ate}=PERIODOS.inv;
+  const fin=l=>{const c=cat(l.categoriaId);return c&&c.fin?c.fin:null;};
+  const minhas=D().lancamentos.filter(l=>fin(l)&&situacao(l)!=='cancelado');
+  const semInst=minhas.filter(l=>!l.instituicaoId);
+  const insts=D().instituicoes.filter(i=>minhas.some(l=>l.instituicaoId===i.id));
+  if(!insts.length){box.innerHTML=`<div class="card-head"><h2>Rendimentos por instituição</h2></div>`+
+    vazio('Nenhum investimento com instituição','Lance rendimentos, aportes ou resgates escolhendo o banco no formulário.');return;}
+  if(!RINST.sel)RINST.sel=new Set(insts.map(i=>i.id));
+  [...RINST.sel].forEach(id=>{if(!insts.some(i=>i.id===id))RINST.sel.delete(id);});
+  if(!RINST.sel.size)insts.forEach(i=>RINST.sel.add(i.id));
+  const escolhidas=insts.filter(i=>RINST.sel.has(i.id));
+  const meses=[];for(let i=de;i<=ate;i++)meses.push(i);
+  const real=minhas.filter(ehRealizado);
+  const soma=(id,tipo,filtro)=>somaV(real.filter(l=>l.instituicaoId===id&&fin(l)===tipo&&filtro(mesIndex(l.dataParcela))));
+  const noPeriodo=mi=>mi>=de&&mi<=ate;
+  const linhas=insts.map(i=>{
+    const rs=real.filter(l=>l.instituicaoId===i.id&&fin(l)==='rendimento');
+    const mesesCom=new Set(rs.filter(l=>noPeriodo(mesIndex(l.dataParcela))).map(l=>mesIndex(l.dataParcela)));
+    const datas=rs.map(l=>l.dataParcela).sort();
+    return {i,rend:soma(i.id,'rendimento',noPeriodo),aporte:soma(i.id,'aporte',noPeriodo),resgate:soma(i.id,'resgate',noPeriodo),
+      taxa:soma(i.id,'taxa',noPeriodo),acumTotal:soma(i.id,'rendimento',()=>true),mesesCom:mesesCom.size,
+      primeiro:datas[0]||null,ultimo:datas[datas.length-1]||null,
+      mensal:meses.map(mi=>{const d=rs.filter(l=>mesIndex(l.dataParcela)===mi);return d.length?somaV(d):null;})};});
+  const sel=linhas.filter(x=>RINST.sel.has(x.i.id));
+  const rendSel=round2(sel.reduce((a,x)=>a+x.rend,0));
+  const acumulado=arr=>{let a=0;return arr.map(v=>{a=round2(a+(v||0));return a;});};
+  const totalApor=round2(linhas.reduce((a,x)=>a+x.aporte,0)),totalResg=round2(linhas.reduce((a,x)=>a+x.resgate,0));
+  box.innerHTML=`<div class="card-head"><h2>Rendimentos por instituição</h2>
+      <div class="seg" id="segRend" role="group" aria-label="Forma do gráfico">
+        <button data-v="acum" aria-pressed="${RINST.vista==='acum'}">Acumulado</button><button data-v="mensal" aria-pressed="${RINST.vista==='mensal'}">Por mês</button></div></div>
+    <div class="card-pad" style="padding-top:0">
+      <div class="chips-inst" role="group" aria-label="Instituições no gráfico">${insts.map((i,k)=>`<button type="button" class="chip-inst" data-inst="${esc(i.id)}" aria-pressed="${RINST.sel.has(i.id)}">
+        <span class="bolinha" style="background:${PALETA[k%PALETA.length]}"></span>${esc(i.nome)}</button>`).join('')}</div>
+      <p class="small" style="margin:10px 0 4px"><b>Período analisado:</b> ${mesLabel(de,false)} a ${mesLabel(ate,false)} (${meses.length} ${meses.length===1?'mês':'meses'}).
+        Rendimento das selecionadas no período: <b class="money pos">${fmt(rendSel)}</b>.</p>
+    </div>
+    <div class="chart-box"><div class="chart-canvas" id="rendInstBox" style="height:260px"><canvas id="chartRendInst" role="img" aria-label="Rendimentos por instituição ao longo do tempo"></canvas></div></div>
+    <div class="table-wrap"><table class="tbl"><thead><tr><th>Instituição</th><th class="r">Rendimento no período</th><th class="r">Acumulado desde o 1º registro</th>
+      <th class="r">Meses com registro</th><th>Registros de</th><th class="r">Aportes</th><th class="r">Resgates</th><th class="r">Taxas</th><th>Saldo</th></tr></thead>
+      <tbody>${linhas.map(x=>`<tr${RINST.sel.has(x.i.id)?'':' class="muted"'}><td><b>${esc(x.i.nome)}</b></td>
+        <td class="r money pos">${fmt(x.rend)}</td><td class="r money">${fmt(x.acumTotal)}</td>
+        <td class="r">${x.mesesCom} de ${meses.length}</td><td>${x.primeiro?fmtData(x.primeiro)+' a '+fmtData(x.ultimo):'—'}</td>
+        <td class="r money">${x.aporte?fmt(x.aporte):'—'}</td><td class="r money">${x.resgate?fmt(x.resgate):'—'}</td>
+        <td class="r money">${x.taxa?fmt(x.taxa):'—'}</td><td class="muted">não informado</td></tr>`).join('')}
+      <tr class="tot"><td><b>Selecionadas juntas</b></td><td class="r money pos"><b>${fmt(rendSel)}</b></td>
+        <td class="r money"><b>${fmt(round2(sel.reduce((a,x)=>a+x.acumTotal,0)))}</b></td><td colspan="6"></td></tr></tbody></table></div>
+    <div class="note" style="margin:10px 14px 14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <span><b>Limites desta análise.</b> Os valores são os rendimentos lançados, sem estimativa. Mês sem lançamento conta como <i>sem registro</i>, não como zero.
+      ${!totalApor&&!totalResg?'Não há aportes nem resgates lançados, então não é possível calcular rentabilidade percentual.':''}
+      O saldo de cada banco não é informado nos lançamentos e por isso não é calculado.
+      Taxas aparecem separadas e não são descontadas do rendimento.
+      ${semInst.length?`${semInst.length} lançamento(s) financeiro(s) sem instituição ficaram fora desta análise.`:''}
+      ${modoCasal()?'No modo casal, esta análise mostra só os seus investimentos.':''}</span></div>`;
+  $$('#segRend button').forEach(b=>b.onclick=()=>{RINST.vista=b.dataset.v;renderRendInst();});
+  $$('#rendInstCard [data-inst]').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.inst;if(RINST.sel.has(id)){if(RINST.sel.size>1)RINST.sel.delete(id);}else RINST.sel.add(id);renderRendInst();});
+  const cor=id=>PALETA[insts.findIndex(i=>i.id===id)%PALETA.length];
+  const rot=meses.map(i=>mesLabel(i));
+  const ds=RINST.vista==='acum'
+    ?sel.map(x=>({label:x.i.nome,data:acumulado(x.mensal),borderColor:cor(x.i.id),backgroundColor:cor(x.i.id),tension:.25,pointRadius:2,borderWidth:2}))
+      .concat(sel.length>1?[{label:'Selecionadas juntas',data:acumulado(meses.map((_,k)=>sel.reduce((a,x)=>a+(x.mensal[k]||0),0))),
+        borderColor:cssVar('--ink'),backgroundColor:cssVar('--ink'),borderDash:[6,4],pointRadius:0,borderWidth:2,tension:.25}]:[])
+    :sel.map(x=>({label:x.i.nome,data:x.mensal,backgroundColor:cor(x.i.id),borderRadius:3}));
+  desenharGrafico('chartRendInst',{type:RINST.vista==='acum'?'line':'bar',data:{labels:rot,datasets:ds},
+    options:{scales:{y:{ticks:{callback:v=>fmtCompacto(v)},grid:{color:cssVar('--border')}},x:{grid:{display:false}}},
+      plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,boxHeight:10}},
+        tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y==null?'sem registro':fmt(c.parsed.y)}`}}}}});
+}
 function renderInvestimentos(){
   const lista=lancamentosFinanceiros(),real=lista.filter(ehRealizado);
   const porFin=f=>somaV(real.filter(l=>cat(l.categoriaId).fin===f));
@@ -3516,7 +3691,7 @@ function renderInvestimentos(){
      <div class="field"><label for="invOp">Tipo de operação</label><select id="invOp" class="input">
        ${opcoes(Object.entries(OPS).map(([k,v])=>({id:k,nome:v})),{vazio:'Todas',selecionado:INV.op})}</select></div>
      <div class="field"><label for="invGrupo">Grupo</label><select id="invGrupo" class="input">
-       ${opcoes(D().grupos.filter(g=>['g-fin-e','g-fin-s'].includes(g.id)),{vazio:'Todos',selecionado:INV.grupo})}</select></div>
+       ${opcoes(D().grupos.filter(g=>D().categorias.some(c=>c.fin&&c.grupoId===g.id)),{vazio:'Todos',selecionado:INV.grupo})}</select></div>
      <div class="field"><label for="invCat">Categoria</label><select id="invCat" class="input">
        ${opcoes(D().categorias.filter(c=>c.fin&&(!INV.grupo||c.grupoId===INV.grupo)),{vazio:'Todas',selecionado:INV.categoria})}</select></div>
      <button class="btn btn-ghost" id="invLimpar">Limpar filtros</button>
@@ -3536,6 +3711,7 @@ function renderInvestimentos(){
        <div class="kpi-value" style="margin:6px 0">${rentab===null?'—':NUM.format(rentab)+'%'}</div>
        <p class="tiny muted">Resultado líquido dividido pelo total aportado no período. É um indicador simplificado, apenas para validar a tela.</p></div>
    </div>
+   <div class="card" id="rendInstCard" style="margin-bottom:14px"></div>
    <div class="split" style="margin-bottom:14px">
      <div class="card"><div class="card-head"><h2>Evolução mensal</h2><span class="tiny muted">Clique em um ponto para detalhar o mês</span></div>
        <div class="chart-box"><div class="chart-canvas" id="invEvoBox">${serie.length?'<canvas id="chartInvEvo" role="img" aria-label="Evolução mensal de rendimentos e aportes"></canvas>':''}</div></div></div>
@@ -3550,6 +3726,7 @@ function renderInvestimentos(){
      ${INV.detalhe?'<button class="pill-link" id="invLimpaDet">Ver todo o período</button>':''}</div>
      <div class="table-wrap to-cards" id="invTabela"></div></div>`;
 
+  renderRendInst();
   const det=INV.detalhe?lista.filter(l=>mesIndex(l.dataParcela)===INV.detalhe):lista;
   const ordenados=soRegistros(det).sort((a,b)=>a.dataParcela<b.dataParcela?1:-1).slice(0,60);
   $('#invTabela').innerHTML=ordenados.length?`<table class="tbl"><thead><tr><th>Tipo</th><th class="r">Valor</th><th>Data</th><th>Grupo</th><th>Categoria</th><th>Observação</th><th>Pagamento</th><th>Situação</th></tr></thead>
@@ -3648,38 +3825,95 @@ function exportarPdfInvestimentos({aportes,resgates,rend,taxas,liquido,rentab,se
 
 /* ================================ Veículos ================================ */
 const VEI={sel:'todos'};
+/* Veículos do modo atual, identificados por dono + veículo (os dois perfis
+   podem ter códigos internos iguais). Individual: só os seus. Casal: os seus
+   e os de quem compartilha a casa, com o dono indicado. */
+function veiculosDoModo(){
+  const eu=DB.usuarioAtual;
+  const meus=D().veiculos.map(v=>({...v,dono:eu,chave:eu+':'+v.id}));
+  if(!modoCasal())return meus;
+  const pv=PARCEIRO.veic&&Array.isArray(PARCEIRO.veic.veiculos)?PARCEIRO.veic.veiculos:[];
+  return meus.concat(pv.map(v=>({...v,dono:PARCEIRO.id,chave:PARCEIRO.id+':'+v.id})));
+}
+const chaveVeic=l=>(l._dono||DB.usuarioAtual)+':'+l.veiculoId;
+const donoVeicRotulo=d=>d===DB.usuarioAtual?(D().perfil.nome||'Você'):nomeParceiro();
+function nomeCatVeicF(l){return l._dono&&l._dono!==DB.usuarioAtual?((catParc('categorias').find(c=>c.id===l.categoriaId)||{}).nome||nomeCat(l.categoriaId)):nomeCat(l.categoriaId);}
+/* Custos de veículo do modo atual. Os seus vêm dos seus lançamentos (histórico
+   completo). Os da outra pessoa vêm só do total mensal por veículo e
+   categoria que ela publica — nunca de registros individuais. */
+function custosVeiculos(){
+  const meus=D().lancamentos.filter(l=>l.veiculoId&&l.tipo==='saida'&&situacao(l)!=='cancelado');
+  if(!modoCasal())return meus;
+  const par=PARCEIRO.id,out=[];
+  const meses=PARCEIRO.veic&&PARCEIRO.veic.meses||{};
+  Object.entries(meses).forEach(([m,vs])=>{
+    const d1=m+'-01',idx=mesIndex(d1);
+    const ult=m+'-'+pad(new Date(Date.UTC(+m.slice(0,4),+m.slice(5,7),0)).getUTCDate());
+    Object.entries(vs).forEach(([vid,r])=>{
+      Object.entries(r.cats||{}).forEach(([cat,tot],k)=>{
+        const fora=+((r.fora||{})[cat]||0);
+        const fut=idx>MES_ATUAL?+tot:(idx<MES_ATUAL?0:+((r.fut||{})[cat]||0));
+        const partes=[];const op=round2(+tot-fora);
+        if(op>0)partes.push({valor:op,inclui:true});
+        if(fora>0)partes.push({valor:fora,inclui:false});
+        let restFut=fut;
+        partes.forEach((pt,j)=>{
+          const f=Math.min(restFut,pt.valor);restFut=round2(restFut-f);const real=round2(pt.valor-f);
+          const base={_dono:par,_agregado:true,veiculoId:vid,tipo:'saida',categoriaId:cat,grupoId:null,
+            incluiCustoVeiculo:pt.inclui,observacao:'',formaPagamento:'—',situacaoManual:null};
+          if(real>0)out.push({...base,id:'veic:'+par+':'+m+':'+vid+':'+k+':'+j,valor:real,dataParcela:idx>MES_ATUAL?ult:d1,dataOriginal:d1});
+          if(f>0)out.push({...base,id:'veic:'+par+':'+m+':'+vid+':'+k+':'+j+':f',valor:round2(f),dataParcela:ult,dataOriginal:d1});
+        });
+      });
+    });
+  });
+  return meus.concat(out);
+}
 function renderVeiculos(){
-  if(VEI.sel!=='todos'&&!veiculosVisiveis().some(v=>v.id===VEI.sel))VEI.sel='todos';
+  const veics=veiculosDoModo();
+  if(VEI.sel!=='todos'&&!veics.some(v=>v.chave===VEI.sel))VEI.sel='todos';
   const {de,ate}=PERIODOS.vei,nMeses=ate-de+1;
-  const todos=LV().filter(l=>l.veiculoId&&l.tipo==='saida'&&situacao(l)!=='cancelado');
-  const noPeriodo=todos.filter(l=>{const mi=mesIndex(l.dataParcela);return mi>=de&&mi<=ate&&(VEI.sel==='todos'||l.veiculoId===VEI.sel);});
+  const casal=modoCasal();
+  const todos=custosVeiculos();
+  const nomeVeicModo=l=>{const v=veics.find(x=>x.chave===chaveVeic(l));return v?v.nome:nomeVeic(l.veiculoId);};
+  const noPeriodo=todos.filter(l=>{const mi=mesIndex(l.dataParcela);return mi>=de&&mi<=ate&&(VEI.sel==='todos'||chaveVeic(l)===VEI.sel);});
   const operacionais=noPeriodo.filter(l=>l.incluiCustoVeiculo!==false&&ehRealizado(l));
   const custo=somaV(operacionais),media=nMeses?round2(custo/nMeses):0;
-  const anoAtual=todos.filter(l=>pYMD(l.dataParcela).y===HOJE_P.y&&l.incluiCustoVeiculo!==false&&ehRealizado(l)&&(VEI.sel==='todos'||l.veiculoId===VEI.sel));
+  const anoAtual=todos.filter(l=>pYMD(l.dataParcela).y===HOJE_P.y&&l.incluiCustoVeiculo!==false&&ehRealizado(l)&&(VEI.sel==='todos'||chaveVeic(l)===VEI.sel));
   const custoAno=somaV(anoAtual);
   const porMes=new Map();operacionais.forEach(l=>{const i=mesIndex(l.dataParcela);porMes.set(i,(porMes.get(i)||0)+cents(l.valor));});
   const serie=[];for(let i=de;i<=ate;i++)serie.push({idx:i,valor:(porMes.get(i)||0)/100});
   const maior=serie.reduce((a,b)=>b.valor>(a?.valor??-1)?b:a,null);
-  const pc=porCategoria(operacionais,'saida');
+  const pc=casal?(()=>{const m=new Map();operacionais.forEach(l=>{const n=nomeCatVeicF(l);m.set(n,(m.get(n)||0)+cents(l.valor));});
+      const tot=[...m.values()].reduce((a,b)=>a+b,0);
+      const itens=[...m.entries()].map(([nome,c])=>({nome,valor:c/100,pct:tot?round2(c/tot*100):0})).sort((a,b)=>b.valor-a.valor);
+      return {itens,total:tot/100};})():porCategoria(operacionais,'saida');
   const antIni=de-nMeses,antFim=de-1;
-  const antLista=todos.filter(l=>{const mi=mesIndex(l.dataParcela);return mi>=antIni&&mi<=antFim&&l.incluiCustoVeiculo!==false&&ehRealizado(l)&&(VEI.sel==='todos'||l.veiculoId===VEI.sel);});
+  const antLista=todos.filter(l=>{const mi=mesIndex(l.dataParcela);return mi>=antIni&&mi<=antFim&&l.incluiCustoVeiculo!==false&&ehRealizado(l)&&(VEI.sel==='todos'||chaveVeic(l)===VEI.sel);});
   const custoAnt=somaV(antLista);
-  const comparativo=veiculosVisiveis().map(v=>({nome:v.nome+(v._dono?' ('+nomeParceiro()+')':''),valor:somaV(todos.filter(l=>l.veiculoId===v.id&&l.incluiCustoVeiculo!==false&&ehRealizado(l)&&mesIndex(l.dataParcela)>=de&&mesIndex(l.dataParcela)<=ate))}));
+  const comparativo=veics.map(v=>({nome:v.nome+(casal?' ('+donoVeicRotulo(v.dono)+')':''),dono:v.dono,
+    valor:somaV(todos.filter(l=>chaveVeic(l)===v.chave&&l.incluiCustoVeiculo!==false&&ehRealizado(l)&&mesIndex(l.dataParcela)>=de&&mesIndex(l.dataParcela)<=ate))}));
   const fora=noPeriodo.filter(l=>l.incluiCustoVeiculo===false);
 
   $('#page-veiculos').innerHTML=`
    <div class="note info" style="margin-bottom:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
-     <span>Painel derivado dos lançamentos que têm um veículo vinculado. Os veículos são cadastrados em Configurações; aqui não existe cadastro financeiro próprio.</span></div>
+     <span>${casal
+       ?`Modo casal: veículos de ${esc(D().perfil.nome)} e de ${esc(nomeParceiro())}, com o dono de cada um, em todo o histórico. De ${esc(nomeParceiro())} chegam só os totais mensais por veículo e categoria; os lançamentos continuam privados. Aqui não se edita o veículo nem os custos da outra pessoa.`
+       :'Painel derivado dos lançamentos que têm um veículo vinculado. Os veículos são cadastrados em Configurações; aqui não existe cadastro financeiro próprio.'}</span></div>
    <div class="card" style="margin-bottom:14px"><div class="filterbar">
      <div class="field"><label for="veiSel">Veículo</label><select id="veiSel" class="input">
        <option value="todos"${VEI.sel==='todos'?' selected':''}>Todos os veículos</option>
-       ${opcoes(veiculosVisiveis().map(v=>v._dono?{...v,nome:v.nome+' ('+nomeParceiro()+')'}:v),{selecionado:VEI.sel})}</select></div>
+       ${veics.map(v=>`<option value="${esc(v.chave)}"${v.chave===VEI.sel?' selected':''}>${esc(v.nome)}${casal?' — '+esc(donoVeicRotulo(v.dono)):''}</option>`).join('')}</select></div>
      <div class="field"><label for="veiDe">De</label><select id="veiDe" class="input">${optMesIdx(de)}</select></div>
      <div class="field"><label for="veiAte">Até</label><select id="veiAte" class="input">${optMesIdx(ate)}</select></div>
      <button class="icon-btn" id="veiExportar" aria-label="Exportar dados do veículo">${SVG_EXPORTAR}</button>
      <div class="spacer desk-only"></div>
-     <button class="btn btn-primary" id="veiNovo">Novo lançamento com este veículo</button>
+     ${(VEI.sel==='todos'?D().veiculos.length:VEI.sel.startsWith(DB.usuarioAtual+':'))?'<button class="btn btn-primary" id="veiNovo">Novo lançamento com este veículo</button>':''}
    </div></div>
+   ${casal?`<div class="veic-lista" style="padding:0 0 12px">${(VEI.sel==='todos'?veics:veics.filter(v=>v.chave===VEI.sel)).map(v=>`<div class="veic-item">
+       <b>${esc(v.nome)}</b><span class="tag">${esc(v.tipo||'Veículo')}</span>
+       <span class="tag ${v.dono===DB.usuarioAtual?'ok':''}">${v.dono===DB.usuarioAtual?'Seu':'De '+esc(nomeParceiro())}</span></div>`).join('')||
+       '<p class="small muted">Nenhum veículo cadastrado pelos dois perfis.</p>'}</div>`:''}
    <div class="kpi-row scroller">
      <div class="kpi k-neg"><div class="kpi-label">Custo operacional no período</div><div class="kpi-value">${fmt(custo)}</div>
        <div class="kpi-foot">${badgeTrend(variacao(custo,custoAnt),true)} <span>ante os ${nMeses} meses anteriores</span></div></div>
@@ -3702,15 +3936,17 @@ function renderVeiculos(){
    ${fora.length?`<div class="card" style="margin-bottom:14px"><div class="card-head"><h2>Fora da média operacional</h2>
      <span class="tiny muted">${fora.length} lançamentos · ${fmt(somaV(fora))}</span></div>
      <div class="card-pad"><p class="small muted" style="margin-bottom:10px">Estes lançamentos continuam no fluxo financeiro geral, mas não entram no custo operacional do veículo.</p>
-     ${fora.map(l=>`<div class="alert-item"><span class="alert-ico a-info">✕</span><div><p><b>${esc(l.observacao||nomeCat(l.categoriaId))}</b> — ${fmt(l.valor)}</p>
-       <div class="tiny">${fmtData(l.dataParcela)} · ${esc(nomeCat(l.categoriaId))} · ${esc(nomeVeic(l.veiculoId))}</div></div></div>`).join('')}</div></div>`:''}
-   <div class="card"><div class="card-head"><h2>Lançamentos do veículo</h2>
-     <span class="tiny muted">Use o botão “Inclui/Fora” para ajustar a média operacional</span></div>
+     ${fora.map(l=>l._agregado?`<div class="alert-item"><span class="alert-ico a-info">✕</span><div><p><b>${esc(nomeCatVeicF(l))}</b> — ${fmt(l.valor)}</p>
+       <div class="tiny">${mesLabel(mesIndex(l.dataParcela),false)} · ${esc(nomeVeicModo(l))} · total de ${esc(nomeParceiro())}</div></div></div>`
+       :`<div class="alert-item"><span class="alert-ico a-info">✕</span><div><p><b>${esc(l.observacao||nomeCat(l.categoriaId))}</b> — ${fmt(l.valor)}</p>
+       <div class="tiny">${fmtData(l.dataParcela)} · ${esc(nomeCat(l.categoriaId))} · ${esc(nomeVeicModo(l))}</div></div></div>`).join('')}</div></div>`:''}
+   <div class="card"><div class="card-head"><h2>${casal?'Seus lançamentos de veículo':'Lançamentos do veículo'}</h2>
+     <span class="tiny muted">${casal?'Os custos de '+esc(nomeParceiro())+' entram nos totais e gráficos acima, sem registros individuais':'Use o botão “Inclui/Fora” para ajustar a média operacional'}</span></div>
      <div class="table-wrap" id="veiTabela"></div></div>`;
 
   const ordenados=soRegistros(noPeriodo).sort((a,b)=>a.dataParcela<b.dataParcela?1:-1);
   $('#veiTabela').innerHTML=ordenados.length?`<table class="tbl"><thead><tr><th>Data</th><th>Veículo</th><th>Categoria</th><th>Observação</th><th class="r">Valor</th><th>Custo operacional</th><th>Situação</th><th class="r">Ações</th></tr></thead>
-    <tbody>${ordenados.map(l=>`<tr><td>${fmtData(l.dataParcela)}</td><td>${esc(nomeVeic(l.veiculoId))}</td><td>${esc(nomeCat(l.categoriaId))}</td>
+    <tbody>${ordenados.map(l=>`<tr><td>${fmtData(l.dataParcela)}</td><td>${esc(nomeVeicModo(l))}</td><td>${esc(nomeCat(l.categoriaId))}</td>
       <td class="wrap">${esc(l.observacao||'—')}</td><td class="r money neg">− ${fmt(l.valor)}</td>
       <td>${ehMeu(l)?`<button class="btn btn-sm" data-toggle="${l.id}">${l.incluiCustoVeiculo!==false?'Inclui':'Fora'}</button>`:`<span class="tag">${l.incluiCustoVeiculo!==false?'Inclui':'Fora'}</span>`}</td>
       <td>${tagSituacao(l)}${tagDono(l)?' '+tagDono(l):''}</td><td class="r">${ehMeu(l)?`<button class="btn btn-sm" data-edit="${l.id}">Editar</button>`:soLeitura(l)}</td></tr>`).join('')}</tbody></table>`
@@ -3719,8 +3955,10 @@ function renderVeiculos(){
   $('#veiSel').onchange=e=>{VEI.sel=e.target.value;renderVeiculos();};
   $('#veiDe').onchange=e=>{PERIODOS.vei.de=+e.target.value;renderVeiculos();};
   $('#veiAte').onchange=e=>{PERIODOS.vei.ate=+e.target.value;renderVeiculos();};
-  $('#veiNovo').onclick=()=>abrirFormLancamento(null,{tipo:'saida',categoriaId:'c-comb',grupoId:'g-vei',
-    veiculoId:VEI.sel==='todos'?(D().veiculos[0]?.id||null):VEI.sel});
+  const vn=$('#veiNovo');
+  if(vn)vn.onclick=()=>{const cv=D().categorias.find(c=>c.veicular&&c.ativo!==false&&/combust/i.test(c.nome))||D().categorias.find(c=>c.veicular&&c.ativo!==false);
+    abrirFormLancamento(null,{tipo:'saida',categoriaId:cv?cv.id:null,grupoId:cv?cv.grupoId:null,
+      veiculoId:VEI.sel==='todos'?(D().veiculos[0]?.id||null):VEI.sel.split(':').slice(1).join(':')});};
   $('#veiExportar').onclick=()=>exportarVeiculos({de,ate,custo,media,custoAno,maior,pc,comparativo,ordenados,fora});
   $$('#veiTabela [data-toggle]').forEach(b=>b.onclick=()=>{
     const l=D().lancamentos.find(x=>x.id===b.dataset.toggle);if(!l)return;l.incluiCustoVeiculo=!(l.incluiCustoVeiculo!==false);
@@ -3739,7 +3977,7 @@ function renderVeiculos(){
     options:{cutout:'56%',plugins:{legend:{display:true,position:'right',labels:{boxWidth:10,boxHeight:10,padding:8}},
       tooltip:{callbacks:{label:c=>`${c.label}: ${fmt(c.parsed)} · ${NUM.format(pc.itens[c.dataIndex].pct)}%`}}}}});
   desenharGrafico('chartVeiCmp',{type:'bar',data:{labels:comparativo.map(c=>c.nome),
-      datasets:[{label:'Custo operacional',data:comparativo.map(c=>c.valor),backgroundColor:[PALETA[0],PALETA[3],PALETA[5]],borderRadius:4}]},
+      datasets:[{label:'Custo operacional',data:comparativo.map(c=>c.valor),backgroundColor:comparativo.map((c,i)=>casal?(c.dono===DB.usuarioAtual?PALETA[0]:'#7D6BA8'):[PALETA[0],PALETA[3],PALETA[5]][i%3]),borderRadius:4}]},
     options:{indexAxis:'y',scales:{x:{ticks:{callback:v=>fmtCompacto(v)},grid:{color:cssVar('--border')}},y:{grid:{display:false}}}}});
 }
 /* ---------- exportação de Veículos ---------- */
@@ -4534,6 +4772,19 @@ function cfgCadastros(){
   $('#alPct').onchange=e=>{D().prefs.alertasPercentual=+e.target.value||20;salvar();toast('Preferência salva.','ok');};
   $('#alRes').onchange=e=>{D().prefs.alertasResultado=e.target.checked;salvar();toast('Preferência salva.','ok');};
 }
+/* "Pic Pay", "PicPay" e "picpay" são a mesma instituição: compara sem
+   acentos, maiúsculas, espaços ou pontuação. */
+const normInst=n=>String(n||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+function instituicaoDuplicada(nome,ignorarId=null){
+  const k=normInst(nome);return k?D().instituicoes.find(i=>i.id!==ignorarId&&normInst(i.nome)===k)||null:null;
+}
+/* ---------- Viagens ----------
+   Classificação à parte da categoria: o lançamento continua, por exemplo,
+   "Combustível" e ganha também "Viagem — Bahia". Nada do registro original
+   muda, e cada despesa segue entrando uma única vez em qualquer total. */
+const viagemDe=l=>l&&l.viagemId?(D().viagens||[]).find(v=>v.id===l.viagemId)||null:null;
+const nomeViagem=l=>{const v=viagemDe(l);return v?v.nome:(l&&l._viagem)||'';};
+const normViagem=n=>String(n||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
 function formCadastro(chave,idx=null){
   const rotulos={cartoes:'cartão',instituicoes:'instituição',veiculos:'veículo',formas:'forma de pagamento'};
   const it=idx!==null?D()[chave][idx]:null;
@@ -4546,6 +4797,8 @@ function formCadastro(chave,idx=null){
     rodape:`<button class="btn" data-fechar>Cancelar</button><button class="btn btn-primary" id="okIt">Salvar</button>`,
     aoAbrir:m=>{$('#okIt',m).onclick=()=>{const n=$('#itNome',m).value.trim();
       if(!n){toast('Informe o nome.','err');return;}
+      if(chave==='instituicoes'){const dup=instituicaoDuplicada(n,it&&it.id);
+        if(dup){toast(`Já existe a instituição “${dup.nome}”. Use a cadastrada para não duplicar.`,'err');return;}}
       if(ehTxt){if(idx!==null)D().formas[idx]=n;else D().formas.push(n);}
       else{const o=idx!==null?it:{id:uid(chave[0])};o.nome=n;
         if(ehVeic){o.tipo=$('#itTipo',m).value;o.placa=$('#itPlaca',m).value.trim();}
@@ -4789,38 +5042,23 @@ function bindGlobal(){
    mensal publicado no caminho compartilhado. Nenhum registro individual da
    outra pessoa existe aqui.
    ========================================================================== */
-const CAS={de:null,ate:null,vista:'bar',veic:'todos'};
+const CAS={de:null,ate:null,vista:'bar',viagem:''};
 const MES_INI_CASAL_IDX=mesIdxDe(2026,9);   // início do CONSOLIDADO; as marcações usam todo o histórico
 
 /* Uma linha por (mês, tipo, grupo, categoria, dono) já filtrada pelo recorte. */
 function baseCasal(){
   const meus=D().lancamentos
     .filter(l=>l.casal&&l.tipo==='saida'&&situacao(l)!=='cancelado')
-    .map(l=>({mes:mesIndex(l.dataParcela),tipo:'saida',grupoId:l.grupoId,categoriaId:l.categoriaId,
+    .map(l=>({mes:mesIndex(l.dataParcela),tipo:'saida',grupoId:l.grupoId,categoriaId:l.categoriaId,viagem:nomeViagem(l),
       valor:+l.valor||0,qtd:1,dono:DB.usuarioAtual,futuro:situacao(l)==='futuro'?+l.valor||0:0}));
   const deles=PARCEIRO.lista
     .filter(l=>l.tipo==='saida'&&(l.casalValor||0)>0)
-    .map(l=>({mes:mesIndex(l.dataParcela),tipo:'saida',grupoId:l.grupoId,categoriaId:l.categoriaId,
+    .map(l=>({mes:mesIndex(l.dataParcela),tipo:'saida',grupoId:l.grupoId,categoriaId:l.categoriaId,viagem:l._viagem||'',
       valor:l.casalValor,qtd:l._qtdCasal||0,dono:PARCEIRO.id,futuro:0}));
   return meus.concat(deles);
 }
-/* Veículos dos dois perfis, com o dono de cada um. Os meus vêm dos meus
-   lançamentos; os do parceiro, do total mensal publicado por ele(a). */
-function veiculosCasal(){
-  const eu=DB.usuarioAtual,out=[];
-  const meus=agregarVeiculos(D());
-  meus.veiculos.forEach(v=>out.push({...v,dono:eu,chave:eu+':'+v.id}));
-  const pv=PARCEIRO.veic;
-  if(pv&&Array.isArray(pv.veiculos))pv.veiculos.forEach(v=>out.push({...v,dono:PARCEIRO.id,chave:PARCEIRO.id+':'+v.id}));
-  const linhas=[];
-  const add=(fonte,dono)=>Object.entries(fonte&&fonte.meses||{}).forEach(([m,vs])=>
-    Object.entries(vs).forEach(([vid,r])=>linhas.push({mes:mesIndex(m+'-01'),chave:dono+':'+vid,dono,total:+r.total||0,
-      operacional:+r.operacional||0,qtd:r.qtd|0,cats:r.cats||{}})));
-  add(meus,eu);add(pv,PARCEIRO.id);
-  return {veiculos:out,linhas};
-}
 function periodoCasal(){
-  const disp=baseCasal().map(x=>x.mes).concat(veiculosCasal().linhas.map(x=>x.mes));
+  const disp=baseCasal().map(x=>x.mes);
   const min=disp.length?Math.min(...disp):MES_ATUAL;
   const max=Math.max(MES_ATUAL,disp.length?Math.max(...disp):MES_ATUAL);
   let de=CAS.de==null?min:Math.max(min,CAS.de);
@@ -4862,44 +5100,14 @@ function nomeGrupoCasal(id){
   return g?g.nome:'Sem grupo';
 }
 
-function renderVeiculosCasal(de,ate){
-  const box=$('#casVeic_corpo'),sel=$('#casVeic');if(!box||!sel)return;
-  const {veiculos,linhas}=veiculosCasal();
-  const nomeDono=d=>d===DB.usuarioAtual?'Você':nomeParceiro();
-  if(!veiculos.length){sel.parentElement.hidden=true;
-    box.innerHTML=vazio('Nenhum veículo cadastrado','Cadastre um veículo em Configurações › Cadastros e vincule a ele as despesas do veículo no formulário de lançamento.');return;}
-  if(CAS.veic!=='todos'&&!veiculos.some(v=>v.chave===CAS.veic))CAS.veic='todos';
-  sel.innerHTML=`<option value="todos">Todos os veículos</option>`+veiculos.map(v=>
-    `<option value="${esc(v.chave)}"${v.chave===CAS.veic?' selected':''}>${esc(v.nome)} — ${esc(nomeDono(v.dono))}</option>`).join('');
-  sel.onchange=e=>{CAS.veic=e.target.value;renderVeiculosCasal(de,ate);};
-  const alvo=linhas.filter(x=>(CAS.veic==='todos'||x.chave===CAS.veic)&&x.mes>=de&&x.mes<=ate);
-  const tot=round2(alvo.reduce((a,x)=>a+x.total,0)),oper=round2(alvo.reduce((a,x)=>a+x.operacional,0));
-  const nM=ate-de+1;
-  const lista=veiculos.filter(v=>CAS.veic==='todos'||v.chave===CAS.veic);
-  box.innerHTML=`<div class="veic-lista">${lista.map(v=>{
-      const t=round2(alvo.filter(x=>x.chave===v.chave).reduce((a,x)=>a+x.total,0));
-      return `<div class="veic-item"><b>${esc(v.nome)}</b><span class="tag">${esc(v.tipo||'Veículo')}</span>
-        <span class="tag ${v.dono===DB.usuarioAtual?'ok':''}">${v.dono===DB.usuarioAtual?'Seu':'De '+esc(nomeParceiro())}</span>
-        <span class="money" style="margin-left:auto">${fmt(t)}</span></div>`;}).join('')}</div>
-    <div class="kv-row"><div><span class="tiny muted">Custo total no período</span><b class="money">${fmt(tot)}</b></div>
-      <div><span class="tiny muted">Custo operacional</span><b class="money">${fmt(oper)}</b></div>
-      <div><span class="tiny muted">Média mensal operacional</span><b class="money">${fmt(round2(oper/nM))}</b></div></div>
-    <p class="tiny muted" style="margin:0 14px 8px">Custo operacional exclui compra, transferência e vistoria de compra. Só contam despesas vinculadas a um veículo no lançamento.</p>
-    <div class="chart-box"><div class="chart-canvas" id="casVeicEvoBox"></div></div>`;
-  if(!alvo.length){$('#casVeicEvoBox').innerHTML=vazio('Sem despesas de veículo no período','Amplie o período ou escolha outro veículo.');return;}
-  const meses=[];for(let i=de;i<=ate;i++)meses.push(i);
-  const donos=[...new Set(lista.map(v=>v.dono))];
-  const cores={[DB.usuarioAtual]:PALETA[0],[PARCEIRO.id]:'#7D6BA8'};
-  $('#casVeicEvoBox').innerHTML='<canvas id="casVeicEvo" role="img" aria-label="Custo mensal dos veículos"></canvas>';
-  desenharGrafico('casVeicEvo',{type:'bar',
-    data:{labels:meses.map(i=>mesLabel(i)),datasets:donos.map(d=>({label:nomeDono(d),stack:'v',borderRadius:4,backgroundColor:cores[d]||PALETA[2],
-      data:meses.map(i=>round2(alvo.filter(x=>x.mes===i&&x.dono===d).reduce((a,x)=>a+x.total,0)))}))},
-    options:{scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>fmtCompacto(v)},grid:{color:cssVar('--border')}}},
-      plugins:{legend:{display:donos.length>1,position:'bottom'},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmt(c.parsed.y)}`}}}}});
-}
 function renderCasal(){
   const sec=$('#page-casal');
-  const todas=baseCasal();
+  const todasBase=baseCasal();
+  const viagensCasal=[...new Map(todasBase.filter(x=>x.viagem).map(x=>[normViagem(x.viagem),x.viagem])).entries()]
+    .map(([k,nome])=>({k,nome})).sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  if(CAS.viagem&&CAS.viagem!=='__qualquer'&&!viagensCasal.some(v=>v.k===CAS.viagem))CAS.viagem='';
+  const passaViagem=x=>!CAS.viagem||(CAS.viagem==='__qualquer'?!!x.viagem:normViagem(x.viagem)===CAS.viagem);
+  const todas=todasBase.filter(passaViagem);
   const {de,ate,min,max}=periodoCasal();
   const linhas=todas.filter(x=>x.mes>=de&&x.mes<=ate);
   const total=somaCasal(linhas);
@@ -4921,6 +5129,9 @@ function renderCasal(){
     <div class="card" style="margin-bottom:14px"><div class="filterbar">
       <div class="field"><label for="casDe">De</label><select id="casDe" class="input">${opcM(de)}</select></div>
       <div class="field"><label for="casAte">Até</label><select id="casAte" class="input">${opcM(ate)}</select></div>
+      <div class="field"><label for="casViagem">Viagem</label><select id="casViagem" class="input">
+        <option value="">Todas as despesas</option><option value="__qualquer"${CAS.viagem==='__qualquer'?' selected':''}>Só despesas de viagem</option>
+        ${viagensCasal.map(v=>`<option value="${esc(v.k)}"${CAS.viagem===v.k?' selected':''}>Viagem — ${esc(v.nome)}</option>`).join('')}</select></div>
       <button class="btn btn-ghost" id="casLimpar">Todo o período</button>
       <div class="spacer desk-only"></div>
       <span class="tiny muted">Despesas do casal: todo o histórico. Consolidado: a partir de 01/09/2026.</span>
@@ -4954,17 +5165,14 @@ function renderCasal(){
       <div id="casEvo"></div>
     </div>
 
+    <div class="card" style="margin-top:14px" id="casViagensCard">
+      <div class="card-head"><h2>Gastos por viagem</h2><span class="tiny muted">Cada despesa conta uma vez; a categoria original é mantida</span></div>
+      <div id="casViagens"></div></div>
     <div class="split" style="margin-top:14px">
       <div class="card"><div class="card-head"><h2>Por grupo</h2></div>
         <div class="chart-box"><div class="chart-canvas" id="casGrupoBox"></div></div></div>
       <div class="card"><div class="card-head"><h2>Por categoria</h2></div>
         <div class="chart-box"><div class="chart-canvas" id="casCatBox"></div></div></div>
-    </div>
-
-    <div class="card" style="margin-top:14px" id="casVeicCard">
-      <div class="card-head"><h2>Veículos do casal</h2>
-        <div class="field" style="min-width:180px"><label for="casVeic" class="sr-only">Veículo</label><select id="casVeic" class="input"></select></div></div>
-      <div id="casVeic_corpo"></div>
     </div>
 
     <div class="card" style="margin-top:14px">
@@ -4979,8 +5187,8 @@ function renderCasal(){
   $('#casDe').onchange=e=>{CAS.de=+e.target.value;if(CAS.ate!=null&&CAS.ate<CAS.de)CAS.ate=CAS.de;renderCasal();};
   $('#casAte').onchange=e=>{CAS.ate=+e.target.value;if(CAS.de!=null&&CAS.de>CAS.ate)CAS.de=CAS.ate;renderCasal();};
   $('#casLimpar').onclick=()=>{CAS.de=null;CAS.ate=null;renderCasal();};
+  $('#casViagem').onchange=e=>{CAS.viagem=e.target.value;renderCasal();};
   $$('#segCas button').forEach(b=>b.onclick=()=>{CAS.vista=b.dataset.v;renderCasal();});
-  renderVeiculosCasal(de,ate);
 
   if(!todas.length){
     $('#casEvo').innerHTML=vazio('Nenhuma despesa marcada ainda',
@@ -4989,6 +5197,7 @@ function renderCasal(){
     $('#casCatBox').innerHTML=vazio('Sem dados','Nada a agrupar por enquanto.');
     $('#casPeso').innerHTML=vazio('Sem dados','As categorias aparecem assim que houver despesas marcadas.');
     $('#casAtencao').innerHTML=vazio('Sem leituras','Os alertas surgem quando houver histórico suficiente.');
+    $('#casViagens').innerHTML=vazio('Sem despesas do casal','Marque despesas como do casal para vê-las por viagem.');
     return;
   }
   if(!linhas.length){
@@ -4997,6 +5206,7 @@ function renderCasal(){
     $('#casCatBox').innerHTML=vazio('Sem dados no filtro','');
     $('#casPeso').innerHTML=vazio('Sem dados no filtro','');
     $('#casAtencao').innerHTML=vazio('Sem leituras no filtro','');
+    $('#casViagens').innerHTML=vazio('Sem despesas no filtro','Amplie o período ou escolha outra viagem.');
     return;
   }
 
@@ -5045,6 +5255,29 @@ function renderCasal(){
   }
 
   // ---- grupo e categoria ----
+  // ---- viagens no período (respeita o filtro de viagem) ----
+  (()=>{
+    const box=$('#casViagens');if(!box)return;
+    const deViagem=linhas.filter(x=>x.viagem);
+    if(!deViagem.length){box.innerHTML=vazio(viagensCasal.length?'Nenhuma despesa de viagem no período':'Nenhuma viagem classificada',
+      viagensCasal.length?'Amplie o período ou escolha outra viagem.':'No formulário de lançamento, escolha a viagem da despesa.');return;}
+    const porViagem=new Map();
+    deViagem.forEach(x=>{const k=normViagem(x.viagem);const r=porViagem.get(k)||{nome:x.viagem,valor:0,qtd:0,meses:new Set(),cats:new Map()};
+      r.valor=round2(r.valor+x.valor);r.qtd+=x.qtd;r.meses.add(x.mes);
+      const cn=nomeCatCasal(x.categoriaId);r.cats.set(cn,round2((r.cats.get(cn)||0)+x.valor));porViagem.set(k,r);});
+    const lista=[...porViagem.values()].sort((a,b)=>b.valor-a.valor);
+    const totV=round2(lista.reduce((a,v)=>a+v.valor,0));
+    box.innerHTML=`<div class="table-wrap"><table class="tbl"><thead><tr><th>Viagem</th><th>Quando</th><th class="r">Total</th><th class="r">% do casal no período</th><th class="r">Despesas</th><th>Maiores categorias</th></tr></thead>
+      <tbody>${lista.map(v=>{const ms=[...v.meses].sort((a,b)=>a-b);
+        const top=[...v.cats.entries()].sort((a,b)=>b[1]-a[1]).slice(0,3).map(([n,val])=>esc(n)+' '+fmt(val)).join(' · ');
+        return `<tr><td><span class="tag viagem">Viagem — ${esc(v.nome)}</span></td><td>${ms.length===1?mesLabel(ms[0],false):mesLabel(ms[0])+' a '+mesLabel(ms[ms.length-1])}</td>
+          <td class="r money"><b>${fmt(v.valor)}</b></td><td class="r">${total?NUM.format(round2(v.valor/total*100)):'0'}%</td><td class="r">${v.qtd}</td><td class="wrap tiny">${top}</td></tr>`;}).join('')}
+      </tbody></table></div>
+      <div class="chart-box"><div class="chart-canvas" style="height:${Math.max(150,lista.length*42+60)}px"><canvas id="casViagemCv" role="img" aria-label="Gastos por viagem"></canvas></div></div>`;
+    desenharGrafico('casViagemCv',{type:'bar',data:{labels:lista.map(v=>v.nome),datasets:[{label:'Gasto da viagem',data:lista.map(v=>v.valor),backgroundColor:'#C77D2E',borderRadius:5}]},
+      options:{indexAxis:'y',scales:{x:{ticks:{callback:v=>fmtCompacto(v)},grid:{color:cssVar('--border')}},y:{grid:{display:false}}},
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${fmt(c.parsed.x)} · ${totV?NUM.format(round2(c.parsed.x/totV*100)):0}% das viagens`}}}}});
+  })();
   const porG=agruparCasal(linhas,'grupoId'),porC=agruparCasal(linhas,'categoriaId');
   const desenhaBarras=(box,dados,rot)=>{
     const el=$(box);
@@ -5107,5 +5340,3 @@ function renderCasal(){
 </script>
 </body>
 </html>
-
-</body></html>
