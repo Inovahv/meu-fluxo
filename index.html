@@ -1108,10 +1108,14 @@ let ULTIMO={};           // caminho -> JSON canônico do que está salvo
 function docsDoPerfil(id,d){
   const P=caminhoPerfil(id),out={};
   out[P]={v:1,grupos:d.grupos,categorias:d.categorias,formas:d.formas,instituicoes:d.instituicoes,veiculos:d.veiculos,
-    cartoes:d.cartoes,viagens:d.viagens||[],recorrencias:d.recorrencias,perfil:d.perfil,prefs:d.prefs,
+    cartoes:d.cartoes,recorrencias:d.recorrencias,perfil:d.perfil,prefs:d.prefs,
     notifLidas:Array.isArray(d.notifLidas)?d.notifLidas.slice(-60):!!d.notifLidas};
   out[P+'/mod/emprestimos']=d.emprestimos;
   out[P+'/mod/capital']=d.capital;
+  /* A lista de viagens fica num documento próprio, e não no documento-base:
+     uma aba antiga (v11) que salve uma preferência regrava o documento-base
+     sem conhecer "viagens" e apagaria a lista. Este documento ela não toca. */
+  out[P+'/mod/viagens']={viagens:d.viagens||[]};
   const porMes={};
   d.lancamentos.forEach(l=>{const m=String(l.dataParcela||'0000-00').slice(0,7);(porMes[m]=porMes[m]||[]).push(l);});
   Object.keys(porMes).forEach(m=>{
@@ -1183,7 +1187,7 @@ function agregarMes(itens,{soCasal=false}={}){
   return soCasal?{v:3,escopo:'casal',buckets}:{v:3,buckets};
 }
 function aplicarBase(d,base){
-  ['grupos','categorias','formas','instituicoes','veiculos','cartoes','viagens','recorrencias','prefs','notifLidas'].forEach(k=>{if(base[k]!==undefined)d[k]=base[k];});
+  ['grupos','categorias','formas','instituicoes','veiculos','cartoes','recorrencias','prefs','notifLidas'].forEach(k=>{if(base[k]!==undefined)d[k]=base[k];});
   if(!Array.isArray(d.viagens))d.viagens=[];
   if(base.perfil)d.perfil={...d.perfil,...base.perfil};
 }
@@ -1193,10 +1197,12 @@ async function carregarPerfil(id){
   /* Lançamentos, Empréstimos e Capital são lidos SEMPRE, mesmo que o
      documento-base do perfil falte: dado que existe no banco nunca fica
      escondido nem é sobrescrito por um perfil vazio. */
-  const [base,emp,cap,meses]=await Promise.all([ARM.get(P),ARM.get(P+'/mod/emprestimos'),ARM.get(P+'/mod/capital'),ARM.list(P+'/lanc')]);
+  const [base,emp,cap,meses,vgs]=await Promise.all([ARM.get(P),ARM.get(P+'/mod/emprestimos'),ARM.get(P+'/mod/capital'),ARM.list(P+'/lanc'),ARM.get(P+'/mod/viagens')]);
   if(base){aplicarBase(d,base);ULTIMO[P]=estavel(base);}
   if(emp){d.emprestimos=emp;ULTIMO[P+'/mod/emprestimos']=estavel(emp);}
   if(cap){d.capital=cap;ULTIMO[P+'/mod/capital']=estavel(cap);}
+  if(vgs&&Array.isArray(vgs.viagens)){d.viagens=vgs.viagens;ULTIMO[P+'/mod/viagens']=estavel(vgs);}
+  else if(base&&Array.isArray(base.viagens))d.viagens=base.viagens;   // perfis salvos na primeira hora da v12
   d.lancamentos=[];
   meses.sort((a,b)=>a.id<b.id?1:-1).forEach(m=>{const it=(m.data&&m.data.itens)||[];ULTIMO[P+'/lanc/'+m.id]=estavel({itens:it});d.lancamentos.push(...it);});
   d.lancamentos.sort((a,b)=>a.dataParcela<b.dataParcela?1:-1);
@@ -1366,11 +1372,11 @@ function ouvir(){
       if(PENDENTE||!s.exists||(s.metadata&&s.metadata.hasPendingWrites))return;
       const b=s.data(),st=estavel(b);if(ULTIMO[P]===st)return;
       const d=D();if(!d)return;aplicarBase(d,clone(b));d.perfil.papel=perfilCasa(id).papel;ULTIMO[P]=st;VER++;reRenderRemoto();},erro));
-    ['emprestimos','capital'].forEach(k=>{
+    ['emprestimos','capital','viagens'].forEach(k=>{
       OUVINTES.push(db.doc(P+'/mod/'+k).onSnapshot(s=>{
         if(PENDENTE||!s.exists||(s.metadata&&s.metadata.hasPendingWrites))return;
         const b=s.data(),st=estavel(b),p=P+'/mod/'+k;if(ULTIMO[p]===st)return;
-        const d=D();if(!d)return;d[k]=clone(b);ULTIMO[p]=st;VER++;reRenderRemoto();},erro));
+        const d=D();if(!d)return;d[k]=k==='viagens'?clone(b.viagens||[]):clone(b);ULTIMO[p]=st;VER++;reRenderRemoto();},erro));
     });
   }catch(e){console.warn('Não foi possível abrir a sincronização em tempo real.',e);}
 }
