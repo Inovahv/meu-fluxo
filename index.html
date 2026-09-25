@@ -618,12 +618,44 @@ img{max-width:100%}
 @media (prefers-reduced-motion:reduce){.filtros-mob.aberto{animation:none}}
 
 /* "Mais opções" no formulário */
+.preview-list .prev-total{border-top:1px dashed var(--border);margin-top:4px;padding-top:6px;font-weight:600}
+.tres-pontos{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--surface-2);font-weight:800;letter-spacing:.5px;margin-right:4px}
+.cartao-box{background:linear-gradient(160deg,var(--surface-2),var(--surface))}
 .mais-opcoes{grid-column:1/-1;border:1px dashed var(--border);border-radius:var(--r-sm);padding:2px 12px}
 .mais-opcoes>summary{cursor:pointer;padding:9px 0;font-size:.86rem;color:var(--ink-2);font-weight:550;list-style:none}
 .mais-opcoes>summary::-webkit-details-marker{display:none}
-.mais-opcoes>summary::before{content:"+ ";font-weight:700}
-.mais-opcoes[open]>summary::before{content:"− "}
+
 .mais-opcoes .form-grid{padding-bottom:10px}
+
+/* ============ v13 ============ */
+/* identidade: texto mais legível, pesos consistentes, cartões mais leves */
+body{letter-spacing:.003em;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+h1,h2,h3{letter-spacing:-.01em}
+.card-head h2{font-weight:650}
+.kpi-label{font-weight:600;color:var(--ink-2)}
+.kpi-value{font-weight:700;letter-spacing:-.02em}
+.card{border-radius:16px;box-shadow:0 1px 2px rgba(12,31,37,.05),0 8px 24px -18px rgba(12,31,37,.35)}
+.kpi{border-radius:14px;background:linear-gradient(165deg,var(--surface),color-mix(in srgb,var(--surface-2) 55%,var(--surface)))}
+.btn-primary{background:linear-gradient(180deg,color-mix(in srgb,var(--brand-2) 88%,#fff),var(--brand-2))}
+/* critério Caixa | Competência */
+.crit-barra{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.seg-crit button{padding:5px 12px;font-size:.8rem}
+.crit-rot{font-size:.78rem;color:var(--ink-2);font-weight:550}
+/* Individual | Casal na barra lateral */
+.side-perfil{display:grid;gap:6px;margin-bottom:8px}
+.side-nome{font-size:.86rem;font-weight:650;color:#fff}
+.casal-mini{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);width:100%;display:flex}
+.casal-mini button{flex:1;padding:5px 8px;font-size:.76rem;color:#CFE3E7}
+.casal-mini button[aria-pressed="true"]{background:#fff;color:var(--brand);font-weight:650}
+/* contador de notificações não lidas */
+.dot{width:auto;min-width:17px;height:17px;padding:0 5px;top:2px;right:2px;display:grid;place-items:center;
+  font-size:.64rem;font-weight:750;color:#fff;line-height:1;border:2px solid var(--surface)}
+.dot:empty{min-width:10px;width:10px;height:10px;padding:0}
+.alert-item.nova{background:var(--accent-soft);border-radius:10px;padding-left:8px;padding-right:8px}
+@media (max-width:900px){
+  .casal-seg.casal-mini{order:0;width:100%}
+  .crit-barra .crit-rot{flex-basis:100%}
+}
 </style>
 </head>
 <body>
@@ -652,6 +684,10 @@ img{max-width:100%}
     </div>
     <nav class="nav" id="nav"></nav>
     <div class="sidebar-foot">
+      <div class="side-perfil"><span class="side-nome" id="sideNome"></span>
+        <div class="seg casal-seg casal-mini" id="segCasal" role="group" aria-label="Ver dados individuais ou do casal">
+          <button type="button" data-v="ind" aria-pressed="true">Individual</button>
+          <button type="button" data-v="casal" aria-pressed="false">Casal</button></div></div>
       <button class="nav-item" id="btnTrocarUsuario" style="padding-left:0">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 17l5-5-5-5M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg>
         Sair
@@ -668,10 +704,7 @@ img{max-width:100%}
         <div class="top-sub" id="pageSub"></div>
       </div>
       <div class="spacer"></div>
-      <div class="seg casal-seg" id="segCasal" role="group" aria-label="Ver dados individuais ou do casal">
-        <button type="button" data-v="ind" aria-pressed="true">Individual</button>
-        <button type="button" data-v="casal" aria-pressed="false">Casal</button>
-      </div>
+
       <span class="sync" id="syncStatus" data-st="ok" role="status"><i aria-hidden="true"></i><span>Sincronizado</span></span>
       <button class="btn btn-primary desk-only" id="btnNovoTop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Novo lançamento</button>
       <button class="icon-btn" id="btnNotif" aria-label="Abrir notificações"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="dot hide" id="notifDot"></span></button>
@@ -719,6 +752,7 @@ img{max-width:100%}
           </div>
         </div>
         <div id="scopeNote"></div>
+        <div class="crit-barra" id="vgCrit"></div>
         <div class="scope-quick">
           <span class="tiny muted">Período dos indicadores</span>
           <div class="seg" id="segEscopo" role="group" aria-label="Período rápido">
@@ -1315,11 +1349,30 @@ const modoCasal=()=>!!(DB.usuarioAtual&&DB.dados[DB.usuarioAtual]&&DB.dados[DB.u
    a partir de 01/09/2026 (antes, só o histórico de quem estava conectado
    entrava, o que misturava períodos). As despesas marcadas como Casal usam
    todo o histórico, mas apenas na Análise do casal (baseCasal). */
+/* Critério de data da Visão geral e das Análises. Caixa (padrão): cada parcela
+   conta na data em que é paga. Competência: conta na data da compra — como a
+   soma das parcelas é o total, a compra aparece uma vez, pelo valor total.
+   Lançamento comum tem as duas datas iguais e não muda. Nada é regravado:
+   é só a forma de ler as datas que já existem. */
+const CRIT={v:'caixa'};
+const usaCriterio=()=>PAGINA==='visao-geral'||PAGINA==='analises';
+function lerPorCriterio(lista){
+  if(CRIT.v!=='competencia'||!usaCriterio())return lista;
+  return lista.map(l=>l.dataOriginal&&l.dataOriginal!==l.dataParcela?{...l,dataParcela:l.dataOriginal,_caixa:l.dataParcela}:l);
+}
 function LV(){
   const own=D().lancamentos;
-  if(!modoCasal())return own;
-  return own.filter(l=>l.dataParcela>=INICIO_CASAL).concat(PARCEIRO.lista.filter(l=>!l._soCasal));
+  if(!modoCasal())return lerPorCriterio(own);
+  return lerPorCriterio(own.filter(l=>l.dataParcela>=INICIO_CASAL).concat(PARCEIRO.lista.filter(l=>!l._soCasal)));
 }
+function seletorCriterio(id){
+  return `<div class="seg seg-crit" id="${id}" role="group" aria-label="Critério de data">
+    <button type="button" data-crit="caixa" aria-pressed="${CRIT.v==='caixa'}">Caixa</button>
+    <button type="button" data-crit="competencia" aria-pressed="${CRIT.v==='competencia'}">Competência</button></div>`;
+}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-crit]');if(!b)return;
+  if(CRIT.v===b.dataset.crit)return;CRIT.v=b.dataset.crit;renderPagina();
+  toast(CRIT.v==='caixa'?'Critério: Caixa — parcelas na data de pagamento.':'Critério: Competência — compras na data da compra, pelo total.','ok');});
 /* Toda lista que mostra REGISTRO por registro passa por aqui: as entradas
    sintéticas do parceiro somam nos totais e gráficos, mas nunca viram linha. */
 const soRegistros=lista=>lista.filter(l=>!l._agregado);
@@ -1697,10 +1750,31 @@ function chartDefaults(){
   Chart.defaults.color=cssVar('--ink-2');
   Chart.defaults.borderColor=cssVar('--border');
 }
+/* Barras em degradê: da cor plena no topo a uma versão mais suave na base
+   (ou na esquerda, em barras horizontais). Cores que não são hexadecimais
+   ficam como estão. */
+function corComAlfa(c,a){const m=/^#?([0-9a-f]{6})$/i.exec(String(c||'').trim());if(!m)return c;
+  const n=parseInt(m[1],16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`;}
+function barraDegrade(cor,horizontal){
+  return ctx=>{const ch=ctx.chart,a=ch.chartArea;const c=Array.isArray(cor)?cor[ctx.dataIndex%cor.length]:cor;
+    if(!a||!/^#?[0-9a-f]{6}$/i.test(String(c||'').trim()))return c;
+    const g=horizontal?ch.ctx.createLinearGradient(a.left,0,a.right,0):ch.ctx.createLinearGradient(0,a.bottom,0,a.top);
+    g.addColorStop(0,corComAlfa(c,.45));g.addColorStop(1,corComAlfa(c,1));return g;};
+}
+function aplicarDegrade(cfg){
+  const horiz=cfg.options&&cfg.options.indexAxis==='y';
+  (cfg.data&&cfg.data.datasets||[]).forEach(ds=>{
+    const eBarra=(ds.type||cfg.type)==='bar';
+    if(!eBarra||typeof ds.backgroundColor==='function'||!ds.backgroundColor)return;
+    ds.backgroundColor=barraDegrade(ds.backgroundColor,horiz);
+    if(ds.borderRadius===undefined)ds.borderRadius=6;
+  });
+}
 function desenharGrafico(idCanvas,cfg,fallback){
   const cv=document.getElementById(idCanvas);if(!cv)return;
   if(!window.Chart){renderFallback(cv,fallback||cfg);return;}
   chartDefaults();
+  aplicarDegrade(cfg);
   if(CHARTS[idCanvas]){CHARTS[idCanvas].destroy();delete CHARTS[idCanvas];}
   cfg.options=cfg.options||{};
   cfg.options.responsive=true;cfg.options.maintainAspectRatio=false;
@@ -1923,7 +1997,10 @@ async function entrar(id){
   LOGIN.etapa='escolher';LOGIN.msg='';
   $('#login').classList.add('hide');$('#app').classList.remove('hide');
   aplicarTema(temaCss(r.d.prefs.tema||'auto'));
-  montarNav();irPara('visao-geral');AVISO_SENHA_FECHADO=false;atualizarAvisoSenha();
+  montarNav();
+  // link direto: depois do login, abre a tela pedida no endereço (se permitida)
+  if(!irParaRota()){irPara('visao-geral',{semHistorico:true});history.replaceState(null,'','#/visao-geral');}
+  AVISO_SENHA_FECHADO=false;atualizarAvisoSenha();
   salvar();            // cria os documentos iniciais e publica o catálogo compartilhado, se preciso
   ouvir();
   toast(r.novo?`Olá, ${r.d.perfil.nome}! Seu espaço está pronto — comece pelo primeiro lançamento.`:`Você entrou como ${r.d.perfil.nome}.`,'ok');
@@ -1939,7 +2016,10 @@ async function sair(){
   LOGIN.etapa='escolher';LOGIN.perfil=null;LOGIN.msg='';renderLogin();aplicarTema('auto');
 }
 function menuPerfil(b){
+  const casal=modoCasal();
   menuAcoes(b,[
+    {texto:casal?'Ver só os meus dados (Individual)':'Ver dados do casal',icone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><circle cx="16.5" cy="9.5" r="2.6"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/></svg>',
+      aoClicar:()=>alternarCasal(casal?'ind':'casal')},
     {texto:'Perfil e acesso',icone:SVG_EDITAR,aoClicar:()=>{CFG.aba='perfil';irPara('configuracoes');}},
     {sep:true},
     {texto:'Sair',icone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 17l5-5-5-5M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg>',aoClicar:sair}
@@ -2063,7 +2143,7 @@ function alternarCasal(v){
 function atualizarBarraCasal(){
   const seg=$('#segCasal'),bar=$('#casalBar');if(!seg||!bar)return;
   const casal=modoCasal(),oculto=PAGINAS_SEM_CASAL.includes(PAGINA);
-  seg.classList.toggle('hide',oculto);
+  const sn=$('#sideNome');if(sn&&D())sn.textContent=D().perfil.nome;
   $$('#segCasal button').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.v==='casal')===casal)));
   if(!casal||oculto){bar.classList.add('hide');bar.innerHTML='';return;}
   const nome=nomeParceiro(),pron=(perfilCasa(PARCEIRO.id)||{}).pron||'ele(a)';
@@ -2165,7 +2245,8 @@ function montarNav(){
   const ss=$('#syncStatus');if(ss)ss.dataset.modo=ARM.modo;statusSync(ESTADO_SYNC);
   atualizarNotif();montarTabbar();vigiarFiltros();
 }
-function irPara(id){
+function irPara(id,{semHistorico=false}={}){
+  if(id!=='lancamentos'){BUSCA_VIVA=null;BUSCA_FOCO=null;}
   if(!PAGINAS.some(x=>x.id===id)||!paginaPermitida(id))id='visao-geral';
   PAGINA=id;const p=PAGINAS.find(x=>x.id===id);
   $$('#nav .nav-item').forEach(b=>b.setAttribute('aria-current',b.dataset.pg===id?'page':'false'));
@@ -2174,9 +2255,32 @@ function irPara(id){
   $('#pageTitle').textContent=p.nome;$('#pageSub').textContent=p.sub;
   $('#btnNovoTop').classList.toggle('hide',!p.novo);
   window.scrollTo({top:0,behavior:'instant'});
+  if(!semHistorico)gravarRota(id);
   renderPagina();
   const sec=$('#page-'+id);if(sec)sec.focus({preventScroll:true});
 }
+/* ---------- Endereços: #/visao-geral, #/lancamentos, #/analises, #/perfil …
+   Funcionam no GitHub Pages sem configuração. A rota só escolhe a TELA do
+   perfil já autenticado: não substitui o login, não leva a dados de outra
+   pessoa, e módulos proibidos no modo atual caem na Visão geral. */
+const rotaDe=id=>'#/'+(id==='configuracoes'&&CFG.aba==='perfil'?'perfil':id);
+function lerRota(){
+  const r=decodeURIComponent((location.hash||'').replace(/^#\/?/,'')).split(/[/?]/)[0];
+  if(r==='perfil')return {pg:'configuracoes',aba:'perfil'};
+  if(r==='configuracoes')return {pg:'configuracoes',aba:null};
+  return PAGINAS.some(p=>p.id===r)?{pg:r}:null;
+}
+function gravarRota(id){const h=rotaDe(id);if(location.hash!==h)history.pushState(null,'',h);}
+function irParaRota(){
+  if(!DB.usuarioAtual||!D()||$('#app').classList.contains('hide'))return false;
+  const r=lerRota();if(!r)return false;
+  if(r.aba)CFG.aba=r.aba;else if(r.pg==='configuracoes'&&CFG.aba==='perfil')CFG.aba='grupos';
+  if(!paginaPermitida(r.pg)){irPara('visao-geral',{semHistorico:true});history.replaceState(null,'','#/visao-geral');return true;}
+  if(r.pg!==PAGINA||r.aba)irPara(r.pg,{semHistorico:true});
+  return true;
+}
+window.addEventListener('popstate',irParaRota);
+window.addEventListener('hashchange',irParaRota);
 function limparGraficos(){
   if(window.Chart)Object.values(CHARTS).forEach(c=>{try{c.destroy();}catch(e){}});
   for(const k in CHARTS)delete CHARTS[k];
@@ -2354,7 +2458,9 @@ function sincronizarEixoFixo(idCanvas,idAxis){
 }
 
 function renderDashboard(){
-  renderFraseDia();
+  {const fd=$('#fraseDia');if(fd)fd.hidden=true;}
+  $('#vgCrit').innerHTML=`<span class="tiny muted">Critério:</span>${seletorCriterio('segCritVG')}<span class="crit-rot">${CRIT.v==='caixa'?'Fluxo de caixa: parcelas na data de pagamento':'Competência: compras na data da compra'}</span>`+
+    (modoCasal()&&CRIT.v==='competencia'?'<span class="tiny muted">Os totais de '+esc(nomeParceiro())+' chegam por caixa.</span>':'');
   preencherFiltrosDashboard();
   const iv=intervaloEfetivo(),ivB=intervaloBase();
   const listaK=escopoKpis(),listaG=escopoGraficos();
@@ -2623,7 +2729,7 @@ function lancamentosFiltrados(){
   if(LF.situacao)l=l.filter(x=>situacao(x)===LF.situacao);
   if(LF.viagem==='__qualquer')l=l.filter(x=>!!x.viagemId);
   else if(LF.viagem)l=l.filter(x=>x.viagemId===LF.viagem);
-  if(LF.busca)l=l.filter(x=>(x.observacao||'').toLowerCase().includes(LF.busca.toLowerCase()));
+  if(LF.busca.trim())l=l.filter(x=>casaBusca(x,LF.busca));
   if(LF.deMes&&LF.deAno)l=l.filter(x=>mesIndex(x.dataParcela)>=mesIdxDe(+LF.deAno,+LF.deMes));
   if(LF.ateMes&&LF.ateAno)l=l.filter(x=>mesIndex(x.dataParcela)<=mesIdxDe(+LF.ateAno,+LF.ateMes));
   const k=LF.ord;
@@ -2646,6 +2752,22 @@ function alternarMarcaCasal(id){
   toast(l.casal?'Marcado como despesa do casal.':'Retirado do recorte do casal.','ok');
   renderPagina();
 }
+let BUSCA_VIVA=null,BUSCA_FOCO=null;
+/* Busca: descrição, categoria, grupo e valor. "120", "120,50", "R$ 120,50"
+   e "1.200" viram número e casam com o valor exato do lançamento. */
+const semAcento=t=>String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+function valorDaBusca(q){
+  const t=String(q||'').replace(/r\$/i,'').replace(/\s/g,'');
+  if(!/^\d{1,3}(\.\d{3})*(,\d{1,2})?$|^\d+([.,]\d{1,2})?$/.test(t))return null;
+  const n=/,/.test(t)?t.replace(/\./g,'').replace(',','.'):(/^\d{1,3}(\.\d{3})+$/.test(t)?t.replace(/\./g,''):t);
+  const v=Number(n);return isFinite(v)?Math.round(v*100):null;
+}
+function casaBusca(l,q){
+  const v=valorDaBusca(q);
+  if(v!==null&&Math.round((+l.valor||0)*100)===v)return true;
+  const alvo=semAcento([l.observacao,nomeCat(l.categoriaId),nomeGrupo(l.grupoId),nomeViagem(l)].join(' '));
+  return semAcento(q).trim().split(/\s+/).filter(Boolean).every(p=>alvo.includes(p));
+}
 function renderLancamentos(){
   const anos=[...new Set(LV().map(l=>pYMD(l.dataParcela).y))].sort();
   const optMes=`<option value="">—</option>`+MESES.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
@@ -2664,8 +2786,8 @@ function renderLancamentos(){
     <span>Esta é a base que alimenta Visão geral, Investimentos, Veículos e Análises. Empréstimos e Capital e Liquidez são módulos separados.</span></div>
   <div class="card" style="margin-bottom:14px">
     <div class="filterbar">
-      <div class="field" style="flex:1;min-width:210px"><label for="lBusca">Buscar na observação</label>
-        <input id="lBusca" class="input" type="search" value="${esc(LF.busca)}" placeholder="Ex.: mercado, posto, aluguel"></div>
+      <div class="field" style="flex:1;min-width:210px"><label for="lBusca">Buscar por descrição, categoria ou valor</label>
+        <input id="lBusca" class="input" type="search" value="${esc(LF.busca)}" placeholder="Ex.: mercado, combustível, 120,50" autocomplete="off" enterkeyhint="search"></div>
       <div class="field"><label for="lTipo">Tipo</label><select id="lTipo" class="input"><option value="">Todos</option>
         <option value="entrada"${LF.tipo==='entrada'?' selected':''}>Entrada</option><option value="saida"${LF.tipo==='saida'?' selected':''}>Saída</option></select></div>
       <div class="field"><label for="lGrupo">Grupo</label><select id="lGrupo" class="input">${opcoes(D().grupos,{vazio:'Todos',selecionado:LF.grupo})}</select></div>
@@ -2721,7 +2843,24 @@ function renderLancamentos(){
   bind('#lTipo','tipo');bind('#lGrupo','grupo');bind('#lCategoria','categoria');bind('#lForma','forma');
   bind('#lInst','inst');bind('#lViagem','viagem');bind('#lVeiculo','veiculo');bind('#lSituacao','situacao');
   bind('#lDeMes','deMes');bind('#lDeAno','deAno');bind('#lAteMes','ateMes');bind('#lAteAno','ateAno');
-  let tb;$('#lBusca').oninput=e=>{clearTimeout(tb);tb=setTimeout(()=>{LF.busca=e.target.value;LF.pag=1;renderLancamentos();$('#lBusca').focus();},350);};
+  /* A busca não perde foco, cursor nem texto: a tela é redesenhada, mas o
+     MESMO campo em que a pessoa digita volta para o lugar (com seleção e
+     composição do teclado do celular intactas). Durante a composição (IME)
+     não redesenha. */
+  const campo=$('#lBusca');
+  if(BUSCA_VIVA){campo.replaceWith(BUSCA_VIVA);if(!BUSCA_FOCO&&BUSCA_VIVA.value!==LF.busca)BUSCA_VIVA.value=LF.busca;if(BUSCA_FOCO){BUSCA_VIVA.focus({preventScroll:true});
+      try{BUSCA_VIVA.setSelectionRange(BUSCA_FOCO[0],BUSCA_FOCO[1]);}catch(e){}}}
+  else{
+    let tb,compondo=false;
+    campo.addEventListener('compositionstart',()=>{compondo=true;});
+    campo.addEventListener('compositionend',()=>{compondo=false;campo.dispatchEvent(new Event('input'));});
+    campo.addEventListener('input',()=>{if(compondo)return;clearTimeout(tb);tb=setTimeout(()=>{
+      if(LF.busca===campo.value)return;LF.busca=campo.value;LF.pag=1;
+      BUSCA_VIVA=campo;BUSCA_FOCO=document.activeElement===campo?[campo.selectionStart,campo.selectionEnd]:null;
+      renderLancamentos();},300);});
+    BUSCA_VIVA=campo;
+  }
+  BUSCA_FOCO=null;
   const limpar=()=>{Object.assign(LF,{busca:'',tipo:'',grupo:'',categoria:'',forma:'',inst:'',veiculo:'',situacao:'',deMes:'',deAno:'',ateMes:'',ateAno:'',pag:1});renderLancamentos();};
   $('#lLimpar').onclick=limpar;const lv=$('#lVazioLimpar');if(lv)lv.onclick=limpar;
   $('#lNovo').onclick=()=>abrirFormLancamento();
@@ -2868,6 +3007,9 @@ function abrirFormLancamento(id=null,preset={}){
   if(id&&!edit){toast('Este lançamento é de '+nomeParceiro()+' e só pode ser alterado por quem lançou.','warn');return;}
   const base=edit||Object.assign({tipo:'saida',valor:0,dataParcela:HOJE,dataOriginal:HOJE,grupoId:'',categoriaId:'',
     observacao:'',formaPagamento:'Pix',cartaoId:null,instituicaoId:null,veiculoId:null,incluiCustoVeiculo:true,situacaoManual:null},preset);
+  // edição de uma parcela: dados da compra inteira, para corrigir sem duplicar
+  const compra=edit&&edit.compraId?(()=>{const ps=D().lancamentos.filter(l=>l.compraId===edit.compraId).sort((a,b)=>(a.parcelaAtual||0)-(b.parcelaAtual||0)||(a.dataParcela<b.dataParcela?-1:1));
+    return {ps,n:ps.length,total:round2(ps.reduce((a,l)=>a+(+l.valor||0),0)),competencia:edit.dataOriginal,primeira:ps.map(l=>l.dataParcela).sort()[0]};})():null;
   const corpo=`
    <form id="formLanc" novalidate>
     <div class="form-grid">
@@ -2878,45 +3020,24 @@ function abrirFormLancamento(id=null,preset={}){
       <div class="field"><label for="fValor">Valor</label>
         <div class="with-prefix"><span class="prefix">R$</span><input id="fValor" class="input input-money" inputmode="decimal" enterkeyhint="next" placeholder="0,00" value="${base.valor?NUM.format(base.valor):''}"></div>
         <span class="err" id="eValor"></span></div>
-      <div class="field"><label for="fData">Data</label><input id="fData" class="input" type="date" value="${base.dataParcela}"><span class="err" id="eData"></span></div>
-      <div class="field"><label for="fGrupo">Grupo</label><select id="fGrupo" class="input"></select></div>
+      <div class="field"><label for="fData" id="fDataRot">Data</label><input id="fData" class="input" type="date" value="${base.dataParcela}"><span class="err" id="eData"></span></div>
       <div class="field"><label for="fCategoria">Categoria</label><select id="fCategoria" class="input"></select><span class="err" id="eCategoria"></span></div>
       <div class="field"><label for="fForma">Forma de pagamento</label><select id="fForma" class="input">${opcoes(D().formas,{selecionado:base.formaPagamento})}</select></div>
 
-      <div class="field full"><label for="fObs">Observação (opcional)</label>
-        <input id="fObs" class="input" value="${esc(base.observacao||'')}" placeholder="Ex.: Mercado São Jorge, parcela do notebook, posto da avenida"></div>
-
-      <div class="field full" id="boxViagem">
-        <label for="fViagem">Viagem</label>
-        <select id="fViagem" class="input"><option value="">Não é despesa de viagem</option>
-          ${(D().viagens||[]).map(v=>`<option value="${esc(v.id)}"${base.viagemId===v.id?' selected':''}>Viagem — ${esc(v.nome)}</option>`).join('')}</select>
-        <details class="inst-nova"><summary class="tiny">Nova viagem</summary>
-          <div class="row" style="gap:8px;margin-top:6px"><input id="fViagemNova" class="input" placeholder="Destino, ex.: Bahia" aria-label="Nome da nova viagem">
-          <button type="button" class="btn btn-sm" id="fViagemAdd">Adicionar</button></div></details>
-        <span class="tiny muted">A categoria continua a mesma; a viagem é uma classificação a mais, para analisar os gastos dela separadamente.</span></div>
-      <div class="field full" id="boxCasal">
-        <label class="check"><input type="checkbox" id="fCasal" ${base.casal?'checked':''}>
-          <span>É do casal<br><span class="tiny muted">Entra no recorte de Análise do casal. O lançamento continua sendo seu: ${esc(nomeParceiro())} vê o total, nunca o registro.</span></span></label>
-</div>
-      <details class="mais-opcoes" id="boxMais"${base.situacaoManual?' open':''}><summary>Mais opções${base.situacaoManual?'':' — situação automática pela data'}</summary>
-        <div class="form-grid"><div class="field"><label for="fSituacao">Situação</label><select id="fSituacao" class="input">
-        <option value="">Automática pela data</option><option value="realizado"${base.situacaoManual==='realizado'?' selected':''}>Realizado</option>
-        <option value="futuro"${base.situacaoManual==='futuro'?' selected':''}>Futuro</option>
-        <option value="cancelado"${base.situacaoManual==='cancelado'?' selected':''}>Cancelado</option></select></div></div></details>
-
       <div class="field full hide" id="boxCartao">
-        <div class="card card-pad" style="background:var(--surface-2)">
-          <h3 style="margin-bottom:10px">Compra no cartão de crédito</h3>
+        <div class="card card-pad cartao-box">
+          <h3 style="margin-bottom:10px">Compra no cartão</h3>
+          ${compra?`<label class="check" style="margin-bottom:10px"><input type="checkbox" id="fCompraInteira"><span>Corrigir a compra inteira
+            <br><span class="tiny muted">Recalcula as ${compra.n} parcelas desta compra (${fmt(compra.total)}), sem criar parcelas novas nem duplicadas. Desmarcado, altera só esta parcela.</span></span></label>`:''}
           <div class="form-grid">
-            <div class="field"><label for="fCartao">Cartão</label><select id="fCartao" class="input">${opcoes(D().cartoes,{selecionado:base.cartaoId||''})}</select></div>
-            <div class="field"><label for="fParcelas">Quantidade de parcelas</label><input id="fParcelas" class="input" type="number" min="1" max="36" value="${base.parcelasTotal||1}" ${edit?'disabled':''}></div>
-            <div class="field"><label for="fPrimeira">Data da primeira parcela</label><input id="fPrimeira" class="input" type="date" value="${base.dataParcela}" ${edit?'disabled':''}></div>
-            <div class="field"><label>Valor previsto de cada parcela</label><output id="fValorParcela" class="input" style="background:var(--surface)">—</output></div>
+            <div class="field"><label for="fCartao">Cartão utilizado</label><select id="fCartao" class="input">${opcoes(D().cartoes,{selecionado:base.cartaoId||''})}</select></div>
+            <div class="field"><label for="fParcelas">Parcelas</label><input id="fParcelas" class="input" type="number" inputmode="numeric" min="1" max="36" value="${compra?compra.n:(base.parcelasTotal||1)}" ${edit?'disabled':''}></div>
+            <div class="field"><label for="fPrimeira">1ª data de pagamento (caixa)</label><input id="fPrimeira" class="input" type="date" value="${compra?compra.primeira:base.dataParcela}" ${edit?'disabled':''}></div>
+            <div class="field"><label>Valor de cada parcela</label><output id="fValorParcela" class="input" style="background:var(--surface)">—</output></div>
           </div>
-          <p class="tiny muted" style="margin:10px 0 6px">Prévia das parcelas — a soma é sempre igual ao valor total. Não há cadastro de data de fechamento da fatura nesta versão.</p>
+          <p class="tiny muted" style="margin:10px 0 6px">Prévia antes de salvar: a compra entra no dia da compra (competência) pelo valor total, e cada parcela entra no caixa na data de pagamento. A soma das parcelas é sempre igual ao total. Não é preciso informar o fechamento da fatura.</p>
           <div class="preview-list" id="previewParcelas"></div>
         </div></div>
-
       <div class="field hide" id="boxInst"><label for="fInst">Banco ou instituição financeira</label>
         <select id="fInst" class="input">${opcoes(D().instituicoes,{vazio:'Escolha a instituição',selecionado:base.instituicaoId||''})}</select>
         <span class="err" id="eInst"></span>
@@ -2930,7 +3051,31 @@ function abrirFormLancamento(id=null,preset={}){
         <label class="check"><input type="checkbox" id="fCusto" ${base.incluiCustoVeiculo!==false?'checked':''}>
           <span>Incluir no custo operacional do veículo<br><span class="tiny muted">Desmarque para aquisição, transferência, vistoria de compra e despesas excepcionais. O lançamento continua no fluxo financeiro geral.</span></span></label></div>
 
-      ${edit?'':`<div class="field full">
+      <div class="field full"><label for="fObs">Descrição (opcional)</label>
+        <input id="fObs" class="input" value="${esc(base.observacao||'')}" placeholder="Ex.: Mercado São Jorge, parcela do notebook, posto da avenida"></div>
+
+      <details class="mais-opcoes" id="boxMais"${(base.situacaoManual||base.casal||base.viagemId)?' open':''}>
+        <summary><span class="tres-pontos" aria-hidden="true">⋯</span> Mais opções <span class="tiny muted" id="maisResumo"></span></summary>
+        <div class="form-grid">
+          <div class="field full" id="boxCasal">
+            <label class="check"><input type="checkbox" id="fCasal" ${base.casal?'checked':''}>
+              <span>Lançamento do casal<br><span class="tiny muted">Entra na Análise do casal. O lançamento continua sendo seu: ${esc(nomeParceiro())} vê só o total, nunca o registro.</span></span></label></div>
+          <div class="field full" id="boxViagem">
+            <label class="check"><input type="checkbox" id="fViagemOn" ${base.viagemId?'checked':''}><span>Viagem</span></label>
+            <div id="boxViagemSel" class="${base.viagemId?'':'hide'}" style="margin-top:8px">
+              <label for="fViagem" class="sr-only">Qual viagem</label>
+              <select id="fViagem" class="input"><option value="">Escolha a viagem</option>
+                ${(D().viagens||[]).map(v=>`<option value="${esc(v.id)}"${base.viagemId===v.id?' selected':''}>${esc(v.nome)}</option>`).join('')}</select>
+              <details class="inst-nova"><summary class="tiny">Nova viagem</summary>
+                <div class="row" style="gap:8px;margin-top:6px"><input id="fViagemNova" class="input" placeholder="Destino, ex.: Bahia" aria-label="Nome da nova viagem">
+                <button type="button" class="btn btn-sm" id="fViagemAdd">Adicionar</button></div></details>
+              <span class="tiny muted">A categoria continua a mesma; a viagem é uma classificação a mais. As viagens também são gerenciadas em Configurações › Cadastros.</span></div></div>
+          <div class="field"><label for="fGrupo">Grupo (filtra as categorias)</label><select id="fGrupo" class="input"></select></div>
+          <div class="field"><label for="fSituacao">Situação</label><select id="fSituacao" class="input">
+            <option value="">Automática pela data</option><option value="realizado"${base.situacaoManual==='realizado'?' selected':''}>Realizado</option>
+            <option value="futuro"${base.situacaoManual==='futuro'?' selected':''}>Futuro</option>
+            <option value="cancelado"${base.situacaoManual==='cancelado'?' selected':''}>Cancelado</option></select></div>
+          ${edit?'':`<div class="field full">
         <label class="check"><input type="checkbox" id="fRec"><span>Lançamento recorrente<br><span class="tiny muted">Gera ocorrências individuais que são reconhecidas automaticamente na data de cada uma.</span></span></label></div>
       <div class="field full hide" id="boxRec">
         <div class="card card-pad" style="background:var(--surface-2)">
@@ -2946,16 +3091,19 @@ function abrirFormLancamento(id=null,preset={}){
           <p class="tiny muted" style="margin:6px 0">Prévia das próximas ocorrências</p>
           <div class="preview-list" id="previewRec"></div>
         </div></div>`}
+        </div>
+      </details>
+
     </div>
    </form>`;
   const rodape=`<button class="btn" data-fechar>Cancelar</button>
     <button class="btn btn-primary" id="salvarLanc">${edit?'Salvar alterações':'Salvar lançamento'}</button>`;
   // novo lançamento: o cursor já começa no valor, que é o primeiro dado a informar
   abrirModal({titulo:edit?'Editar lançamento':'Novo lançamento',corpo,rodape,foco:(!edit&&!preset.valor)?'#fValor':null,
-    aoAbrir:m=>montarFormLancamento(m,base,edit)});
+    aoAbrir:m=>montarFormLancamento(m,base,edit,compra)});
 }
 
-function montarFormLancamento(m,base,edit){
+function montarFormLancamento(m,base,edit,compra=null){
   let tipo=base.tipo;
   const fGrupo=$('#fGrupo',m),fCat=$('#fCategoria',m),fValor=$('#fValor',m);
   moedaMask(fValor);
@@ -2973,6 +3121,8 @@ function montarFormLancamento(m,base,edit){
     const forma=$('#fForma',m).value;
     const ehCartao=forma==='Cartão de crédito';
     $('#boxCartao',m).classList.toggle('hide',!ehCartao);
+    // no cartão, a data do formulário é a da compra (competência); a do caixa vem das parcelas
+    $('#fDataRot',m).textContent=ehCartao?'Data da compra (competência)':'Data';
     const precisaInst=!!(c&&c.fin)||['g-fin-e','g-fin-s'].includes(c?.grupoId);
     $('#boxInst',m).classList.toggle('hide',!precisaInst);
     const precisaVeic=!!(c&&c.veicular);
@@ -2981,12 +3131,16 @@ function montarFormLancamento(m,base,edit){
     if(ehCartao)previewParcelas();
   }
   function previewParcelas(){
+    const ci=$('#fCompraInteira',m);
+    if(edit&&!(ci&&ci.checked)){$('#fValorParcela',m).textContent=fmt(lerMoeda(fValor)||0);
+      $('#previewParcelas',m).innerHTML=`<div><span class="muted">${compra?'Alterando só esta parcela ('+(edit.parcelaAtual||'?')+' de '+compra.n+'). Marque “Corrigir a compra inteira” para recalcular todas.':'Lançamento único.'}</span></div>`;return;}
     const n=Math.max(1,Math.min(36,+$('#fParcelas',m).value||1));
     const total=lerMoeda(fValor),primeira=$('#fPrimeira',m).value||$('#fData',m).value;
-    const partes=dividirParcelas(total,n);
+    const partes=dividirParcelas(total,n),comp=$('#fData',m).value;
     $('#fValorParcela',m).textContent=total?fmt(partes[0])+(partes[0]!==partes[n-1]?' a '+fmt(partes[n-1]):''):'—';
     $('#previewParcelas',m).innerHTML=total?partes.map((v,i)=>
-      `<div><span>Parcela ${i+1} de ${n} — ${fmtData(addMeses(primeira,i))}</span><b>${fmt(v)}</b></div>`).join('')
+      `<div><span>Parcela ${i+1} de ${n} — caixa em ${fmtData(addMeses(primeira,i))}</span><b>${fmt(v)}</b></div>`).join('')+
+      `<div class="prev-total"><span>Competência: ${fmtData(comp)} · total</span><b>${fmt(round2(partes.reduce((a,b)=>a+b,0)))}</b></div>`
       :'<div><span class="muted">Informe o valor para ver a prévia das parcelas.</span></div>';
   }
   function previewRec(){
@@ -3010,7 +3164,7 @@ function montarFormLancamento(m,base,edit){
   fCat.onchange=()=>{const c=cat(fCat.value);if(c){base.categoriaId=c.id;if(fGrupo.value!==c.grupoId){fGrupo.value=c.grupoId;base.grupoId=c.grupoId;const v=fCat.value;encherCategorias();fCat.value=v;}}atualizaContexto();};
   $('#fForma',m).onchange=atualizaContexto;
   $('#fVeic',m).onchange=atualizaContexto;
-  ['#fParcelas','#fPrimeira'].forEach(s=>{const el=$(s,m);if(el)el.oninput=previewParcelas;});
+  ['#fParcelas','#fPrimeira'].forEach(s=>{const el=$(s,m);if(el){el.oninput=previewParcelas;el.onchange=previewParcelas;}});
   fValor.addEventListener('input',()=>{if($('#fForma',m).value==='Cartão de crédito')previewParcelas();previewRec();});
   const fRec=$('#fRec',m);
   if(fRec){fRec.onchange=previewRec;['#fFreq','#fRecIni','#fRecFim','#fRecQtd','#fRecSemFim'].forEach(s=>{const el=$(s,m);if(el)el.onchange=previewRec;});}
@@ -3020,6 +3174,23 @@ function montarFormLancamento(m,base,edit){
     const ri=$('#fRecIni',m);if(ri)ri.value=$('#fData',m).value;previewParcelas();previewRec();avisoCasal();};
   avisoCasal();
 
+  const resumoMais=()=>{const r=[];if($('#fCasal',m).checked)r.push('casal');
+    if($('#fViagemOn',m).checked){const o=$('#fViagem',m).selectedOptions[0];r.push('viagem'+(o&&o.value?': '+o.textContent:''));}
+    if($('#fRec',m)&&$('#fRec',m).checked)r.push('recorrente');if($('#fSituacao',m).value)r.push($('#fSituacao',m).selectedOptions[0].textContent.toLowerCase());
+    $('#maisResumo',m).textContent=r.length?'· '+r.join(' · '):'';};
+  $('#fViagemOn',m).onchange=()=>{$('#boxViagemSel',m).classList.toggle('hide',!$('#fViagemOn',m).checked);resumoMais();};
+  ['#fCasal','#fViagem','#fSituacao'].forEach(k=>$(k,m).addEventListener('change',resumoMais));
+  if($('#fRec',m))$('#fRec',m).addEventListener('change',resumoMais);
+  resumoMais();
+  // compra no cartão: corrigir a compra inteira, sem duplicar parcelas
+  const fCI=$('#fCompraInteira',m);
+  if(fCI)fCI.onchange=()=>{const on=fCI.checked;
+    $('#fParcelas',m).disabled=!on;$('#fPrimeira',m).disabled=!on;
+    setMoeda(fValor,on?compra.total:edit.valor);
+    $('#fData',m).value=on?compra.competencia:edit.dataParcela;
+    $('#fDataRot',m).textContent=on?'Data da compra (competência)':'Data de pagamento desta parcela (caixa)';
+    previewParcelas();};
+  if(compra)$('#fDataRot',m).textContent='Data de pagamento desta parcela (caixa)';
   const fViagemAdd=$('#fViagemAdd',m);
   if(fViagemAdd)fViagemAdd.onclick=()=>{
     const n=$('#fViagemNova',m).value.trim();if(!n){toast('Informe o destino da viagem.','err');return;}
@@ -3028,7 +3199,7 @@ function montarFormLancamento(m,base,edit){
     const o={id:uid('vg'),nome:n};(D().viagens=D().viagens||[]).push(o);
     $('#fViagem',m).insertAdjacentHTML('beforeend',`<option value="${esc(o.id)}">Viagem — ${esc(o.nome)}</option>`);
     $('#fViagem',m).value=o.id;$('#fViagemNova',m).value='';m.querySelector('#boxViagem .inst-nova').open=false;
-    toast(`Viagem “${n}” criada.`,'ok');};
+    toast(`Viagem “${n}” criada.`,'ok');resumoMais();};
   // o campo Viagem só aparece em despesas
   const ajustaViagem=()=>{const b=m.querySelector('#fTipo button[aria-pressed="true"]');
     const bv=$('#boxViagem',m);if(bv)bv.classList.toggle('hide',!!b&&b.dataset.v==='entrada');};
@@ -3047,6 +3218,8 @@ function montarFormLancamento(m,base,edit){
     const valor=lerMoeda(fValor),data=$('#fData',m).value,categoriaId=fCat.value;
     let erro=false;
     const eI=$('#eInst',m);if(eI)eI.textContent='';
+    if($('#fViagemOn',m).checked&&!$('#fViagem',m).value&&!$('#boxViagem',m).classList.contains('hide')){
+      toast('Escolha a viagem ou desmarque “Viagem”.','err');$('#boxMais',m).open=true;erro=true;}
     if(!$('#boxInst',m).classList.contains('hide')&&!$('#fInst',m).value){
       if(eI)eI.textContent='Escolha o banco ou instituição deste investimento.';erro=true;}
     $('#eValor',m).textContent='';$('#eData',m).textContent='';$('#eCategoria',m).textContent='';
@@ -3062,7 +3235,7 @@ function montarFormLancamento(m,base,edit){
       veiculoId:$('#boxVeic',m).classList.contains('hide')?null:($('#fVeic',m).value||null),
       incluiCustoVeiculo:$('#fCusto',m)?$('#fCusto',m).checked:true,
       casal:!!($('#fCasal',m)&&$('#fCasal',m).checked),
-      viagemId:($('#boxViagem',m)&&!$('#boxViagem',m).classList.contains('hide')&&$('#fViagem',m).value)||null};
+      viagemId:($('#boxViagem',m)&&!$('#boxViagem',m).classList.contains('hide')&&$('#fViagemOn',m).checked&&$('#fViagem',m).value)||null};
     if(edit){
       if(edit.recorrenciaId){
         const todos=irmaosRecorrencia(edit), depois=todos.filter(x=>x.dataParcela>=edit.dataParcela);
@@ -3080,6 +3253,15 @@ function montarFormLancamento(m,base,edit){
             toast(alvo.length>1?alvo.length+' lançamentos da série atualizados.':'Lançamento atualizado.','ok');
             renderPagina();});
         return;
+      }
+      if(compra&&fCI&&fCI.checked){
+        const n=Math.max(1,Math.min(36,+$('#fParcelas',m).value||1)),primeira=$('#fPrimeira',m).value||data;
+        const partes=dividirParcelas(valor,n),antigos=compra.ps;
+        const novos=partes.map((v,i)=>({...(antigos[i]||{}),id:antigos[i]?antigos[i].id:uid('l'),...comum,valor:v,
+          dataOriginal:data,dataParcela:addMeses(primeira,i),parcelaAtual:i+1,parcelasTotal:n,compraId:compra.ps[0].compraId,recorrenciaId:null}));
+        const ids=new Set(antigos.map(l=>l.id));
+        D().lancamentos=D().lancamentos.filter(l=>!ids.has(l.id)).concat(novos);
+        salvar();fecharModal();toast(`Compra corrigida: ${n} parcela(s), total ${fmt(valor)}.`,'ok');renderPagina();return;
       }
       Object.assign(edit,comum,{dataParcela:data,dataOriginal:edit.parcelasTotal?edit.dataOriginal:data});
       salvar();fecharModal();toast('Lançamento atualizado.','ok');renderPagina();return;
@@ -3122,6 +3304,7 @@ const ANA={aba:'comparacoes',modo:'mes',dim:'categorias',
 
 function renderAnalises(){
   $('#page-analises').innerHTML=`
+   <div class="crit-barra"><span class="tiny muted">Critério:</span>${seletorCriterio('segCritAna')}<span class="crit-rot">${CRIT.v==='caixa'?'Caixa':'Competência'}</span></div>
    <div class="row" style="position:relative;margin-bottom:14px">
      <div class="subnav" role="tablist" style="margin-bottom:0;margin-right:46px">
        ${[['comparacoes','Comparações'],['tendencias','Tendências'],['projecoes','Projeções'],['automaticas','Análises automáticas']].map(([k,t])=>
@@ -4744,7 +4927,7 @@ function formCategoria(id=null){
 }
 function cfgCadastros(){
   const listaSimples=(titulo,chave,campos,extra='')=>{
-    const itens=D()[chave];
+    const itens=D()[chave]||[];
     return `<div class="card" style="margin-bottom:14px"><div class="card-head"><h2>${titulo}</h2>
       <button class="btn btn-sm btn-primary" data-add="${chave}">Adicionar</button></div>
       ${extra?`<div class="card-pad" style="padding-bottom:0"><p class="small muted">${extra}</p></div>`:''}
@@ -4758,6 +4941,7 @@ function cfgCadastros(){
     listaSimples('Cartões de crédito','cartoes',[{k:'nome',rot:'Cartão'}],'Sem dia de fechamento de fatura nesta versão: as parcelas seguem a data da compra.')+
     listaSimples('Instituições financeiras','instituicoes',[{k:'nome',rot:'Instituição'}])+
     listaSimples('Veículos','veiculos',[{k:'nome',rot:'Veículo'},{k:'tipo',rot:'Tipo'},{k:'placa',rot:'Placa'}])+
+    listaSimples('Viagens','viagens',[{k:'nome',rot:'Viagem'}],'As viagens aparecem em “⋯ Mais opções” do lançamento. São só suas; no modo casal, a outra pessoa vê apenas o total de cada viagem.')+
     listaSimples('Formas de pagamento','formas',[{k:'nome',rot:'Forma'}])+
     `<div class="card"><div class="card-head"><h2>Alertas</h2></div><div class="card-pad stack">
       <div class="field"><label for="alPct">Avisar quando as despesas crescerem acima de</label>
@@ -4771,6 +4955,7 @@ function cfgCadastros(){
     const usado=k==='formas'?D().lancamentos.some(l=>l.formaPagamento===nome)
       :k==='veiculos'?D().lancamentos.some(l=>l.veiculoId===it.id)
       :k==='instituicoes'?D().lancamentos.some(l=>l.instituicaoId===it.id)
+      :k==='viagens'?D().lancamentos.some(l=>l.viagemId===it.id)
       :D().lancamentos.some(l=>l.cartaoId===it.id);
     if(usado){toast(`“${nome}” está em uso em lançamentos e não pode ser excluído nesta versão.`,'warn');return;}
     if(await confirmar({titulo:'Excluir item',texto:`Excluir “${nome}”?`,botao:'Excluir'})){
@@ -4792,7 +4977,8 @@ const viagemDe=l=>l&&l.viagemId?(D().viagens||[]).find(v=>v.id===l.viagemId)||nu
 const nomeViagem=l=>{const v=viagemDe(l);return v?v.nome:(l&&l._viagem)||'';};
 const normViagem=n=>String(n||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
 function formCadastro(chave,idx=null){
-  const rotulos={cartoes:'cartão',instituicoes:'instituição',veiculos:'veículo',formas:'forma de pagamento'};
+  const rotulos={cartoes:'cartão',instituicoes:'instituição',veiculos:'veículo',formas:'forma de pagamento',viagens:'viagem'};
+  if(!D()[chave])D()[chave]=[];
   const it=idx!==null?D()[chave][idx]:null;
   const ehVeic=chave==='veiculos',ehTxt=chave==='formas';
   abrirModal({titulo:(idx!==null?'Editar ':'Novo ')+rotulos[chave],pequeno:true,
@@ -4803,6 +4989,8 @@ function formCadastro(chave,idx=null){
     rodape:`<button class="btn" data-fechar>Cancelar</button><button class="btn btn-primary" id="okIt">Salvar</button>`,
     aoAbrir:m=>{$('#okIt',m).onclick=()=>{const n=$('#itNome',m).value.trim();
       if(!n){toast('Informe o nome.','err');return;}
+      if(chave==='viagens'){const dup=D().viagens.find(v=>v.id!==(it&&it.id)&&normViagem(v.nome)===normViagem(n));
+        if(dup){toast(`Já existe a viagem “${dup.nome}”.`,'err');return;}}
       if(chave==='instituicoes'){const dup=instituicaoDuplicada(n,it&&it.id);
         if(dup){toast(`Já existe a instituição “${dup.nome}”. Use a cadastrada para não duplicar.`,'err');return;}}
       if(ehTxt){if(idx!==null)D().formas[idx]=n;else D().formas.push(n);}
@@ -4959,7 +5147,7 @@ function cfgDados(){
      e o novo aparece como não lido; excluir remove o aviso. */
 function chaveNotif(a){return a.chave||('t:'+a.titulo+'|'+a.texto);}
 function listaNotificacoes(){
-  const out=[];
+  const out=[{chave:'frase:'+HOJE,nivel:'info',titulo:'Frase do dia',texto:fraseDoDia()}];
   const limite=addMeses(HOJE,1);
   const proximas=soRegistros(D().lancamentos).filter(l=>situacao(l)==='futuro'&&l.dataParcela<=limite)
     .sort((a,b)=>a.dataParcela<b.dataParcela?-1:a.dataParcela>b.dataParcela?1:(a.id<b.id?-1:1)).slice(0,5);
@@ -4982,18 +5170,19 @@ function atualizarNotif(){
   const itens=listaNotificacoes(),vistas=new Set(notifVistas());
   const naoLidas=itens.filter(a=>!vistas.has(chaveNotif(a))).length;
   $('#notifDot').classList.toggle('hide',!naoLidas);
+  $('#notifDot').textContent=naoLidas>9?'9+':(naoLidas?String(naoLidas):'');
   $('#btnNotif').setAttribute('aria-label',naoLidas?`Notificações: ${naoLidas} nova(s) de ${itens.length}`:`Notificações (${itens.length})`);
 }
 function abrirNotificacoes(){
   const itens=listaNotificacoes();
-  const chaves=itens.map(chaveNotif),antes=notifVistas();
+  const chaves=itens.map(chaveNotif),antes=notifVistas(),novas=new Set(chaves.filter(k=>!antes.includes(k)));
   if(chaves.some(k=>!antes.includes(k))||antes.length!==chaves.length){D().notifLidas=chaves;salvar();}
   atualizarNotif();
   abrirDrawer(`<div class="modal-head"><h2>Notificações</h2>
       <button class="icon-btn" data-fechar aria-label="Fechar notificações"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
-    <div class="modal-body">${itens.length?itens.map(a=>`<div class="alert-item">
+    <div class="modal-body">${itens.length?itens.map(a=>`<div class="alert-item${novas.has(chaveNotif(a))?' nova':''}">
       <span class="alert-ico a-${a.nivel}" aria-hidden="true">${a.nivel==='neg'?'!':a.nivel==='pos'?'✓':a.nivel==='warn'?'▲':'i'}</span>
-      <div><p><b>${esc(a.titulo)}</b></p><p class="small muted">${esc(a.texto)}</p></div></div>`).join('')
+      <div><p><b>${esc(a.titulo)}</b>${novas.has(chaveNotif(a))?' <span class="tag ok">nova</span>':''}</p><p class="small muted">${esc(a.texto)}</p></div></div>`).join('')
       :'<p class="muted small">Nada por aqui no momento.</p>'}
       <p class="tiny muted" style="margin-top:14px">Avisos calculados a partir dos seus próprios lançamentos, inclusive no modo casal. Nada é enviado por e-mail ou mensagem.</p></div>`);
 }
