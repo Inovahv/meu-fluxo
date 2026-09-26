@@ -3,10 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#F2F6F7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#071519" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F5F7FB" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0A0F1E" media="(prefers-color-scheme: dark)">
 <title>Meu Fluxo — Finanças da casa</title>
 <meta name="description" content="Gestão financeira pessoal e do casal, com login por perfil.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Meu Fluxo">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
@@ -5665,6 +5673,86 @@ function renderCasal(){
     :vazio('Nada a sinalizar','Os números do período não apresentam variações ou concentrações relevantes.');
 }
 
+</script>
+<!-- ===================== PWA: instalação + service worker ===================== -->
+<style>
+.pwa-inst{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:70;
+  display:flex;align-items:center;gap:10px;background:var(--surface);color:var(--ink);border:1px solid var(--border);
+  border-radius:999px;box-shadow:var(--shadow-2);padding:8px 8px 8px 14px;max-width:calc(100vw - 24px);animation:tin .25s ease-out}
+.pwa-inst svg{width:18px;height:18px;flex:none;color:var(--accent)}
+.pwa-inst .pwa-txt{font-size:.86rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pwa-inst .btn{padding:7px 14px}
+.pwa-inst .pwa-x{width:32px;height:32px;border-radius:50%;border:0;background:transparent;color:var(--ink-2);cursor:pointer;
+  display:grid;place-items:center;flex:none}
+.pwa-inst .pwa-x:hover{background:var(--surface-2);color:var(--ink)}
+@media (max-width:560px){.pwa-inst{left:12px;right:12px;transform:none;max-width:none}.pwa-inst .pwa-txt{white-space:normal}}
+.pwa-ios{position:fixed;inset:0;z-index:80;display:grid;place-items:end center;padding:0;background:rgba(6,10,20,.5)}
+.pwa-ios .sheet{width:100%;max-width:520px;background:var(--surface);color:var(--ink);border:1px solid var(--border);
+  border-radius:18px 18px 0 0;box-shadow:var(--shadow-2);padding:20px 18px calc(20px + env(safe-area-inset-bottom,0px));animation:tin .25s ease-out}
+.pwa-ios h3{font-size:1.05rem;margin-bottom:6px}
+.pwa-ios ol{margin:12px 0 4px;padding-left:20px;display:grid;gap:9px;font-size:.92rem}
+.pwa-ios .ios-ic{display:inline-flex;vertical-align:-4px;margin:0 2px;color:var(--accent)}
+.pwa-ios .ios-ic svg{width:18px;height:18px}
+</style>
+<div class="pwa-inst" id="pwaInstall" hidden role="dialog" aria-label="Instalar o Meu Fluxo">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+  <span class="pwa-txt">Instalar o Meu Fluxo no seu dispositivo</span>
+  <button class="btn btn-primary btn-sm" id="pwaInstallBtn">Instalar</button>
+  <button class="pwa-x" id="pwaInstallX" aria-label="Agora não"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+</div>
+<script>
+(function(){
+  var LSKEY='pwa_install_dispensado';
+  var pronto=null;
+  var barra=document.getElementById('pwaInstall');
+  var btn=document.getElementById('pwaInstallBtn');
+  var fechar=document.getElementById('pwaInstallX');
+  function standalone(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;}
+  function ehIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.MSStream;}
+  function dispensado(){try{return localStorage.getItem(LSKEY)==='1';}catch(e){return false;}}
+  function mostrar(){if(barra&&!standalone()&&!dispensado())barra.hidden=false;}
+  function esconder(){if(barra)barra.hidden=true;}
+  if(fechar)fechar.onclick=function(){esconder();try{localStorage.setItem(LSKEY,'1');}catch(e){}};
+
+  // Android / Chromium: prompt nativo de instalação
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();pronto=e;mostrar();});
+  window.addEventListener('appinstalled',function(){esconder();pronto=null;try{localStorage.setItem(LSKEY,'1');}catch(e){}});
+
+  if(btn)btn.onclick=function(){
+    if(pronto){pronto.prompt();pronto.userChoice.finally(function(){pronto=null;esconder();});return;}
+    if(ehIOS()){abrirIOS();return;}
+    esconder();
+  };
+
+  // iOS/Safari: sem prompt nativo — mostra instruções de "Adicionar à Tela de Início"
+  function abrirIOS(){
+    var ov=document.createElement('div');ov.className='pwa-ios';
+    ov.innerHTML='<div class="sheet" role="dialog" aria-label="Como instalar no iPhone">'+
+      '<h3>Instalar no iPhone/iPad</h3>'+
+      '<p class="small muted">O Safari instala o app pela Tela de Início:</p>'+
+      '<ol>'+
+      '<li>Toque no botão <b>Compartilhar</b> <span class="ios-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span> na barra do Safari.</li>'+
+      '<li>Escolha <b>Adicionar à Tela de Início</b> <span class="ios-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>.</li>'+
+      '<li>Confirme em <b>Adicionar</b>. Pronto — o Meu Fluxo abre como app.</li>'+
+      '</ol>'+
+      '<div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn btn-primary" id="pwaIosOk">Entendi</button></div>'+
+      '</div>';
+    ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
+    document.body.appendChild(ov);
+    var ok=ov.querySelector('#pwaIosOk');if(ok)ok.onclick=function(){ov.remove();};
+    esconder();
+  }
+
+  // iOS não dispara beforeinstallprompt: oferecemos o convite manualmente
+  if(ehIOS()&&!standalone()&&!dispensado()){
+    if(barra){barra.querySelector('.pwa-txt').textContent='Adicionar o Meu Fluxo à Tela de Início';setTimeout(mostrar,1200);}
+  }
+
+  // Registro do service worker (necessário para instalar e abrir offline)
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});
+  }
+})();
 </script>
 </body>
 </html>
