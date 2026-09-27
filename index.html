@@ -2116,11 +2116,13 @@ async function entrar(id){
   AVISO_SENHA_FECHADO=false;atualizarAvisoSenha();
   salvar();            // cria os documentos iniciais e publica o catálogo compartilhado, se preciso
   ouvir();
+  sincronizarPush();sincronizarAgendaPush(true);
   toast(r.novo?`Olá, ${r.d.perfil.nome}! Seu espaço está pronto — comece pelo primeiro lançamento.`:`Você entrou como ${r.d.perfil.nome}.`,'ok');
 }
 async function sair(){
   if(PENDENTE)try{await descarregar();}catch(e){}
   pararOuvintes();
+  try{await removerInscricaoPush();}catch(e){}
   try{if(SB)await SB.auth.signOut();}catch(e){}
   ARM.modo='sem-sessao';ARM.uid=null;ARM.db=null;
   DB={usuarioAtual:null,dados:{}};ULTIMO={};PARCEIRO={id:null,nome:'',catalogo:null,meses:{},lista:[],veic:null};
@@ -4978,11 +4980,11 @@ const usoGrupo=id=>D().lancamentos.filter(l=>l.grupoId===id).length;
 function renderConfig(){
   $('#page-configuracoes').innerHTML=`
    <div class="subnav" role="tablist">
-     ${[['grupos','Grupos e categorias'],['cadastros','Cadastros auxiliares'],['perfil','Perfil e acesso'],['aparencia','Aparência'],['dados','Backup e dados']]
+     ${[['grupos','Grupos e categorias'],['cadastros','Cadastros auxiliares'],['perfil','Perfil e acesso'],['notificacoes','Notificações'],['aparencia','Aparência'],['dados','Backup e dados']]
        .map(([k,t])=>`<button role="tab" data-cfg="${k}" aria-selected="${CFG.aba===k}">${t}</button>`).join('')}
    </div><div id="cfgConteudo"></div>`;
   $$('#page-configuracoes [data-cfg]').forEach(b=>b.onclick=()=>{CFG.aba=b.dataset.cfg;renderConfig();});
-  ({grupos:cfgGrupos,cadastros:cfgCadastros,perfil:cfgPerfil,aparencia:cfgAparencia,dados:cfgDados})[CFG.aba]();
+  ({grupos:cfgGrupos,cadastros:cfgCadastros,perfil:cfgPerfil,notificacoes:cfgNotificacoes,aparencia:cfgAparencia,dados:cfgDados})[CFG.aba]();
 }
 function cfgGrupos(){
   const gs=[...D().grupos].sort((a,b)=>a.ordem-b.ordem);
@@ -5312,6 +5314,8 @@ function atualizarNotif(){
   const naoLidas=itens.filter(a=>!vistas.has(chaveNotif(a))).length;
   $('#notifDot').classList.toggle('hide',!naoLidas);
   $('#notifDot').textContent=naoLidas>9?'9+':(naoLidas?String(naoLidas):'');
+  atualizarBadgeApp(naoLidas);
+  sincronizarAgendaPush();
   $('#btnNotif').setAttribute('aria-label',naoLidas?`Notificações: ${naoLidas} nova(s) de ${itens.length}`:`Notificações (${itens.length})`);
 }
 function abrirNotificacoes(){
@@ -5326,6 +5330,187 @@ function abrirNotificacoes(){
       <div><p><b>${esc(a.titulo)}</b>${novas.has(chaveNotif(a))?' <span class="tag ok">nova</span>':''}</p><p class="small muted">${esc(a.texto)}</p></div></div>`).join('')
       :'<p class="muted small">Nada por aqui no momento.</p>'}
       <p class="tiny muted" style="margin-top:14px">Avisos calculados a partir dos seus próprios lançamentos, inclusive no modo casal. Nada é enviado por e-mail ou mensagem.</p></div>`);
+}
+
+/* ---------------------- notificações do sistema (Web Push) ----------------------
+   Push real, entregue pelo servidor (Supabase) mesmo com o app fechado. A frase
+   do dia é calculada no servidor (mesma tabela/fórmula do app); os avisos de
+   vencimento são agendados aqui e cancelados/atualizados quando o lançamento
+   muda. Cada inscrição fica vinculada ao usuário e ao aparelho; sair desvincula
+   o aparelho, para que avisos de um perfil não cheguem ao outro. */
+const VAPID_PUBLICA='BKMIvu4STRDwjpQ-oipyrnXIdc_PYvNgZTzOJjQLfP1zi_CTC7is-X0yEoQc4TfbAhz1XR8wPqMoarZ0o0-BISM';
+const PUSH_ON_KEY='mf_push_on';
+function b64urlParaU8(b){const pad='='.repeat((4-b.length%4)%4);const base=(b+pad).replace(/-/g,'+').replace(/_/g,'/');const raw=atob(base);const u=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)u[i]=raw.charCodeAt(i);return u;}
+function pushSuportado(){return ('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);}
+function ehStandalonePush(){return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true;}
+function ehIOSpush(){return /iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);}
+function pushPrefs(){const d=D();const def={frase_ativa:true,frase_hora:8,fin_ativa:true,mostrar_valores:false};if(!d)return def;if(!d.prefs)d.prefs={};if(!d.prefs.push)d.prefs.push={...def};const p=d.prefs.push;if(typeof p.frase_hora!=='number')p.frase_hora=8;return p;}
+function tzAtual(){try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'America/Sao_Paulo';}catch(_){return 'America/Sao_Paulo';}}
+function pushLigadoAparelho(){try{return localStorage.getItem(PUSH_ON_KEY)==='1';}catch(_){return false;}}
+function marcarPushAparelho(on){try{on?localStorage.setItem(PUSH_ON_KEY,'1'):localStorage.removeItem(PUSH_ON_KEY);}catch(_){}}
+
+async function salvarInscricao(sub){
+  if(!SB||!ARM.uid||!sub)return false;
+  const j=sub.toJSON();if(!j||!j.keys)return false;
+  const pr=pushPrefs();
+  const row={user_id:ARM.uid,perfil:(perfilCasa(ARM.uid)?.nome||null),endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,ativo:true,
+    frase_ativa:!!pr.frase_ativa,frase_hora:pr.frase_hora|0,fin_ativa:!!pr.fin_ativa,mostrar_valores:!!pr.mostrar_valores,
+    tz:tzAtual(),ua:(navigator.userAgent||'').slice(0,300),visto_em:new Date().toISOString()};
+  try{const{error}=await SB.from('push_subscricoes').upsert(row,{onConflict:'endpoint'});if(error){console.warn('salvarInscricao',error);return false;}return true;}
+  catch(e){console.warn('salvarInscricao',e);return false;}
+}
+async function atualizarPrefsInscricoes(){
+  if(!SB||!ARM.uid)return;
+  const pr=pushPrefs();
+  try{await SB.from('push_subscricoes').update({frase_ativa:!!pr.frase_ativa,frase_hora:pr.frase_hora|0,fin_ativa:!!pr.fin_ativa,mostrar_valores:!!pr.mostrar_valores,visto_em:new Date().toISOString()}).eq('user_id',ARM.uid);}catch(e){console.warn('prefs push',e);}
+}
+async function assinarNesteAparelho(){
+  if(!pushSuportado())return {estado:'nao-suportado'};
+  let perm=Notification.permission;
+  if(perm==='default'){try{perm=await Notification.requestPermission();}catch(_){perm=Notification.permission;}}
+  if(perm!=='granted')return {estado:perm};
+  let reg;try{reg=await navigator.serviceWorker.ready;}catch(_){return {estado:'sem-sw'};}
+  let sub=null;try{sub=await reg.pushManager.getSubscription();}catch(_){}
+  if(!sub){try{sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64urlParaU8(VAPID_PUBLICA)});}catch(e){console.warn('subscribe',e);return {estado:'erro-inscricao'};}}
+  const ok=await salvarInscricao(sub);
+  if(ok){marcarPushAparelho(true);sincronizarAgendaPush(true);}
+  return {estado:ok?'ativo':'erro-servidor'};
+}
+async function desativarNesteAparelho(){
+  marcarPushAparelho(false);
+  try{const reg=await navigator.serviceWorker.getRegistration();const sub=reg&&await reg.pushManager.getSubscription();
+    if(sub&&SB){const ep=sub.toJSON().endpoint;try{await SB.from('push_subscricoes').delete().eq('endpoint',ep);}catch(_){}}}catch(_){}
+  if('clearAppBadge' in navigator)navigator.clearAppBadge().catch(()=>{});
+}
+async function removerInscricaoPush(){ /* chamado no logout, ainda autenticado */
+  try{if(!('serviceWorker' in navigator))return;const reg=await navigator.serviceWorker.getRegistration();const sub=reg&&await reg.pushManager.getSubscription();
+    if(sub&&SB){const ep=sub.toJSON().endpoint;try{await SB.from('push_subscricoes').delete().eq('endpoint',ep);}catch(_){}}}catch(_){}
+  if('clearAppBadge' in navigator)navigator.clearAppBadge().catch(()=>{});
+}
+async function sincronizarPush(){ /* no login: religa a inscrição deste aparelho ao usuário atual */
+  try{if(!pushSuportado()||Notification.permission!=='granted'||!pushLigadoAparelho())return;
+    const reg=await navigator.serviceWorker.ready;let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64urlParaU8(VAPID_PUBLICA)});
+    await salvarInscricao(sub);}catch(e){console.warn('sincronizarPush',e);}
+}
+function isoLocalNaData(ymdStr,hora){const p=pYMD(ymdStr);const d=new Date(p.y,p.m-1,p.d,(hora|0)||8,0,0,0);return d.toISOString();}
+let _agendaThrottle=0,_agendaEmCurso=false;
+async function sincronizarAgendaPush(force){
+  if(!SB||!ARM.uid||!D())return;
+  const agora=Date.now();
+  if(!force&&(agora-_agendaThrottle<8000))return;
+  if(_agendaEmCurso)return;_agendaEmCurso=true;_agendaThrottle=agora;
+  try{
+    const pr=pushPrefs();const desejados=new Map();
+    if(pr.fin_ativa){
+      const limite=addMeses(HOJE,1);
+      soRegistros(D().lancamentos).filter(l=>situacao(l)==='futuro'&&l.dataParcela<=limite).forEach(l=>{
+        const chave='v:'+l.id+':'+l.dataParcela+':'+l.valor+':'+l.tipo;
+        const nome=l.observacao||nomeCat(l.categoriaId);
+        const titulo=(l.tipo==='entrada'?'Entrada prevista':'Saída prevista')+' em '+fmtData(l.dataParcela);
+        const corpo=(l.tipo==='entrada'?'Você tem uma entrada prevista para esta data.':'Você tem uma saída prevista para esta data.');
+        const detalhe=nome+' — '+fmt(l.valor)+(l.parcelasTotal?(' (parcela '+l.parcelaAtual+' de '+l.parcelasTotal+')'):'');
+        desejados.set(chave,{user_id:ARM.uid,chave,tipo:'financeiro',nivel:l.tipo==='entrada'?'pos':'warn',titulo,corpo,corpo_detalhe:detalhe,rota:'lancamentos',enviar_em:isoLocalNaData(l.dataParcela,pr.frase_hora)});
+      });
+    }
+    let existentes=[];
+    try{const{data}=await SB.from('push_agenda').select('chave,enviado').eq('user_id',ARM.uid);existentes=data||[];}catch(e){return;}
+    const setExist=new Set(existentes.map(r=>r.chave));
+    const setDesej=new Set(desejados.keys());
+    const inserir=[...desejados.values()].filter(r=>!setExist.has(r.chave));
+    if(inserir.length){try{await SB.from('push_agenda').insert(inserir);}catch(e){console.warn('agenda insert',e);}}
+    const cancelar=existentes.filter(r=>!r.enviado&&!setDesej.has(r.chave)).map(r=>r.chave);
+    if(cancelar.length){try{await SB.from('push_agenda').delete().eq('user_id',ARM.uid).in('chave',cancelar);}catch(e){console.warn('agenda cancel',e);}}
+  }finally{_agendaEmCurso=false;}
+}
+async function enviarPushTeste(){
+  if(!SB)return {erro:'sem-sessao'};
+  let token=null;try{const{data}=await SB.auth.getSession();token=data&&data.session&&data.session.access_token;}catch(_){}
+  if(!token)return {erro:'sem-token'};
+  try{const r=await fetch(SUPA_URL+'/functions/v1/enviar-push',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPA_CHAVE,'Authorization':'Bearer '+token},body:JSON.stringify({action:'test'})});
+    return await r.json().catch(()=>({}));}catch(e){return {erro:String(e)};}
+}
+function atualizarBadgeApp(naoLidas){
+  try{if('setAppBadge' in navigator){if(naoLidas>0)navigator.setAppBadge(naoLidas).catch(()=>{});else if('clearAppBadge' in navigator)navigator.clearAppBadge().catch(()=>{});}}catch(_){}
+}
+/* mensagens do service worker (toque na notificação / troca de inscrição) */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.addEventListener('message',ev=>{
+    const m=ev.data||{};
+    if(m.tipo==='abrir-rota'&&m.rota){if(DB.usuarioAtual&&D())irPara(m.rota);}
+    else if(m.tipo==='resync-push'){sincronizarPush();}
+  });
+}
+function cfgNotificacoes(){
+  const cont=$('#cfgConteudo');
+  const suportado=pushSuportado();
+  const perm=('Notification' in window)?Notification.permission:'unsupported';
+  const pr=pushPrefs();
+  const ligado=pushLigadoAparelho()&&perm==='granted';
+  const iOS=ehIOSpush(),standalone=ehStandalonePush();
+  const selEstilo='padding:7px 10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit';
+  let aviso='';
+  if(!suportado){
+    if(iOS&&!standalone) aviso='Para receber notificações no iPhone/iPad, primeiro adicione o Meu Fluxo à Tela de Início (botão Compartilhar → “Adicionar à Tela de Início”) e abra o app por ela.';
+    else aviso='Este navegador não oferece notificações por push. No Android, use o Chrome; no iPhone/iPad, instale o app na Tela de Início.';
+  } else if(perm==='denied'){
+    aviso='As notificações estão bloqueadas para o Meu Fluxo. Ative-as nas Configurações do aparelho (ou do navegador) para este app e volte aqui.';
+  } else if(iOS&&!standalone){
+    aviso='No iPhone/iPad, as notificações só funcionam com o app instalado. Adicione o Meu Fluxo à Tela de Início e abra por ela para ativá-las.';
+  }
+  const estadoTxt=perm==='granted'?(ligado?'Ativadas neste aparelho':'Permitidas — toque em Ativar'):perm==='denied'?'Bloqueadas no sistema':perm==='default'?'Ainda não solicitadas':'Indisponíveis neste navegador';
+  const bloquearToggle=(!suportado||perm==='denied'||(iOS&&!standalone));
+  cont.innerHTML=`
+   <div class="card"><div class="card-head"><h2>Notificações no aparelho</h2></div><div class="card-pad stack">
+     ${aviso?`<div class="badge-demo" style="margin-bottom:4px">${aviso}</div>`:''}
+     <div class="row" style="justify-content:space-between;align-items:center;gap:12px">
+       <div><b>Receber notificações</b><br><span class="tiny muted" id="pushEstado">${estadoTxt}</span></div>
+       <button class="btn ${ligado?'':'btn-primary'}" id="pushToggle" ${bloquearToggle?'disabled':''}>${ligado?'Desativar':'Ativar'}</button>
+     </div>
+     <p class="tiny muted">Os avisos chegam pelo próprio Meu Fluxo, sem e-mail nem mensagem. Cada aparelho é ativado separadamente e só recebe os avisos do perfil conectado nele.</p>
+   </div></div>
+
+   <div class="card" id="pushOpcoes" ${ligado?'':'hidden'}><div class="card-head"><h2>O que enviar</h2></div><div class="card-pad stack">
+     <label class="check"><input type="checkbox" id="pushFrase" ${pr.frase_ativa?'checked':''}>
+       <span><b>Frase do dia</b><br><span class="tiny muted">Uma vez por dia, no horário escolhido — a mesma frase que aparece no app.</span></span></label>
+     <div class="row" style="align-items:center;gap:10px">
+       <label for="pushHora" class="small">Horário da frase</label>
+       <select id="pushHora" style="${selEstilo}">${Array.from({length:24},(_,h)=>`<option value="${h}" ${pr.frase_hora===h?'selected':''}>${pad(h)}:00</option>`).join('')}</select>
+     </div>
+     <label class="check"><input type="checkbox" id="pushFin" ${pr.fin_ativa?'checked':''}>
+       <span><b>Avisos de vencimento</b><br><span class="tiny muted">Entradas e saídas previstas dos seus próprios lançamentos. Se você alterar, pagar ou excluir um lançamento, o aviso pendente é atualizado ou cancelado.</span></span></label>
+     <label class="check"><input type="checkbox" id="pushValores" ${pr.mostrar_valores?'checked':''}>
+       <span><b>Mostrar valores na notificação</b><br><span class="tiny muted">Desligado por padrão: assim a notificação não exibe valores na tela bloqueada.</span></span></label>
+     <hr style="border:0;border-top:1px solid var(--border);margin:2px 0">
+     <div class="row"><button class="btn" id="pushTeste">Enviar um teste para este aparelho</button></div>
+     <p class="tiny muted">O horário é aproximado (janela de alguns minutos). A entrega depende do serviço de notificações do aparelho e da permissão do sistema.</p>
+   </div></div>`;
+  const toggle=$('#pushToggle');
+  if(toggle)toggle.onclick=async()=>{
+    if(pushLigadoAparelho()&&Notification.permission==='granted'){await desativarNesteAparelho();toast('Notificações desativadas neste aparelho.','ok');renderConfig();return;}
+    toggle.disabled=true;toggle.textContent='Ativando…';
+    const r=await assinarNesteAparelho();
+    if(r.estado==='ativo')toast('Notificações ativadas neste aparelho.','ok');
+    else if(r.estado==='denied')toast('Permissão negada. Ative nas Configurações do aparelho.','err');
+    else if(r.estado==='nao-suportado')toast('Este aparelho não suporta notificações por push.','err');
+    else toast('Não foi possível ativar agora. Tente novamente.','err');
+    renderConfig();
+  };
+  const bindPref=(id,campo,tipo)=>{const el=$('#'+id);if(!el)return;el.onchange=async()=>{const p=pushPrefs();p[campo]=(tipo==='hora')?(+el.value):el.checked;salvar();await atualizarPrefsInscricoes();await sincronizarAgendaPush(true);};};
+  bindPref('pushFrase','frase_ativa');
+  bindPref('pushHora','frase_hora','hora');
+  bindPref('pushFin','fin_ativa');
+  bindPref('pushValores','mostrar_valores');
+  const teste=$('#pushTeste');
+  if(teste)teste.onclick=async()=>{
+    teste.disabled=true;teste.textContent='Enviando…';
+    const r=await enviarPushTeste();
+    if(r&&r.ok&&r.teste>0)toast('Teste enviado. Veja a área de notificações do aparelho.','ok');
+    else if(r&&r.ok&&r.assinaturas===0)toast('Nenhuma inscrição ativa neste perfil. Ative as notificações primeiro.','err');
+    else if(r&&r.erro)toast('Não foi possível enviar o teste agora.','err');
+    else toast('Teste solicitado. Se não chegar, confira as permissões do aparelho.','ok');
+    teste.disabled=false;teste.textContent='Enviar um teste para este aparelho';
+  };
 }
 
 /* ---------------------- inicialização ---------------------- */
