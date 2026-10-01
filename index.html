@@ -4602,17 +4602,21 @@ function renderDetalheContrato(){
         <div class="field" style="margin-top:12px"><label for="tx">Nova taxa mensal de juros (%)</label>
           <input id="tx" class="input" type="number" step="0.01" min="0" max="20" value="${ct.taxaMensal}"></div>
         <div class="field" style="margin-top:12px"><label for="txData">Vigente a partir de</label>
-          <input id="txData" class="input" type="date" value="${HOJE}" min="${ultima.data}"></div>
-        <p class="tiny muted" style="margin-top:10px">Os juros já calculados antes dessa data continuam usando a taxa anterior — só o período a partir daqui passa a usar a taxa nova.</p>`,
+          <input id="txData" class="input" type="date" value="${HOJE}"></div>
+        <p class="tiny muted" style="margin-top:10px">Pode ser qualquer data, inclusive retroativa: os juros são recalculados a partir dela com a nova taxa. Antes dessa data vale a taxa anterior; mudanças de taxa já registradas depois dela continuam valendo a partir das suas datas.</p>${ct.historicoTaxa.length>1?`<p class="tiny muted" style="margin-top:6px">Histórico: ${ct.historicoTaxa.map(p=>fmtData(p.data)+' — '+NUM.format(p.taxa)+'%').join(' · ')}</p>`:''}`,
       rodape:`<button class="btn" data-fechar>Cancelar</button><button class="btn btn-primary" id="okTx">Salvar taxa</button>`,
       aoAbrir:m=>{$('#okTx',m).onclick=()=>{
         const novaData=$('#txData',m).value||HOJE;
-        if(novaData<ultima.data){toast('A data de vigência não pode ser anterior à última mudança de taxa ('+fmtData(ultima.data)+').','err');return;}
         const novaTaxa=+$('#tx',m).value||0;
-        if(novaData===ultima.data)ultima.taxa=novaTaxa;
-        else ct.historicoTaxa.push({data:novaData,taxa:novaTaxa});
-        ct.taxaMensal=novaTaxa;
-        salvar();fecharModal();toast('Taxa atualizada. O histórico já calculado antes da vigência não muda.','ok');renderEmprestimos();};}});
+        const h=ct.historicoTaxa;
+        h.sort((a,b)=>a.data<b.data?-1:a.data>b.data?1:0);
+        if(novaData<=h[0].data)h[0].taxa=novaTaxa;            // na data inicial ou antes: troca a taxa base
+        else{const ex=h.find(p=>p.data===novaData);
+          if(ex)ex.taxa=novaTaxa;else h.push({data:novaData,taxa:novaTaxa});
+          h.sort((a,b)=>a.data<b.data?-1:a.data>b.data?1:0);}
+        ct.taxaMensal=h[h.length-1].taxa;                       // taxa atual = mudança mais recente
+        const retro=novaData<HOJE;
+        salvar();fecharModal();toast(retro?'Taxa aplicada desde '+fmtData(novaData<=h[0].data?h[0].data:novaData)+'. Juros recalculados a partir dessa data.':'Taxa atualizada.','ok');renderEmprestimos();};}});
   };
   $('#ctMais').onclick=e=>{e.stopPropagation();menuAcoes(e.currentTarget,[
     {texto:'Alterar taxa',icone:SVG_TAXA,aoClicar:alterarTaxa},
