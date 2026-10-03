@@ -306,6 +306,9 @@ table.tbl td.r,table.tbl th.r{text-align:right}
 .tag.fut{background:var(--accent-soft);color:var(--brand-2);border-color:color-mix(in srgb,var(--accent) 34%,transparent)}
 :root[data-theme="dark"] .tag.fut,:root:not([data-theme="light"]) .tag.fut{color:var(--accent)}
 .tag.can{background:var(--neg-bg);color:var(--neg);border-color:color-mix(in srgb,var(--neg) 26%,transparent)}
+.kpi.k-warn::before{background:var(--warn)} .kpi.k-warn .spark{color:var(--warn)}
+.linkbtn{background:none;border:0;padding:0;font:inherit;font-weight:600;color:var(--accent);cursor:pointer;text-align:left}
+.linkbtn:hover{text-decoration:underline}
 .tbl-foot{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-top:1px solid var(--border);
   font-size:.83rem;color:var(--ink-2)}
 .bulkbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 16px;background:var(--accent-soft);
@@ -1779,16 +1782,66 @@ function fecharDrawer(){const d=$('#drawer');if(d.hidden)return;d.classList.remo
 
 /* ---- gráficos ---- */
 const CHARTS={};
-/* Paleta categórica — 8 matizes de ordem fixa (nunca ciclar além do 8º; a 9ª
-   categoria em diante entra em "Outras", ver COR_OUTRAS), validada com o
-   validador de acessibilidade (contraste, separação para daltonismo e piso de
-   visão normal) para os fundos claro e escuro do app. Ordem: teal (marca),
-   terracota, violeta, jade, ameixa, ouro, azul-petróleo, rosé. */
-const PALETA=['#4C63F0','#12B5A5','#F59E0B','#8B5CF6','#EC4899','#0EA5E9','#F97316','#22B07D'];
+/* Paleta categórica — 8 matizes bem separados, em ordem de contraste máximo
+   entre vizinhos: azul, amarelo, verde, magenta, laranja, ciano, marrom e
+   roxo. Azul e roxo ficam nas pontas, para nunca aparecerem lado a lado em
+   gráficos de poucas séries. A 9ª categoria em diante entra em "Outras". */
+const PALETA=['#3B5BDB','#E8A300','#2F9E44','#D6336C','#F76707','#1098AD','#8D5B2E','#9C36B5'];
 const COR_OUTRAS='#94A3B8';
-/* Cores semânticas das séries de tempo, coerentes com pos/neg/roxo da paleta.
-   Legíveis tanto no tema claro quanto no escuro. */
-const COR_ENTRADA='#12A971', COR_SAIDA='#EF4A5A', COR_ACUM='#8B5CF6';
+/* Cores semânticas das séries de tempo. Pares de comparação usam sempre
+   azul x amarelo (nunca azul x roxo). */
+const COR_ENTRADA='#12A971', COR_SAIDA='#EF4A5A', COR_ACUM='#E8A300';
+const COR_A=PALETA[0], COR_B=PALETA[1];
+/* Cores de marca das instituições financeiras: tudo que envolve o PicPay sai
+   em verde, o Nubank em roxo, e assim por diante. O nome é comparado sem
+   acentos, espaços ou maiúsculas ("Pic Pay" = "PicPay"). */
+const CORES_BANCO=[
+  [/nubank|nuconta|nupagamentos|^nu$/,'#820AD1'],
+  [/picpay/,'#11B85C'],
+  [/itau/,'#EC7000'],
+  [/bradesco/,'#CC092F'],
+  [/santander/,'#EA1D25'],
+  [/bancodobrasil|^bb$|ourocard/,'#F5C400'],
+  [/caixa|^cef$/,'#0070AF'],
+  [/^(banco)?inter$|bancointer/,'#FF7A00'],
+  [/^c6|c6bank|c6business/,'@ink'],
+  [/mercadopago/,'#00B1EA'],
+  [/banestes/,'#00599C'],
+  [/sicoob/,'#00A091'],
+  [/sicredi/,'#3FA110'],
+  [/pagbank|pagseguro/,'#7CB518'],
+  [/neon/,'#00BFD8'],
+  [/^(banco)?original/,'#00A651'],
+  [/^will|willbank/,'#F2C200'],
+  [/^xp|xpinvest/,'@ink'],
+  [/btg/,'#0B2D5B'],
+  [/safra/,'#1B3A6B'],
+  [/mercantil/,'#E30613'],
+  [/rico$|^rico/,'#FF5A00']
+];
+function corBanco(nome){
+  const k=String(nome||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(!k)return null;
+  for(const [re,c] of CORES_BANCO)if(re.test(k))return c==='@ink'?(cssVar('--ink')||'#1F2937'):c;
+  return null;
+}
+function hexRgb(c){const m=/^#?([0-9a-f]{6})$/i.exec(String(c||'').trim());if(!m)return null;const n=parseInt(m[1],16);return [n>>16&255,n>>8&255,n&255];}
+function distCor(a,b){const x=hexRgb(a),y=hexRgb(b);if(!x||!y)return 999;
+  const r=(x[0]+y[0])/2,dr=x[0]-y[0],dg=x[1]-y[1],db=x[2]-y[2];
+  return Math.sqrt((2+r/256)*dr*dr+4*dg*dg+(2+(255-r)/256)*db*db);}
+/* Uma cor por nome: marca do banco quando reconhecido; senão a próxima cor
+   da paleta que não se pareça com nenhuma já usada no mesmo gráfico. */
+function coresPorNome(nomes){
+  const out=new Array(nomes.length).fill(null),usadas=[];
+  const parecida=c=>usadas.some(u=>distCor(u,c)<120);
+  nomes.forEach((n,i)=>{const c=corBanco(n);if(c&&!parecida(c)){out[i]=c;usadas.push(c);}});
+  let p=0;
+  nomes.forEach((n,i)=>{if(out[i])return;
+    let tent=0,c=PALETA[p%PALETA.length];
+    while(parecida(c)&&tent<PALETA.length){p++;tent++;c=PALETA[p%PALETA.length];}
+    out[i]=c;usadas.push(c);p++;});
+  return out;
+}
 function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
 function chartDefaults(){
   if(!window.Chart)return;
@@ -3079,6 +3132,7 @@ function exportarPdfLancamentos(lista,tot){
 function duplicar(id){
   const l=D().lancamentos.find(x=>x.id===id);if(!l)return;
   const novo={...l,id:uid('l'),observacao:(l.observacao||'')+' (cópia)',compraId:null,parcelaAtual:null,parcelasTotal:null,recorrenciaId:null};
+  delete novo.km;delete novo.litros;
   D().lancamentos.unshift(novo);salvar();toast('Lançamento duplicado.','ok');renderPagina();
 }
 /* escolha do alcance quando o lançamento pertence a uma série recorrente */
@@ -3170,6 +3224,12 @@ function abrirFormLancamento(id=null,preset={}){
         <span class="tiny muted">Obrigatória para rendimento, aporte, resgate e taxa: é o que permite analisar cada banco.</span></div>
       <div class="field hide" id="boxVeic"><label for="fVeic">Veículo</label>
         <select id="fVeic" class="input">${opcoes(D().veiculos,{vazio:'Não informar',selecionado:base.veiculoId||''})}</select></div>
+      <div class="field hide" id="boxKm"><label for="fKm">Quilometragem atual (opcional)</label>
+        <input id="fKm" class="input" type="number" inputmode="numeric" min="0" step="1" placeholder="Ex.: 45230" value="${+base.km>0?Math.round(base.km):''}">
+        <span class="err" id="eKm"></span><span class="tiny muted" id="fKmDica">Leitura do painel. Com ela o app calcula km rodados, custo por km e consumo.</span></div>
+      <div class="field hide" id="boxLitros"><label for="fLitros">Litros abastecidos (opcional)</label>
+        <input id="fLitros" class="input" type="text" inputmode="decimal" placeholder="Ex.: 38,5" value="${+base.litros>0?String(base.litros).replace('.',','):''}">
+        <span class="tiny muted">Com litros e quilometragem, o km/l passa a ser medido, e não estimado.</span></div>
       <div class="field full hide" id="boxCusto">
         <label class="check"><input type="checkbox" id="fCusto" ${base.incluiCustoVeiculo!==false?'checked':''}>
           <span>Incluir no custo operacional do veículo<br><span class="tiny muted">Desmarque para aquisição, transferência, vistoria de compra e despesas excepcionais. O lançamento continua no fluxo financeiro geral.</span></span></label></div>
@@ -3251,6 +3311,12 @@ function montarFormLancamento(m,base,edit,compra=null){
     const precisaVeic=!!(c&&c.veicular);
     $('#boxVeic',m).classList.toggle('hide',!precisaVeic);
     $('#boxCusto',m).classList.toggle('hide',!(precisaVeic&&$('#fVeic',m).value));
+    const temVeic=precisaVeic&&!!$('#fVeic',m).value;
+    $('#boxKm',m).classList.toggle('hide',!temVeic);
+    $('#boxLitros',m).classList.toggle('hide',!(temVeic&&ehCatCombustivel(c)));
+    if(temVeic){const vv=D().veiculos.find(x=>x.id===$('#fVeic',m).value);
+      const pp=seqOdometro(leiturasVeiculo(vv,edit?{ids:new Set([edit.id]),compraId:edit.compraId||null}:null)),uu=pp[pp.length-1];
+      $('#fKmDica',m).textContent=uu?'Última leitura: '+fmtKm(uu.km)+' em '+fmtData(uu.data)+'. Com ela o app calcula km rodados, custo por km e consumo.':'Leitura do painel. Com ela o app calcula km rodados, custo por km e consumo.';}
     if(ehCartao)previewParcelas();
   }
   function previewParcelas(){
@@ -3349,8 +3415,23 @@ function montarFormLancamento(m,base,edit,compra=null){
     if(!valor){$('#eValor',m).textContent='Informe um valor maior que zero.';fValor.setAttribute('aria-invalid','true');erro=true;}else fValor.removeAttribute('aria-invalid');
     if(!data){$('#eData',m).textContent='Informe a data.';erro=true;}
     if(!categoriaId){$('#eCategoria',m).textContent='Escolha a categoria.';fCat.setAttribute('aria-invalid','true');erro=true;}else fCat.removeAttribute('aria-invalid');
+    const eK=$('#eKm',m);if(eK)eK.textContent='';
+    const kmOn=!$('#boxKm',m).classList.contains('hide');
+    const kmVal=kmOn&&$('#fKm',m).value!==''?Math.round(+$('#fKm',m).value):null;
+    const litOn=!$('#boxLitros',m).classList.contains('hide');
+    const litVal=litOn?lerDecimal($('#fLitros',m).value):null;
+    if(kmOn&&kmVal!==null){
+      if(!(kmVal>0)||kmVal>3000000){if(eK)eK.textContent='Informe a quilometragem do painel (número inteiro) ou deixe em branco.';erro=true;}
+      else{const vv=D().veiculos.find(x=>x.id===$('#fVeic',m).value);
+        const cf=vv&&conflitoKm(vv,data,kmVal,edit?{ids:new Set([edit.id]),compraId:edit.compraId||null}:null);
+        if(cf){if(eK)eK.textContent=`Não confere com a leitura de ${fmtKm(cf.km)} em ${fmtData(cf.data)}. O hodômetro não volta: corrija um dos dois.`;erro=true;}}}
+    if(litOn&&$('#fLitros',m).value.trim()&&!(litVal>0&&litVal<1000)){toast('Litros: informe um número como 38,5 ou deixe em branco.','err');erro=true;}
     if(erro){toast('Revise os campos destacados.','err');return;}
     const c=cat(categoriaId);
+    const aplicarKm=x=>{if(!x)return;
+      if(kmOn&&kmVal>0)x.km=kmVal;else delete x.km;
+      if(litOn&&litVal>0)x.litros=round2(litVal);else delete x.litros;};
+    const limparKm=x=>{delete x.km;delete x.litros;};
     const comum={tipo,valor,categoriaId,grupoId:c.grupoId,observacao:$('#fObs',m).value.trim(),
       formaPagamento:$('#fForma',m).value,situacaoManual:$('#fSituacao',m).value||null,
       cartaoId:$('#fForma',m).value==='Cartão de crédito'?$('#fCartao',m).value:null,
@@ -3369,7 +3450,7 @@ function montarFormLancamento(m,base,edit,compra=null){
             let alvo=[edit];
             if(esc0==='proximas')alvo=depois;
             if(esc0==='serie')alvo=todos;
-            alvo.forEach(x=>{Object.assign(x,comum);if(x.id===edit.id){x.dataParcela=data;x.dataOriginal=data;}});
+            alvo.forEach(x=>{Object.assign(x,comum);if(x.id===edit.id){x.dataParcela=data;x.dataOriginal=data;aplicarKm(x);}});
             if(esc0!=='uma'){const r=D().recorrencias.find(y=>y.id===edit.recorrenciaId);
               if(r)r.descricao=comum.observacao||nomeCat(categoriaId);}
             salvar();fecharModal();
@@ -3382,11 +3463,13 @@ function montarFormLancamento(m,base,edit,compra=null){
         const partes=dividirParcelas(valor,n),antigos=compra.ps;
         const novos=partes.map((v,i)=>({...(antigos[i]||{}),id:antigos[i]?antigos[i].id:uid('l'),...comum,valor:v,
           dataOriginal:data,dataParcela:addMeses(primeira,i),parcelaAtual:i+1,parcelasTotal:n,compraId:compra.ps[0].compraId,recorrenciaId:null}));
+        novos.forEach((x,i)=>i===0?aplicarKm(x):limparKm(x));
         const ids=new Set(antigos.map(l=>l.id));
         D().lancamentos=D().lancamentos.filter(l=>!ids.has(l.id)).concat(novos);
         salvar();fecharModal();toast(`Compra corrigida: ${n} parcela(s), total ${fmt(valor)}.`,'ok');renderPagina();return;
       }
       Object.assign(edit,comum,{dataParcela:data,dataOriginal:edit.parcelasTotal?edit.dataOriginal:data});
+      aplicarKm(edit);
       salvar();fecharModal();toast('Lançamento atualizado.','ok');renderPagina();return;
     }
     const nParc=$('#fForma',m).value==='Cartão de crédito'?Math.max(1,Math.min(36,+$('#fParcelas',m).value||1)):1;
@@ -3396,16 +3479,16 @@ function montarFormLancamento(m,base,edit,compra=null){
       const datas=ocorrenciasRecorrencia(ini,freq,{ate:semFim?null:($('#fRecFim',m).value||null),qtd:semFim?null:(+$('#fRecQtd',m).value||null)});
       const rid=uid('r');
       D().recorrencias.push({id:rid,descricao:comum.observacao||nomeCat(categoriaId),frequencia:freq,dataInicial:ini,criadoEm:HOJE});
-      datas.forEach(d=>D().lancamentos.unshift({id:uid('l'),...comum,dataParcela:d,dataOriginal:d,parcelaAtual:null,parcelasTotal:null,compraId:null,recorrenciaId:rid}));
+      datas.forEach((d,i)=>{const x={id:uid('l'),...comum,dataParcela:d,dataOriginal:d,parcelaAtual:null,parcelasTotal:null,compraId:null,recorrenciaId:rid};if(i===0)aplicarKm(x);D().lancamentos.unshift(x);});
       salvar();fecharModal();toast(`Recorrência criada com ${datas.length} ocorrências.`,'ok');renderPagina();return;
     }
     if(nParc>1){
       const primeira=$('#fPrimeira',m).value||data,partes=dividirParcelas(valor,nParc),compraId=uid('c');
-      partes.forEach((v,i)=>D().lancamentos.unshift({id:uid('l'),...comum,valor:v,dataOriginal:data,dataParcela:addMeses(primeira,i),
-        parcelaAtual:i+1,parcelasTotal:nParc,compraId,recorrenciaId:null}));
+      partes.forEach((v,i)=>{const x={id:uid('l'),...comum,valor:v,dataOriginal:data,dataParcela:addMeses(primeira,i),
+        parcelaAtual:i+1,parcelasTotal:nParc,compraId,recorrenciaId:null};if(i===0)aplicarKm(x);D().lancamentos.unshift(x);});
       salvar();fecharModal();toast(`Compra registrada em ${nParc} parcelas.`,'ok');renderPagina();return;
     }
-    D().lancamentos.unshift({id:uid('l'),...comum,dataParcela:data,dataOriginal:data,parcelaAtual:null,parcelasTotal:null,compraId:null,recorrenciaId:null});
+    {const x={id:uid('l'),...comum,dataParcela:data,dataOriginal:data,parcelaAtual:null,parcelasTotal:null,compraId:null,recorrenciaId:null};aplicarKm(x);D().lancamentos.unshift(x);}
     salvar();fecharModal();toast('Lançamento salvo.','ok');renderPagina();
   };
 }
@@ -3509,8 +3592,8 @@ function renderComparacoes(){
   if(!chaves.length){$('#cmpBox').innerHTML=vazio('Sem dados para comparar','Os períodos escolhidos não têm saídas realizadas com essa classificação.');return;}
   desenharGrafico('chartCmp',{type:'bar',
     data:{labels:chaves.map(c=>c.k),datasets:[
-      {label:iv.A.nome,data:chaves.map(c=>c.a),backgroundColor:PALETA[0],borderRadius:4},
-      {label:iv.B.nome,data:chaves.map(c=>c.b),backgroundColor:PALETA[3],borderRadius:4}]},
+      {label:iv.A.nome,data:chaves.map(c=>c.a),backgroundColor:COR_A,borderRadius:4},
+      {label:iv.B.nome,data:chaves.map(c=>c.b),backgroundColor:COR_B,borderRadius:4}]},
     options:{indexAxis:'y',scales:{x:{ticks:{callback:v=>fmtCompacto(v)},grid:{color:cssVar('--border')}},y:{grid:{display:false}}},
       plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,boxHeight:10}}}}});
 }
@@ -3628,21 +3711,21 @@ function renderTendencias(){
 
   desenharGrafico('chartTendSaz',{type:'bar',
     data:{labels:saz.map(s=>s.mes),datasets:[
-      {label:'Entradas (média)',data:saz.map(s=>s.entradas),backgroundColor:PALETA[2],borderRadius:4},
-      {label:'Saídas (média)',data:saz.map(s=>s.saidas),backgroundColor:PALETA[4],borderRadius:4}]},
+      {label:'Entradas (média)',data:saz.map(s=>s.entradas),backgroundColor:COR_ENTRADA,borderRadius:4},
+      {label:'Saídas (média)',data:saz.map(s=>s.saidas),backgroundColor:COR_SAIDA,borderRadius:4}]},
     options:{scales:{y:{ticks:{callback:v=>fmtCompacto(v)},grid:{color:cssVar('--border')}},x:{grid:{display:false}}},
       plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,boxHeight:10}}}}});
 
   if(formasOrd.length)desenharGrafico('chartTendForma',{type:'doughnut',
-    data:{labels:formasOrd.map(f=>f[0]),datasets:[{data:formasOrd.map(f=>f[1]),backgroundColor:formasOrd.map((_,i)=>PALETA[i%PALETA.length])}]},
+    data:{labels:formasOrd.map(f=>f[0]),datasets:[{data:formasOrd.map(f=>f[1]),backgroundColor:coresPorNome(formasOrd.map(f=>f[0]))}]},
     options:{plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,boxHeight:10}}}}},
     {data:{labels:formasOrd.map(f=>f[0]),datasets:[{label:'Forma de pagamento',data:formasOrd.map(f=>f[1])}]}});
   else $('#tendFormaBox').innerHTML=vazio('Sem saídas classificadas','Não há saídas realizadas com forma de pagamento no período.');
 
   desenharGrafico('chartTendMm',{type:'line',
     data:{labels:meses.map(m=>mesLabel(m.idx)),datasets:[
-      {label:'Resultado do mês',data:meses.map(m=>m.resultado),backgroundColor:PALETA[5],borderColor:'transparent',type:'bar',borderRadius:3,order:2},
-      {label:'Média móvel (3 meses)',data:mm,borderColor:PALETA[0],backgroundColor:PALETA[0],tension:.35,borderWidth:3,pointRadius:2,spanGaps:false,order:1}]},
+      {label:'Resultado do mês',data:meses.map(m=>m.resultado),backgroundColor:meses.map(m=>m.resultado>=0?COR_ENTRADA:COR_SAIDA),borderColor:'transparent',type:'bar',borderRadius:3,order:2},
+      {label:'Média móvel (3 meses)',data:mm,borderColor:COR_A,backgroundColor:COR_A,tension:.35,borderWidth:3,pointRadius:2,spanGaps:false,order:1}]},
     options:{scales:{y:{ticks:{callback:v=>fmtCompacto(v)},grid:{color:cssVar('--border')}},x:{grid:{display:false}}},
       plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,boxHeight:10}}}}});
 }
@@ -3912,6 +3995,7 @@ function renderRendInst(){
   const minhas=D().lancamentos.filter(l=>fin(l)&&situacao(l)!=='cancelado');
   const semInst=minhas.filter(l=>!l.instituicaoId);
   const insts=D().instituicoes.filter(i=>minhas.some(l=>l.instituicaoId===i.id));
+  const coresInst=coresPorNome(insts.map(i=>i.nome));
   if(!insts.length){box.innerHTML=`<div class="card-head"><h2>Rendimentos por instituição</h2></div>`+
     vazio('Nenhum investimento com instituição','Lance rendimentos, aportes ou resgates escolhendo o banco no formulário.');return;}
   if(!RINST.sel)RINST.sel=new Set(insts.map(i=>i.id));
@@ -3939,7 +4023,7 @@ function renderRendInst(){
         <button data-v="acum" aria-pressed="${RINST.vista==='acum'}">Acumulado</button><button data-v="mensal" aria-pressed="${RINST.vista==='mensal'}">Por mês</button></div></div>
     <div class="card-pad" style="padding-top:0">
       <div class="chips-inst" role="group" aria-label="Instituições no gráfico">${insts.map((i,k)=>`<button type="button" class="chip-inst" data-inst="${esc(i.id)}" aria-pressed="${RINST.sel.has(i.id)}">
-        <span class="bolinha" style="background:${PALETA[k%PALETA.length]}"></span>${esc(i.nome)}</button>`).join('')}</div>
+        <span class="bolinha" style="background:${coresInst[k]}"></span>${esc(i.nome)}</button>`).join('')}</div>
       <p class="small" style="margin:10px 0 4px"><b>Período analisado:</b> ${mesLabel(de,false)} a ${mesLabel(ate,false)} (${meses.length} ${meses.length===1?'mês':'meses'}).
         Rendimento das selecionadas no período: <b class="money pos">${fmt(rendSel)}</b>.</p>
     </div>
@@ -3967,7 +4051,7 @@ function renderRendInst(){
   $$('#segRend button').forEach(b=>b.onclick=()=>{RINST.vista=b.dataset.v;renderRendInst();});
   $$('#rendInstCard [data-inst]').forEach(b=>b.onclick=()=>{
     const id=b.dataset.inst;if(RINST.sel.has(id)){if(RINST.sel.size>1)RINST.sel.delete(id);}else RINST.sel.add(id);renderRendInst();});
-  const cor=id=>PALETA[insts.findIndex(i=>i.id===id)%PALETA.length];
+  const cor=id=>coresInst[insts.findIndex(i=>i.id===id)]||PALETA[0];
   const rot=meses.map(i=>mesLabel(i));
   const ds=RINST.vista==='acum'
     ?sel.map(x=>({label:x.i.nome,data:acumulado(x.mensal),borderColor:cor(x.i.id),backgroundColor:cor(x.i.id),tension:.25,pointRadius:2,borderWidth:2}))
@@ -4201,6 +4285,251 @@ function custosVeiculos(){
   });
   return meus.concat(out);
 }
+/* ---------- Quilometragem e consumo ----------
+   As leituras do hodômetro vêm de dois lugares: o campo opcional
+   "Quilometragem atual" do lançamento e as atualizações avulsas feitas na aba
+   Veículos. Com elas o app interpola o hodômetro dia a dia e calcula km
+   rodados por mês, custo por km e consumo. O km/l é MEDIDO quando há litros e
+   quilometragem informados nos abastecimentos; caso contrário usa o consumo de
+   referência cadastrado no veículo (Configurações). Tudo é privado: no modo
+   casal só os totais em R$ por veículo são publicados, nunca a quilometragem. */
+const NUM1=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
+const NUMI=new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0});
+const fmtKm=v=>NUMI.format(Math.round(+v||0))+' km';
+const fmtKmL=v=>v>0?NUM1.format(v)+' km/l':'—';
+const fmtL=v=>v>0?NUM1.format(v)+' L':'—';
+const fmtPorKm=v=>v>0?fmt(v)+'/km':'—';
+function lerDecimal(s){s=String(s==null?'':s).trim().replace(/\s/g,'');if(!s)return null;
+  if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');const n=parseFloat(s);return isFinite(n)?n:null;}
+const ehCatCombustivel=c=>!!(c&&c.veicular&&(c.id==='c-comb'||/combust|abastec|gasolina|etanol|diesel/i.test(c.nome||'')));
+const ehCombustivel=l=>ehCatCombustivel(cat(l.categoriaId));
+const dataConsumo=l=>l.dataOriginal||l.dataParcela;
+const ymdIdx=(i,d=1)=>ymd(Math.floor(i/12),i%12+1,d);
+const meuVeiculoDaChave=ch=>{if(!ch||ch==='todos'||!ch.startsWith(DB.usuarioAtual+':'))return null;
+  const id=ch.split(':').slice(1).join(':');return D().veiculos.find(v=>v.id===id)||null;};
+/* Todas as leituras de um veículo seu (uma por compra parcelada). */
+function leiturasVeiculo(v,ignorar){
+  const out=[],vistos=new Set();if(!v)return out;
+  D().lancamentos.forEach(l=>{
+    if(l.veiculoId!==v.id||situacao(l)==='cancelado'||!(+l.km>0))return;
+    if(ignorar&&(ignorar.ids.has(l.id)||(ignorar.compraId&&l.compraId===ignorar.compraId)))return;
+    const k=l.compraId||l.id;if(vistos.has(k))return;vistos.add(k);
+    out.push({data:dataConsumo(l),km:+l.km,fonte:'lanc',id:l.id,desc:l.observacao||nomeCat(l.categoriaId)});
+  });
+  (v.leiturasKm||[]).forEach(r=>{if(ignorar&&ignorar.leitura===r.id)return;out.push({data:r.data,km:+r.km,fonte:'manual',id:r.id,desc:'Atualização de quilometragem'});});
+  out.sort((a,b)=>a.data<b.data?-1:a.data>b.data?1:a.km-b.km);
+  return out;
+}
+/* Sequência válida do hodômetro: nunca diminui (leituras incoerentes ficam de
+   fora do cálculo e aparecem marcadas na lista) e tem no máximo um ponto por dia. */
+function seqOdometro(leit){
+  const pts=[];let max=-1;
+  leit.forEach(r=>{r.ignorada=r.km<max;if(r.ignorada)return;max=r.km;
+    if(pts.length&&pts[pts.length-1].data===r.data)pts[pts.length-1].km=r.km;else pts.push({data:r.data,km:r.km});});
+  return pts;
+}
+function odoEm(pts,data){
+  if(!pts.length||data<pts[0].data||data>pts[pts.length-1].data)return null;
+  for(let i=0;i<pts.length;i++){
+    if(pts[i].data===data)return pts[i].km;
+    if(pts[i].data>data){const a=pts[i-1],b=pts[i];return a.km+(b.km-a.km)*diasEntre(a.data,data)/Math.max(1,diasEntre(a.data,b.data));}
+  }
+  return pts[pts.length-1].km;
+}
+/* km rodados entre d1 (inclusive) e d2 (exclusive), só onde há leituras. */
+function kmEntre(pts,d1,d2){
+  if(pts.length<2)return 0;
+  const a=d1<pts[0].data?pts[0].data:d1,b=d2>pts[pts.length-1].data?pts[pts.length-1].data:d2;
+  if(b<=a)return 0;
+  return Math.max(0,(odoEm(pts,b)||0)-(odoEm(pts,a)||0));
+}
+/* Leitura que contradiz a nova (maior antes dela, ou menor depois dela). */
+function conflitoKm(v,data,km,ignorar){
+  return leiturasVeiculo(v,ignorar).find(r=>(r.data<data&&r.km>km)||(r.data>data&&r.km<km))||null;
+}
+/* Abastecimentos agrupados por compra (parcelas do cartão contam uma vez). */
+function comprasCombustivel(lancs){
+  const g=new Map();
+  lancs.filter(ehCombustivel).forEach(l=>{const k=l.compraId||l.id;
+    const c=g.get(k)||{data:dataConsumo(l),valor:0,litros:0,km:0};
+    c.valor=round2(c.valor+(+l.valor||0));if(+l.litros>0)c.litros=+l.litros;if(+l.km>0)c.km=+l.km;g.set(k,c);});
+  return [...g.values()].sort((a,b)=>a.data<b.data?-1:1);
+}
+/* Consumo medido de abastecimento a abastecimento: os litros de cada
+   abastecimento repõem o que foi gasto desde o abastecimento anterior com km. */
+function segmentosConsumo(lancs){
+  const cs=comprasCombustivel(lancs).filter(c=>c.km>0),out=[];
+  for(let i=1;i<cs.length;i++){const a=cs[i-1],b=cs[i];
+    if(b.litros>0&&b.km>a.km)out.push({data:b.data,km:b.km-a.km,litros:b.litros});}
+  return out;
+}
+function analiseKm(v,de,ate){
+  const leit=leiturasVeiculo(v),pts=seqOdometro(leit);
+  const lancs=D().lancamentos.filter(l=>l.veiculoId===v.id&&l.tipo==='saida'&&situacao(l)!=='cancelado'&&dataConsumo(l)<=HOJE);
+  const ref=+v.kmPorLitro>0?+v.kmPorLitro:null;
+  const iniP=ymdIdx(de),fimP=ymdIdx(ate+1);
+  const segs=segmentosConsumo(lancs);
+  const meses=[];
+  for(let i=de;i<=ate;i++){
+    const a=ymdIdx(i),b=ymdIdx(i+1);
+    const doMes=lancs.filter(l=>{const d=dataConsumo(l);return d>=a&&d<b;});
+    const compras=comprasCombustivel(doMes);
+    const comb=round2(compras.reduce((s,c)=>s+c.valor,0));
+    const litrosReal=compras.reduce((s,c)=>s+(c.litros||0),0);
+    const cobertura=compras.length>0&&compras.every(c=>c.litros>0);
+    const km=kmEntre(pts,a,b);
+    const custoOp=somaV(doMes.filter(l=>l.incluiCustoVeiculo!==false));
+    let litros=null,estimado=false;
+    if(cobertura)litros=litrosReal;
+    else if(ref&&km>0){litros=km/ref;estimado=true;}
+    const sg=segs.filter(x=>x.data>=a&&x.data<b),sgL=sg.reduce((s2,x)=>s2+x.litros,0);
+    meses.push({idx:i,abast:compras.length,comb,litros,estimado,km,
+      kmL:sgL>0?sg.reduce((s2,x)=>s2+x.km,0)/sgL:null,combKm:km>0&&comb>0?comb/km:null,custoOp,custoKm:km>0?custoOp/km:null,futuro:i>MES_ATUAL});
+  }
+  const kmPeriodo=kmEntre(pts,iniP,fimP);
+  const temJanela=pts.length>=2&&kmPeriodo>0;
+  const jA=temJanela?(iniP>pts[0].data?iniP:pts[0].data):null,jB=temJanela?(fimP<pts[pts.length-1].data?fimP:pts[pts.length-1].data):null;
+  const naJanela=temJanela?lancs.filter(l=>{const d=dataConsumo(l);return d>=jA&&d<=jB;}):[];
+  const custoJan=somaV(naJanela.filter(l=>l.incluiCustoVeiculo!==false)),combJan=somaV(naJanela.filter(ehCombustivel));
+  // consumo medido: de abastecimento a abastecimento (com km e litros informados)
+  const comprasPer=comprasCombustivel(lancs.filter(l=>{const d=dataConsumo(l);return d>=iniP&&d<fimP;}));
+  const segP=segs.filter(x=>x.data>=iniP&&x.data<fimP),litSeg=segP.reduce((s,x)=>s+x.litros,0);
+  let medido=null,baseMedido='';
+  if(litSeg>0){medido=segP.reduce((s,x)=>s+x.km,0)/litSeg;baseMedido=segP.length+(segP.length===1?' trecho entre abastecimentos':' trechos entre abastecimentos');}
+  if(!medido&&temJanela){const cJan=comprasCombustivel(naJanela);
+    if(cJan.length&&cJan.every(c=>c.litros>0)){const lit=cJan.reduce((s,c)=>s+c.litros,0);
+      if(lit>0){medido=kmPeriodo/lit;baseMedido='km rodados ÷ litros abastecidos';}}}
+  const comLitros=comprasPer.filter(c=>c.litros>0);
+  const litrosTot=comLitros.reduce((s,c)=>s+c.litros,0);
+  const precoLitro=litrosTot>0?round2(comLitros.reduce((s,c)=>s+c.valor,0)/litrosTot):null;
+  const mesesPassados=meses.filter(m=>!m.futuro);
+  const ativos=mesesPassados.filter(m=>m.comb>0||m.km>0);
+  const nM=ativos.length?Math.max(1,ativos[ativos.length-1].idx-ativos[0].idx+1):1;
+  const combTot=round2(mesesPassados.reduce((s,m)=>s+m.comb,0));
+  const comAbast=mesesPassados.filter(m=>m.comb>0);
+  const porLitros=comAbast.length>0&&comAbast.every(m=>m.litros>0&&!m.estimado);
+  const chave=m=>porLitros?m.litros:m.comb;
+  const ord=comAbast.slice().sort((a,b)=>chave(b)-chave(a));
+  const litrosMes=mesesPassados.some(m=>m.litros>0)?mesesPassados.reduce((s,m)=>s+(m.litros||0),0)/nM:null;
+  const ult=pts.length?pts[pts.length-1]:null;
+  const kmMesesComKm=mesesPassados.filter(m=>m.km>0);
+  return {v,leit,pts,meses,kmPeriodo,custoKm:temJanela?custoJan/kmPeriodo:null,combKm:temJanela&&combJan>0?combJan/kmPeriodo:null,
+    medido,baseMedido,ref,consumo:medido||ref,precoLitro,combTot,mediaComb:round2(combTot/nM),litrosMes,
+    maior:ord[0]||null,menor:ord.length>1?ord[ord.length-1]:null,porLitros,
+    kmMedioMes:kmMesesComKm.length?kmPeriodo/nM:0,
+    maisKm:kmMesesComKm.slice().sort((a,b)=>b.km-a.km)[0]||null,
+    atual:ult,abastPeriodo:comprasPer.length,nMesesUso:nM};
+}
+function formAtualizarKm(vid){
+  const meus=D().veiculos;
+  if(!meus.length){toast('Cadastre um veículo em Configurações primeiro.','warn');return;}
+  const sel=vid||meus[0].id;
+  abrirModal({titulo:'Atualizar quilometragem',pequeno:true,
+    corpo:`<div class="field"><label for="kmVeic">Veículo</label><select id="kmVeic" class="input">${opcoes(meus,{selecionado:sel})}</select></div>
+      <div class="field" style="margin-top:12px"><label for="kmData">Data da leitura</label><input id="kmData" class="input" type="date" value="${HOJE}"></div>
+      <div class="field" style="margin-top:12px"><label for="kmValor">Quilometragem do painel</label>
+        <input id="kmValor" class="input" type="number" inputmode="numeric" min="0" step="1" placeholder="Ex.: 45230">
+        <span class="err" id="eKmValor"></span><span class="tiny muted" id="kmUlt"></span></div>
+      <p class="tiny muted" style="margin-top:10px">Use quando não houver lançamento no dia. Cada leitura melhora o cálculo de km rodados, custo por km e consumo.</p>`,
+    rodape:`<button class="btn" data-fechar>Cancelar</button><button class="btn btn-primary" id="okKm">Salvar leitura</button>`,
+    aoAbrir:m=>{
+      const dica=()=>{const v=D().veiculos.find(x=>x.id===$('#kmVeic',m).value);const p=seqOdometro(leiturasVeiculo(v));const u=p[p.length-1];
+        $('#kmUlt',m).textContent=u?'Última leitura: '+fmtKm(u.km)+' em '+fmtData(u.data)+'.':'Primeira leitura deste veículo.';};
+      $('#kmVeic',m).onchange=dica;dica();
+      $('#okKm',m).onclick=()=>{
+        const v=D().veiculos.find(x=>x.id===$('#kmVeic',m).value),data=$('#kmData',m).value||HOJE,km=Math.round(+$('#kmValor',m).value);
+        $('#eKmValor',m).textContent='';
+        if(!v)return;
+        if(!(km>0)||km>3000000){$('#eKmValor',m).textContent='Informe a quilometragem do painel (número inteiro).';return;}
+        const c=conflitoKm(v,data,km);
+        if(c){$('#eKmValor',m).textContent=`Não confere com a leitura de ${fmtKm(c.km)} em ${fmtData(c.data)} (${c.fonte==='manual'?'atualização manual':esc(c.desc)}). O hodômetro não volta.`;return;}
+        if(!v.leiturasKm)v.leiturasKm=[];
+        v.leiturasKm.push({id:uid('k'),data,km});
+        salvar();fecharModal();toast('Quilometragem registrada: '+fmtKm(km)+'.','ok');renderVeiculos();};
+    }});
+}
+/* Seção "Quilometragem e consumo" da aba Veículos. */
+/* Do primeiro ao último mês com abastecimento ou km rodado (sem meses vazios nas pontas). */
+function mesesComUso(meses){const p=meses.filter(m=>!m.futuro);const i=p.findIndex(m=>m.comb||m.km);if(i<0)return [];
+  let j=p.length-1;while(j>i&&!(p[j].comb||p[j].km))j--;return p.slice(i,j+1);}
+function htmlKmVeiculo(a,nMeses){
+  const {v,meses}=a;
+  const temLeit=a.pts.length>0;
+  const kpis=`<div class="kpi-row scroller" style="margin-bottom:12px">
+     <div class="kpi k-brand"><div class="kpi-label">Quilometragem atual</div><div class="kpi-value">${a.atual?fmtKm(a.atual.km):'—'}</div>
+       <div class="tiny muted">${a.atual?'leitura de '+fmtData(a.atual.data):'sem leituras ainda'}</div></div>
+     <div class="kpi k-brand"><div class="kpi-label">Km rodados no período</div><div class="kpi-value">${a.kmPeriodo?fmtKm(a.kmPeriodo):'—'}</div>
+       <div class="tiny muted">${a.kmPeriodo?'média de '+fmtKm(a.kmMedioMes)+'/mês'+(a.maisKm?' · pico em '+mesLabel(a.maisKm.idx):''):'precisa de 2 leituras'}</div></div>
+     <div class="kpi k-neg"><div class="kpi-label">Custo por km</div><div class="kpi-value">${fmtPorKm(a.custoKm)}</div>
+       <div class="tiny muted">${a.combKm?'só combustível: '+fmtPorKm(a.combKm):'custo operacional ÷ km'}</div></div>
+     <div class="kpi k-pos"><div class="kpi-label">Consumo médio</div><div class="kpi-value">${fmtKmL(a.consumo)}</div>
+       <div class="tiny muted">${a.medido?'medido ('+esc(a.baseMedido)+')'+(a.ref?' · ref. '+fmtKmL(a.ref):''):a.ref?'referência do cadastro':'informe litros ou a referência'}</div></div>
+     <div class="kpi k-warn"><div class="kpi-label">Combustível por mês</div><div class="kpi-value">${fmt(a.mediaComb)}</div>
+       <div class="tiny muted">${a.litrosMes?'≈ '+fmtL(a.litrosMes)+' por mês · ':''}${a.nMesesUso} ${a.nMesesUso===1?'mês':'meses'} com uso${a.precoLitro?' · litro a '+fmt(a.precoLitro):''}</div></div>
+     <div class="kpi k-neg"><div class="kpi-label">Maior consumo</div><div class="kpi-value">${a.maior?mesLabel(a.maior.idx,false):'—'}</div>
+       <div class="tiny muted">${a.maior?fmt(a.maior.comb)+(a.maior.litros?' · '+(a.maior.estimado?'≈ ':'')+fmtL(a.maior.litros):''):'sem abastecimentos'}${a.menor?'<br>Menor: '+mesLabel(a.menor.idx)+' · '+fmt(a.menor.comb):''}</div></div>
+   </div>`;
+  const avisos=[];
+  if(!temLeit)avisos.push('Informe a <b>quilometragem atual</b> ao lançar abastecimentos (ou use <b>Atualizar quilometragem</b>). Com duas leituras o app passa a calcular km rodados e custo por km.');
+  else if(a.pts.length<2)avisos.push('Há só uma leitura. A partir da próxima, os km rodados e o custo por km aparecem aqui.');
+  if(!a.medido&&!a.ref)avisos.push('Para o consumo (km/l): informe os <b>litros</b> nos abastecimentos, ou cadastre o <b>consumo de referência</b> do veículo.');
+  if(a.leit.some(r=>r.ignorada))avisos.push('Há leitura menor que uma anterior (marcada abaixo); ela fica fora do cálculo até ser corrigida.');
+  const linhas=mesesComUso(meses);
+  const tabela=linhas.length?`<div class="table-wrap"><table class="tbl"><thead><tr><th>Mês</th><th class="r">Abastec.</th><th class="r">Combustível</th><th class="r">Litros</th>
+      <th class="r">Km rodados</th><th class="r">Km/l</th><th class="r">Comb./km</th><th class="r">Custo total/km</th></tr></thead>
+    <tbody>${linhas.slice().reverse().map(m=>`<tr><td style="white-space:nowrap">${mesLabel(m.idx)}${a.maior&&a.maior.idx===m.idx?' <span class="tag can">maior</span>':''}${a.menor&&a.menor.idx===m.idx?' <span class="tag ok">menor</span>':''}${a.maisKm&&a.maisKm.idx===m.idx?' <span class="tag">mais km</span>':''}</td>
+      <td class="r">${m.abast||'—'}</td><td class="r money">${m.comb?fmt(m.comb):'—'}</td>
+      <td class="r">${m.litros?(m.estimado?'≈ ':'')+fmtL(m.litros):'—'}</td><td class="r">${m.km?fmtKm(m.km):'—'}</td>
+      <td class="r">${m.kmL?fmtKmL(m.kmL):'—'}</td><td class="r money">${fmtPorKm(m.combKm)}</td><td class="r money">${fmtPorKm(m.custoKm)}</td></tr>`).join('')}</tbody></table></div>`
+    :'';
+  const leituras=a.leit.length?`<details class="mais-opcoes" style="margin-top:12px"><summary><span class="tres-pontos" aria-hidden="true">⋯</span> Leituras do hodômetro <span class="tiny muted">${a.leit.length}</span></summary>
+    <div class="table-wrap"><table class="tbl"><thead><tr><th>Data</th><th class="r">Quilometragem</th><th>Origem</th><th class="r">Ações</th></tr></thead>
+    <tbody>${a.leit.slice().reverse().map(r=>`<tr><td>${fmtData(r.data)}</td><td class="r">${fmtKm(r.km)}${r.ignorada?' <span class="tag can">menor que a anterior</span>':''}</td>
+      <td class="wrap">${r.fonte==='manual'?'Atualização manual':'Lançamento: '+esc(r.desc)}</td>
+      <td class="r">${r.fonte==='manual'?`<button class="btn btn-sm btn-danger" data-kmdel="${esc(r.id)}">Excluir</button>`:`<button class="btn btn-sm" data-kmedit="${esc(r.id)}">Editar</button>`}</td></tr>`).join('')}</tbody></table></div></details>`:'';
+  return `<div class="card" style="margin-bottom:14px" id="veiKmCard"><div class="card-head"><h2>Quilometragem e consumo — ${esc(v.nome)}</h2>
+      <div class="row" style="margin-left:auto;gap:6px"><button class="btn btn-sm" id="veiKmRef">Consumo de referência</button><button class="btn btn-sm btn-primary" id="veiKmAtual">Atualizar quilometragem</button></div></div>
+    <div class="card-pad">
+      ${avisos.map(t=>`<div class="note" style="margin-bottom:10px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg><span>${t}</span></div>`).join('')}
+      ${kpis}
+      ${linhas.length?`<div class="chart-box"><div class="chart-canvas" style="height:240px"><canvas id="chartVeiKm" role="img" aria-label="Combustível e km rodados por mês"></canvas></div></div>`:''}
+      ${tabela}
+      <p class="tiny muted" style="margin-top:8px">Etiquetas: <b>maior</b>/<b>menor</b> consumo de combustível e mês com <b>mais km</b>. Mês pela data do abastecimento (compras no cartão contam no mês da compra). “≈” = litros estimados pelo consumo de referência. Km/l mensal é aproximado: depende de quanto do tanque foi usado no mês.</p>
+      ${leituras}
+    </div></div>`;
+}
+function htmlKmResumo(lista){
+  if(!lista.length)return '';
+  return `<div class="card" style="margin-bottom:14px"><div class="card-head"><h2>Quilometragem e consumo por veículo</h2>
+      <button class="btn btn-sm btn-primary" id="veiKmAtual" style="margin-left:auto">Atualizar quilometragem</button></div>
+    <div class="table-wrap"><table class="tbl"><thead><tr><th>Veículo</th><th class="r">Km atual</th><th class="r">Km no período</th><th class="r">Custo/km</th>
+      <th class="r">Consumo</th><th class="r">Combustível/mês</th></tr></thead>
+    <tbody>${lista.map(a=>`<tr><td><button class="linkbtn" data-veikm="${esc(DB.usuarioAtual+':'+a.v.id)}">${esc(a.v.nome)}</button></td>
+      <td class="r">${a.atual?fmtKm(a.atual.km):'—'}</td><td class="r">${a.kmPeriodo?fmtKm(a.kmPeriodo):'—'}</td><td class="r money">${fmtPorKm(a.custoKm)}</td>
+      <td class="r">${fmtKmL(a.consumo)}${a.consumo&&!a.medido?' <span class="tiny muted">(ref.)</span>':''}</td><td class="r money">${fmt(a.mediaComb)}</td></tr>`).join('')}</tbody></table></div>
+    <div class="card-pad" style="padding-top:8px"><p class="tiny muted">Escolha um veículo no filtro acima para ver a análise mensal completa.${modoCasal()?' A quilometragem é privada: só os seus veículos aparecem aqui.':''}</p></div></div>`;
+}
+function ligarKmVeiculo(a,box){
+  const at=$('#veiKmAtual');if(at)at.onclick=()=>formAtualizarKm(a&&a.v?a.v.id:null);
+  const rf=$('#veiKmRef');if(rf&&a)rf.onclick=()=>{const i=D().veiculos.findIndex(x=>x.id===a.v.id);if(i>=0)formCadastro('veiculos',i,()=>renderVeiculos());};
+  $$('[data-veikm]').forEach(b=>b.onclick=()=>{VEI.sel=b.dataset.veikm;renderVeiculos();});
+  $$('[data-kmdel]').forEach(b=>b.onclick=async()=>{
+    if(!a)return;const r=(a.v.leiturasKm||[]).find(x=>x.id===b.dataset.kmdel);if(!r)return;
+    if(await confirmar({titulo:'Excluir leitura',texto:`Excluir a leitura de ${fmtKm(r.km)} em ${fmtData(r.data)}?`,botao:'Excluir'})){
+      a.v.leiturasKm=a.v.leiturasKm.filter(x=>x.id!==r.id);salvar();toast('Leitura excluída.','ok');renderVeiculos();}});
+  $$('[data-kmedit]').forEach(b=>b.onclick=()=>abrirFormLancamento(b.dataset.kmedit));
+  if(a&&$('#chartVeiKm')){
+    const ls=mesesComUso(a.meses);
+    desenharGrafico('chartVeiKm',{type:'bar',data:{labels:ls.map(m=>mesLabel(m.idx)),datasets:[
+        {label:'Combustível (R$)',data:ls.map(m=>m.comb),backgroundColor:COR_B,borderRadius:4,yAxisID:'y',order:2},
+        {label:'Km rodados',data:ls.map(m=>m.km?Math.round(m.km):null),type:'line',borderColor:COR_A,backgroundColor:COR_A,tension:.3,borderWidth:3,pointRadius:3,spanGaps:true,yAxisID:'y1',order:1}]},
+      options:{scales:{y:{position:'left',ticks:{callback:v=>fmtCompacto(v)},grid:{color:cssVar('--border')}},
+        y1:{position:'right',ticks:{callback:v=>NUMI.format(v)+' km'},grid:{display:false}},x:{grid:{display:false}}},
+        plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,boxHeight:10}},
+          tooltip:{callbacks:{label:c=>c.dataset.yAxisID==='y1'?`Km rodados: ${fmtKm(c.parsed.y)}`:`Combustível: ${fmt(c.parsed.y)}`}}}}});
+  }
+}
+
 function renderVeiculos(){
   const veics=veiculosDoModo();
   if(VEI.sel!=='todos'&&!veics.some(v=>v.chave===VEI.sel))VEI.sel='todos';
@@ -4226,6 +4555,10 @@ function renderVeiculos(){
   const comparativo=veics.map(v=>({nome:v.nome+(casal?' ('+donoVeicRotulo(v.dono)+')':''),dono:v.dono,
     valor:somaV(todos.filter(l=>chaveVeic(l)===v.chave&&l.incluiCustoVeiculo!==false&&ehRealizado(l)&&mesIndex(l.dataParcela)>=de&&mesIndex(l.dataParcela)<=ate))}));
   const fora=noPeriodo.filter(l=>l.incluiCustoVeiculo===false);
+  const vKm=meuVeiculoDaChave(VEI.sel);
+  const aKm=vKm?analiseKm(vKm,de,ate):null;
+  VEI.km=aKm;
+  const secKm=aKm?htmlKmVeiculo(aKm,nMeses):(VEI.sel==='todos'?htmlKmResumo(D().veiculos.map(v=>analiseKm(v,de,ate))):'');
 
   $('#page-veiculos').innerHTML=`
    <div class="note info" style="margin-bottom:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
@@ -4256,6 +4589,7 @@ function renderVeiculos(){
    </div>
    ${pc.itens.length?`<div class="note" style="margin-bottom:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
      <span>Categoria mais representativa: <b>${esc(pc.itens[0].nome)}</b>, com ${fmt(pc.itens[0].valor)} (${NUM.format(pc.itens[0].pct)}% do custo operacional do período).</span></div>`:''}
+   ${secKm}
    <div class="split" style="margin-bottom:14px">
      <div class="card"><div class="card-head"><h2>Evolução mensal</h2></div>
        <div class="chart-box"><div class="chart-canvas" id="veiEvoBox"><canvas id="chartVeiEvo" role="img" aria-label="Evolução mensal do custo do veículo"></canvas></div></div></div>
@@ -4301,7 +4635,7 @@ function renderVeiculos(){
   desenharGrafico('chartVeiEvo',{type:'bar',data:{labels:serie.map(m=>mesLabel(m.idx)),
       datasets:[
         {label:'Custo operacional',data:serie.map(m=>m.valor),backgroundColor:PALETA[0],borderRadius:4,order:2},
-        {label:'Média móvel (3 meses)',data:mmVei,type:'line',borderColor:PALETA[1],backgroundColor:PALETA[1],tension:.35,borderWidth:3,pointRadius:2,spanGaps:false,order:1}]},
+        {label:'Média móvel (3 meses)',data:mmVei,type:'line',borderColor:COR_B,backgroundColor:COR_B,tension:.35,borderWidth:3,pointRadius:2,spanGaps:false,order:1}]},
     options:{scales:{y:{ticks:{callback:v=>fmtCompacto(v)},grid:{color:cssVar('--border')}},x:{grid:{display:false}}},
       plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,boxHeight:10}}}}});
   if(pc.itens.length)desenharGrafico('chartVeiCat',{type:'doughnut',
@@ -4309,8 +4643,9 @@ function renderVeiculos(){
     options:{cutout:'56%',plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,boxHeight:10,padding:8}},
       tooltip:{callbacks:{label:c=>`${c.label}: ${fmt(c.parsed)} · ${NUM.format(pc.itens[c.dataIndex].pct)}%`}}}}});
   desenharGrafico('chartVeiCmp',{type:'bar',data:{labels:comparativo.map(c=>c.nome),
-      datasets:[{label:'Custo operacional',data:comparativo.map(c=>c.valor),backgroundColor:comparativo.map((c,i)=>casal?(c.dono===DB.usuarioAtual?PALETA[0]:COR_ACUM):[PALETA[0],PALETA[3],PALETA[5]][i%3]),borderRadius:4}]},
+      datasets:[{label:'Custo operacional',data:comparativo.map(c=>c.valor),backgroundColor:comparativo.map((c,i)=>casal?(c.dono===DB.usuarioAtual?COR_A:COR_B):PALETA[i%PALETA.length]),borderRadius:4}]},
     options:{indexAxis:'y',scales:{x:{ticks:{callback:v=>fmtCompacto(v)},grid:{color:cssVar('--border')}},y:{grid:{display:false}}}}});
+  ligarKmVeiculo(aKm);
 }
 /* ---------- exportação de Veículos ---------- */
 function exportarVeiculos({de,ate,custo,media,custoAno,maior,pc,comparativo,ordenados,fora}){
@@ -4351,6 +4686,28 @@ async function exportarCsvVeiculos({de,ate,custo,media,custoAno,maior,pc,compara
   add('Data','Veículo','Categoria','Observação','Valor','Custo operacional','Situação');
   ordenados.forEach(l=>add(fmtData(l.dataParcela),nomeVeic(l.veiculoId),nomeCat(l.categoriaId),l.observacao||'',NUM.format(l.valor),
     l.incluiCustoVeiculo!==false?'Inclui':'Fora',situacao(l)==='realizado'?'Realizado':situacao(l)==='futuro'?'Futuro':'Cancelado'));
+  const k=VEI.km;
+  if(k){
+    add('');
+    add('Quilometragem e consumo — '+k.v.nome);
+    add('Quilometragem atual',k.atual?Math.round(k.atual.km)+' km em '+fmtData(k.atual.data):'—');
+    add('Km rodados no período',k.kmPeriodo?Math.round(k.kmPeriodo):'—');
+    add('Custo operacional por km',k.custoKm?NUM.format(k.custoKm):'—');
+    add('Combustível por km',k.combKm?NUM.format(k.combKm):'—');
+    add('Consumo médio (km/l)',k.consumo?NUM1.format(k.consumo)+(k.medido?' (medido)':' (referência)'):'—');
+    add('Combustível por mês (média)',NUM.format(k.mediaComb));
+    add('Preço médio do litro',k.precoLitro?NUM.format(k.precoLitro):'—');
+    add('Maior consumo',k.maior?mesLabel(k.maior.idx,false)+' — '+NUM.format(k.maior.comb):'—');
+    add('Menor consumo',k.menor?mesLabel(k.menor.idx,false)+' — '+NUM.format(k.menor.comb):'—');
+    add('');
+    add('Mês','Abastecimentos','Combustível','Litros','Litros estimados','Km rodados','Km/l','Combustível por km','Custo total por km');
+    mesesComUso(k.meses).forEach(m=>add(mesLabel(m.idx,false),m.abast,NUM.format(m.comb),m.litros?NUM1.format(m.litros):'',m.estimado?'sim':'',
+      m.km?Math.round(m.km):'',m.kmL?NUM1.format(m.kmL):'',m.combKm?NUM.format(m.combKm):'',m.custoKm?NUM.format(m.custoKm):''));
+    add('');
+    add('Leituras do hodômetro');
+    add('Data','Quilometragem','Origem');
+    k.leit.forEach(r=>add(fmtData(r.data),Math.round(r.km),(r.fonte==='manual'?'Atualização manual':'Lançamento: '+r.desc)+(r.ignorada?' (ignorada: menor que a anterior)':'')));
+  }
   await salvarCsv('relatorio-veiculos-'+HOJE+'.csv',lin);
 }
 function exportarPdfVeiculos({de,ate,custo,media,custoAno,maior,pc,comparativo,ordenados,fora}){
@@ -4368,6 +4725,24 @@ function exportarPdfVeiculos({de,ate,custo,media,custoAno,maior,pc,comparativo,o
   if(imgEvo)html+=`<h2>Evolução mensal</h2><img src="${imgEvo}">`;
   if(imgCat)html+=`<h2>Custos por categoria</h2><img src="${imgCat}" style="max-width:360px">`;
   if(imgCmp)html+=`<h2>Comparação entre veículos</h2><img src="${imgCmp}">`;
+  const k=VEI.km;
+  if(k){
+    const imgKm=CHARTS['chartVeiKm']?CHARTS['chartVeiKm'].toBase64Image():null;
+    html+=`<h2 style="margin-top:22px">Quilometragem e consumo — ${esc(k.v.nome)}</h2>
+      <div class="rel-kpis">
+        <div><b>Quilometragem atual</b><span>${k.atual?fmtKm(k.atual.km):'—'}</span></div>
+        <div><b>Km rodados no período</b><span>${k.kmPeriodo?fmtKm(k.kmPeriodo):'—'}</span></div>
+        <div><b>Custo por km</b><span>${fmtPorKm(k.custoKm)}</span></div>
+        <div><b>Consumo médio</b><span>${fmtKmL(k.consumo)}${k.consumo?(k.medido?' (medido)':' (ref.)'):''}</span></div>
+        <div><b>Combustível por mês</b><span>${fmt(k.mediaComb)}</span></div>
+        <div><b>Maior consumo</b><span>${k.maior?mesLabel(k.maior.idx,false)+' · '+fmt(k.maior.comb):'—'}</span></div>
+      </div>`;
+    if(imgKm)html+=`<img src="${imgKm}">`;
+    html+=`<table><thead><tr><th>Mês</th><th>Abastec.</th><th>Combustível</th><th>Litros</th><th>Km rodados</th><th>Km/l</th><th>Comb./km</th><th>Custo/km</th></tr></thead>
+      <tbody>${mesesComUso(k.meses).map(m=>`<tr><td>${mesLabel(m.idx,false)}</td><td>${m.abast||'—'}</td><td>${m.comb?fmt(m.comb):'—'}</td>
+        <td>${m.litros?(m.estimado?'≈ ':'')+fmtL(m.litros):'—'}</td><td>${m.km?fmtKm(m.km):'—'}</td><td>${m.kmL?fmtKmL(m.kmL):'—'}</td>
+        <td>${fmtPorKm(m.combKm)}</td><td>${fmtPorKm(m.custoKm)}</td></tr>`).join('')}</tbody></table>`;
+  }
   html+=`<h2 style="margin-top:22px">Lançamentos do veículo no período</h2>
     <table><thead><tr><th>Data</th><th>Veículo</th><th>Categoria</th><th>Observação</th><th>Valor</th><th>Custo operacional</th></tr></thead>
     <tbody>${ordenados.map(l=>`<tr><td>${fmtData(l.dataParcela)}</td><td>${esc(nomeVeic(l.veiculoId))}</td><td>${esc(nomeCat(l.categoriaId))}</td>
@@ -4538,7 +4913,7 @@ function renderEmprestimos(){
   const principalAberto=round2(calc.reduce((a,{r})=>a+r.principal,0)),jurosAberto=round2(calc.reduce((a,{r})=>a+r.juros,0));
   desenharGrafico('chartEmpComp',{type:'doughnut',
     data:{labels:['Principal em aberto','Juros acumulados'],datasets:[{data:[principalAberto,jurosAberto],
-      backgroundColor:[PALETA[0],PALETA[3]],borderWidth:2,borderColor:cssVar('--surface')}]},
+      backgroundColor:[COR_A,COR_B],borderWidth:2,borderColor:cssVar('--surface')}]},
     options:{cutout:'58%',plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,boxHeight:10}}}}});
 }
 function renderDetalheContrato(){
@@ -4857,17 +5232,18 @@ function renderCapital(){
   ]));
   $$('#capReceber [data-rec]').forEach(c=>c.onchange=()=>{c.checked?CAP.receber.add(c.dataset.rec):CAP.receber.delete(c.dataset.rec);renderCapital();});
 
+  const coresCap=coresPorNome(contas.map(c=>c.banco));
   if(contas.length){
     desenharGrafico('chartCapDist',{type:'doughnut',
-      data:{labels:contas.map(c=>c.banco),datasets:[{data:contas.map(c=>c.saldo),backgroundColor:contas.map((_,i)=>PALETA[i%PALETA.length]),borderWidth:2,borderColor:cssVar('--surface')}]},
+      data:{labels:contas.map(c=>c.banco),datasets:[{data:contas.map(c=>c.saldo),backgroundColor:coresCap,borderWidth:2,borderColor:cssVar('--surface')}]},
       options:{cutout:'58%',plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,boxHeight:10}}}}});
     desenharGrafico('chartCapInst',{type:'bar',data:{labels:contas.map(c=>c.banco),
-        datasets:[{label:'Saldo',data:contas.map(c=>c.saldo),backgroundColor:PALETA[0],borderRadius:4}]},
+        datasets:[{label:'Saldo',data:contas.map(c=>c.saldo),backgroundColor:coresCap,borderRadius:4}]},
       options:{indexAxis:'y',scales:{x:{ticks:{callback:v=>fmtCompacto(v)},grid:{color:cssVar('--border')}},y:{grid:{display:false}}}}});
   }
   if(meses.length)desenharGrafico('chartCapEvo',{type:'line',data:{labels:meses.map(m=>mesLabel(m)),
       datasets:contas.map((c,i)=>({label:c.banco,data:meses.map(m=>{const h=[...c.historico].filter(x=>mesIndex(x.data)<=m).pop();return h?h.saldo:null;}),
-        borderColor:PALETA[i%PALETA.length],backgroundColor:PALETA[i%PALETA.length],tension:.3,pointRadius:2,spanGaps:true}))},
+        borderColor:coresCap[i],backgroundColor:coresCap[i],tension:.3,pointRadius:2,spanGaps:true}))},
     options:{scales:{y:{ticks:{callback:v=>fmtCompacto(v)},grid:{color:cssVar('--border')}},x:{grid:{display:false}}},
       plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,boxHeight:10}}}}});
 }
@@ -5079,7 +5455,7 @@ function cfgCadastros(){
       <button class="btn btn-sm btn-primary" data-add="${chave}">Adicionar</button></div>
       ${extra?`<div class="card-pad" style="padding-bottom:0"><p class="small muted">${extra}</p></div>`:''}
       <div class="table-wrap"><table class="tbl"><thead><tr>${campos.map(c=>`<th>${c.rot}</th>`).join('')}<th class="r">Ações</th></tr></thead>
-        <tbody>${itens.length?itens.map((it,i)=>`<tr>${campos.map(c=>`<td>${esc(typeof it==='string'?it:(it[c.k]||'—'))}</td>`).join('')}
+        <tbody>${itens.length?itens.map((it,i)=>`<tr>${campos.map(c=>`<td>${esc(typeof it==='string'?it:(c.f?c.f(it):(it[c.k]||'—')))}</td>`).join('')}
           <td class="r"><button class="btn btn-sm" data-edt="${chave}:${i}">Editar</button>
             <button class="btn btn-sm btn-danger" data-rmv="${chave}:${i}">Excluir</button></td></tr>`).join('')
           :`<tr><td colspan="${campos.length+1}" class="muted">Nenhum item cadastrado.</td></tr>`}</tbody></table></div></div>`;
@@ -5087,7 +5463,7 @@ function cfgCadastros(){
   $('#cfgConteudo').innerHTML=
     listaSimples('Cartões de crédito','cartoes',[{k:'nome',rot:'Cartão'}],'Sem dia de fechamento de fatura nesta versão: as parcelas seguem a data da compra.')+
     listaSimples('Instituições financeiras','instituicoes',[{k:'nome',rot:'Instituição'}])+
-    listaSimples('Veículos','veiculos',[{k:'nome',rot:'Veículo'},{k:'tipo',rot:'Tipo'},{k:'placa',rot:'Placa'}])+
+    listaSimples('Veículos','veiculos',[{k:'nome',rot:'Veículo'},{k:'tipo',rot:'Tipo'},{k:'placa',rot:'Placa'},{k:'kmPorLitro',rot:'Consumo ref.',f:it=>+it.kmPorLitro>0?NUM1.format(it.kmPorLitro)+' km/l':'—'}])+
     listaSimples('Viagens','viagens',[{k:'nome',rot:'Viagem'}],'As viagens aparecem em “⋯ Mais opções” do lançamento. São só suas; no modo casal, a outra pessoa vê apenas o total de cada viagem.')+
     listaSimples('Formas de pagamento','formas',[{k:'nome',rot:'Forma'}])+
     `<div class="card"><div class="card-head"><h2>Alertas</h2></div><div class="card-pad stack">
@@ -5123,7 +5499,7 @@ function instituicaoDuplicada(nome,ignorarId=null){
 const viagemDe=l=>l&&l.viagemId?(D().viagens||[]).find(v=>v.id===l.viagemId)||null:null;
 const nomeViagem=l=>{const v=viagemDe(l);return v?v.nome:(l&&l._viagem)||'';};
 const normViagem=n=>String(n||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
-function formCadastro(chave,idx=null){
+function formCadastro(chave,idx=null,aoSalvar=null){
   const rotulos={cartoes:'cartão',instituicoes:'instituição',veiculos:'veículo',formas:'forma de pagamento',viagens:'viagem'};
   if(!D()[chave])D()[chave]=[];
   const it=idx!==null?D()[chave][idx]:null;
@@ -5132,7 +5508,10 @@ function formCadastro(chave,idx=null){
     corpo:`<div class="field"><label for="itNome">Nome</label><input id="itNome" class="input" value="${esc(it?(typeof it==='string'?it:it.nome):'')}"></div>
       ${ehVeic?`<div class="field" style="margin-top:12px"><label for="itTipo">Tipo</label>
         <select id="itTipo" class="input">${opcoes(['Carro','Moto','Utilitário','Outro'],{selecionado:it?.tipo||'Carro'})}</select></div>
-        <div class="field" style="margin-top:12px"><label for="itPlaca">Placa</label><input id="itPlaca" class="input" value="${esc(it?.placa||'')}"></div>`:''}`,
+        <div class="field" style="margin-top:12px"><label for="itPlaca">Placa</label><input id="itPlaca" class="input" value="${esc(it?.placa||'')}"></div>
+        <div class="field" style="margin-top:12px"><label for="itKmL">Consumo médio de referência (km/l) — opcional</label>
+          <input id="itKmL" class="input" type="text" inputmode="decimal" placeholder="Ex.: 11,5" value="${+it?.kmPorLitro>0?String(it.kmPorLitro).replace('.',','):''}">
+          <span class="tiny muted">Usado para estimar litros e consumo quando os abastecimentos não têm litros informados. Quando há litros e quilometragem, o app mede o consumo real.</span></div>`:''}`,
     rodape:`<button class="btn" data-fechar>Cancelar</button><button class="btn btn-primary" id="okIt">Salvar</button>`,
     aoAbrir:m=>{$('#okIt',m).onclick=()=>{const n=$('#itNome',m).value.trim();
       if(!n){toast('Informe o nome.','err');return;}
@@ -5142,9 +5521,12 @@ function formCadastro(chave,idx=null){
         if(dup){toast(`Já existe a instituição “${dup.nome}”. Use a cadastrada para não duplicar.`,'err');return;}}
       if(ehTxt){if(idx!==null)D().formas[idx]=n;else D().formas.push(n);}
       else{const o=idx!==null?it:{id:uid(chave[0])};o.nome=n;
-        if(ehVeic){o.tipo=$('#itTipo',m).value;o.placa=$('#itPlaca',m).value.trim();}
+        if(ehVeic){o.tipo=$('#itTipo',m).value;o.placa=$('#itPlaca',m).value.trim();
+          const kl=lerDecimal($('#itKmL',m).value);
+          if($('#itKmL',m).value.trim()&&!(kl>0&&kl<200)){toast('Consumo de referência: informe km/l, como 11,5, ou deixe em branco.','err');return;}
+          if(kl>0)o.kmPorLitro=round2(kl);else delete o.kmPorLitro;}
         if(idx===null)D()[chave].push(o);}
-      salvar();fecharModal();toast('Cadastro salvo.','ok');renderConfig();};}});
+      salvar();fecharModal();toast('Cadastro salvo.','ok');if(aoSalvar)aoSalvar();else renderConfig();};}});
 }
 function cfgPerfil(){
   const p=D().perfil,eu=perfilCasa(DB.usuarioAtual),outro=perfilCasa(parceiroDe(DB.usuarioAtual));
@@ -5754,7 +6136,7 @@ function renderCasal(){
         <div class="tl-res ${acima?'neg':''}"><span aria-hidden="true">${acima?'▲':'—'}</span>${fmt(m.total)}</div>
         <div class="tl-bars">
           <div class="tl-bar"><span>Você</span><span class="trk"><span style="width:${Math.max(m.meu/teto*100,m.meu>0?3:0)}%;background:${PALETA[0]}"></span></span><span class="val">${fmtCompacto(m.meu)}</span></div>
-          <div class="tl-bar"><span>${esc(nomeParceiro()).slice(0,9)}</span><span class="trk"><span style="width:${Math.max(m.dele/teto*100,m.dele>0?3:0)}%;background:${COR_ACUM}"></span></span><span class="val">${fmtCompacto(m.dele)}</span></div>
+          <div class="tl-bar"><span>${esc(nomeParceiro()).slice(0,9)}</span><span class="trk"><span style="width:${Math.max(m.dele/teto*100,m.dele>0?3:0)}%;background:${COR_B}"></span></span><span class="val">${fmtCompacto(m.dele)}</span></div>
         </div>
         <div class="tl-foot"><span>Ante a média</span><span class="money">${mediaMes?fmtPct(round2((m.total-mediaMes)/mediaMes*100)):'—'}</span></div>
       </div>`;}).join('')}</div>`;
@@ -5769,7 +6151,7 @@ function renderCasal(){
     desenharGrafico('casChart',{type:CAS.vista==='line'?'line':'bar',
       data:{labels:serie.map(m=>m.label),datasets:[
         {label:'Você',data:serie.map(m=>m.meu),backgroundColor:PALETA[0],borderColor:PALETA[0],borderRadius:4,tension:.3,stack:'a'},
-        {label:nomeParceiro(),data:serie.map(m=>m.dele),backgroundColor:COR_ACUM,borderColor:COR_ACUM,borderRadius:4,tension:.3,stack:'a'}]},
+        {label:nomeParceiro(),data:serie.map(m=>m.dele),backgroundColor:COR_B,borderColor:COR_B,borderRadius:4,tension:.3,stack:'a'}]},
       options:{scales:{
           y:{stacked:CAS.vista!=='line',ticks:{display:false},border:{display:false},grid:{color:cssVar('--border')},afterFit(sc){sc.width=0;}},
           x:{stacked:CAS.vista!=='line',grid:{display:false}}},
