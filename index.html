@@ -279,6 +279,13 @@ textarea.input{resize:vertical;min-height:70px}
 /* ============ 7. Filtros ============ */
 .filterbar{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding:14px 16px}
 .filterbar .field{min-width:130px}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.vstat{border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.vstat b{font-size:1.12rem;line-height:1.25}
+.vlinha{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--border);border-radius:12px;padding:9px 12px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
+.vlinha:hover{border-color:var(--brand)}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:8px}
+.mgrid>div{display:flex;flex-direction:column;gap:1px;background:var(--surface-2,rgba(127,127,127,.06));border-radius:10px;padding:8px 10px;min-width:0}
 .adv{border-top:1px solid var(--border);padding:15px 16px;display:grid;gap:12px}
 .adv-grid{display:grid;gap:11px;grid-template-columns:repeat(auto-fit,minmax(168px,1fr))}
 .scope-note{display:flex;gap:8px;align-items:center;font-size:.8rem;background:var(--warn-bg);color:var(--warn);
@@ -2486,7 +2493,7 @@ function linhasLancamento(l,{selecionavel=false,completa=false}={}){
     <td class="wrap">${esc(l.observacao||'—')}</td>
     <td>${esc(l.formaPagamento)}${l.cartaoId?' · '+esc(cartao(l.cartaoId)?.nome||''):''}</td>
     ${completa?`<td>${parc}</td><td>${recor}</td><td>${l.instituicaoId?esc(nomeInst(l.instituicaoId)):'—'}</td>
-      <td>${l.veiculoId?esc(nomeVeic(l.veiculoId))+(+l.km>0?'<br><span class="tiny muted">'+fmtKm(l.km)+(+l.litros>0?' · '+fmtL(l.litros):'')+'</span>':''):'—'}</td>
+      <td>${l.veiculoId?esc(nomeVeic(l.veiculoId))+((k=>k?'<br><span class="tiny muted">'+fmtKm(k.km)+(k.origem==='descricao'?' (descrição)':'')+((t=>t?' · '+fmtL(t.l):'')(ehMeu(l)&&ehCombustivel(l)?litrosLanc(l):null))+'</span>':'')(ehMeu(l)?kmLanc(l):null)):'—'}</td>
       <td>${l.veiculoId?(l.incluiCustoVeiculo?'<span class="tag ok">Inclui</span>':'<span class="tag">Fora</span>'):'—'}</td>
       <td>${ehMeu(l)?`<button class="tag tag-toggle${l.casal?' ok':''}" data-casal="${l.id}" aria-pressed="${!!l.casal}" title="Marcar ou desmarcar como despesa do casal">${l.casal?'Casal':'—'}</button>`:(l.casal?'<span class="tag ok">Casal</span>':'—')}</td>
       <td>${nomeViagem(l)?'<span class="tag viagem">Viagem — '+esc(nomeViagem(l))+'</span>':'—'}</td>`:''}
@@ -2505,7 +2512,7 @@ function cardLancamento(l,{selecionavel=false,acoes=false}={}){
     <div class="row tiny muted" style="gap:8px">
       <span>${fmtData(l.dataParcela)}</span><span>·</span><span>${esc(l.formaPagamento)}</span>
       ${l.parcelasTotal?`<span>·</span><span>parcela ${l.parcelaAtual}/${l.parcelasTotal}</span>`:''}
-      ${l.veiculoId?`<span>·</span><span>${esc(nomeVeic(l.veiculoId))}${+l.km>0?' · '+fmtKm(l.km):''}</span>`:''}
+      ${l.veiculoId?`<span>·</span><span>${esc(nomeVeic(l.veiculoId))}${(k=>k?' · '+fmtKm(k.km):'')(ehMeu(l)?kmLanc(l):null)}</span>`:''}
       ${l.instituicaoId?`<span>·</span><span>${esc(nomeInst(l.instituicaoId))}</span>`:''}
     </div>
     <div class="row" style="justify-content:space-between"><span class="row" style="gap:6px">${tagSituacao(l)}${tagDono(l)}${nomeViagem(l)?'<span class="tag viagem">Viagem — '+esc(nomeViagem(l))+'</span>':''}</span>
@@ -2904,9 +2911,9 @@ function lancamentosFiltrados(){
   if(LF.forma)l=l.filter(x=>x.formaPagamento===LF.forma);
   if(LF.inst)l=l.filter(x=>x.instituicaoId===LF.inst);
   if(LF.veiculo)l=l.filter(x=>x.veiculoId===LF.veiculo);
-  if(LF.km==='com')l=l.filter(x=>+x.km>0);else if(LF.km==='sem')l=l.filter(x=>x.veiculoId&&!(+x.km>0));
-  if(LF.kmDe!=='')l=l.filter(x=>+x.km>0&&+x.km>=+LF.kmDe);
-  if(LF.kmAte!=='')l=l.filter(x=>+x.km>0&&+x.km<=+LF.kmAte);
+  if(LF.km==='com')l=l.filter(x=>kmLanc(x));else if(LF.km==='sem')l=l.filter(x=>x.veiculoId&&!kmLanc(x));
+  if(LF.kmDe!=='')l=l.filter(x=>{const k=kmLanc(x);return k&&k.km>=+LF.kmDe;});
+  if(LF.kmAte!=='')l=l.filter(x=>{const k=kmLanc(x);return k&&k.km<=+LF.kmAte;});
   if(LF.situacao)l=l.filter(x=>situacao(x)===LF.situacao);
   if(LF.viagem==='__qualquer')l=l.filter(x=>!!x.viagemId);
   else if(LF.viagem)l=l.filter(x=>x.viagemId===LF.viagem);
@@ -2946,8 +2953,9 @@ function valorDaBusca(q){
 function casaBusca(l,q){
   const v=valorDaBusca(q);
   if(v!==null&&Math.round((+l.valor||0)*100)===v)return true;
-  if(+l.km>0){const qd=String(q).replace(/[^\d]/g,'');if(qd.length>=3&&/^[\d\s.,km]+$/i.test(String(q).trim())&&String(Math.round(+l.km)).includes(qd))return true;}
-  const alvo=semAcento([l.observacao,nomeCat(l.categoriaId),nomeGrupo(l.grupoId),nomeViagem(l),+l.km>0?'km quilometragem hodometro':''].join(' '));
+  const kL=l.veiculoId?kmLanc(l):null;
+  if(kL){const qd=String(q).replace(/[^\d]/g,'');if(qd.length>=3&&/^[\d\s.,km]+$/i.test(String(q).trim())&&String(Math.round(kL.km)).includes(qd))return true;}
+  const alvo=semAcento([l.observacao,nomeCat(l.categoriaId),nomeGrupo(l.grupoId),nomeViagem(l),kL?'km quilometragem hodometro':''].join(' '));
   return semAcento(q).trim().split(/\s+/).filter(Boolean).every(p=>alvo.includes(p));
 }
 function renderLancamentos(){
@@ -3120,7 +3128,7 @@ async function exportarCsvLancamentos(lista){
     l.tipo==='entrada'?'Entrada':'Saída',NUM.format(l.valor),fmtData(l.dataOriginal),fmtData(l.dataParcela),
     nomeGrupo(l.grupoId),nomeCat(l.categoriaId),l.observacao||'',l.formaPagamento,
     l.parcelasTotal?l.parcelaAtual+'/'+l.parcelasTotal:'',l.recorrenciaId?'Sim':'',
-    l.instituicaoId?nomeInst(l.instituicaoId):'',l.veiculoId?nomeVeic(l.veiculoId):'',+l.km>0?Math.round(l.km):'',+l.litros>0?NUM1.format(l.litros):'',
+    l.instituicaoId?nomeInst(l.instituicaoId):'',l.veiculoId?nomeVeic(l.veiculoId):'',(k=>k?Math.round(k.km):'')(l.veiculoId&&ehMeu(l)?kmLanc(l):null),(t=>t?NUM1.format(t.l):'')(l.veiculoId&&ehMeu(l)&&ehCombustivel(l)?litrosLanc(l):null),
     l.veiculoId?(l.incluiCustoVeiculo?'Inclui':'Fora'):'',
     situacao(l)==='realizado'?'Realizado':situacao(l)==='futuro'?'Futuro':'Cancelado'));
   await salvarCsv('relatorio-lancamentos-'+HOJE+'.csv',lin);
@@ -3238,7 +3246,7 @@ function abrirFormLancamento(id=null,preset={}){
       <div class="field hide" id="boxVeic"><label for="fVeic">Veículo</label>
         <select id="fVeic" class="input">${opcoes(D().veiculos,{vazio:'Não informar',selecionado:base.veiculoId||''})}</select></div>
       <div class="field hide" id="boxKm"><label for="fKm">Quilometragem atual (opcional)</label>
-        <input id="fKm" class="input" type="number" inputmode="numeric" min="0" step="1" placeholder="Ex.: 45230" value="${+base.km>0?Math.round(base.km):''}">
+        <input id="fKm" class="input" type="number" inputmode="numeric" min="0" step="1" placeholder="${(k=>k?'Na descrição: '+k:'Ex.: 45230')(!(+base.km>0)?kmDaDescricao(base.observacao):null)}" value="${+base.km>0?Math.round(base.km):''}">
         <span class="err" id="eKm"></span>
         <label class="check hide" id="boxKmConf" style="margin-top:4px"><input type="checkbox" id="fKmConf"><span class="small">Salvar mesmo assim (a leitura fica marcada “conferir”; nada é corrigido automaticamente)</span></label>
         <span class="tiny muted" id="fKmDica">Leitura do hodômetro nesta data. Vale para qualquer despesa do veículo (combustível, óleo, pneus, manutenção, impostos…).</span></div>
@@ -4304,20 +4312,17 @@ function custosVeiculos(){
   });
   return meus.concat(out);
 }
-/* ---------- Quilometragem, consumo e manutenções (v2) ----------
-   Leituras do hodômetro vêm de três lugares: o campo opcional "Quilometragem
-   atual" do lançamento, a ação "Atualizar quilometragem" e o registro de uma
-   manutenção sem custo. Regras:
-   - Distância = diferença entre leituras REAIS dentro do período (sem
-     interpolar nem extrapolar). Menos de duas leituras: "dados insuficientes".
-   - Leituras incompatíveis (hodômetro voltando) são sinalizadas para
-     conferência; nada é corrigido ou apagado automaticamente. O cálculo usa o
-     maior conjunto coerente de leituras e mostra quais ficaram de fora.
-   - Consumo real só de abastecimento a abastecimento, com litros, valor e km
-     confiáveis. O consumo de referência do cadastro só entra em estimativas,
-     sempre identificadas como tal.
-   - Tudo é privado: no modo casal só os totais em R$ por veículo são
-     publicados para a outra pessoa, nunca quilometragem ou manutenções. */
+/* ---------- Quilometragem, consumo e manutenções (v3) ----------
+   Fontes de leitura do hodômetro, nesta ordem de confiança:
+   1. campo "Quilometragem" do lançamento; 2. km escrito na DESCRIÇÃO do
+   lançamento (ex.: "9,798 L - 28351 km", "33.856 Km"); 3. "Atualizar
+   quilometragem"; 4. manutenção registrada sem custo. Nada disso é gravado
+   ou alterado na base: é lido a cada cálculo, então editar a descrição ou o
+   campo atualiza tudo.
+   Regras: distância só entre leituras reais; leituras que se contradizem
+   ficam marcadas "conferir" (o maior conjunto coerente é usado); km de uma
+   troca sem leitura no dia é ESTIMADO entre as leituras vizinhas e sempre
+   aparece como "≈ estimado"; nada é extrapolado além da última leitura. */
 const NUM1=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
 const NUMI=new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0});
 const INSUF='Dados insuficientes';
@@ -4328,6 +4333,23 @@ const fmtPorKm=v=>v>0?fmt(v)+'/km':'—';
 const kmCompacto=v=>Math.abs(v)>=1000?NUM1.format(v/1000)+' mil km':NUMI.format(v)+' km';
 function lerDecimal(s){s=String(s==null?'':s).trim().replace(/\s/g,'');if(!s)return null;
   if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');const n=parseFloat(s);return isFinite(n)?n:null;}
+/* ---- km e litros escritos na descrição ---- */
+function kmDaDescricao(t){
+  const s=String(t||'');
+  const m=s.match(/(\d{1,3}(?:[.\s]\d{3})+|\d{3,7})\s*km\b/i)||s.match(/\bkm\s*[:\-]?\s*(\d{1,3}(?:[.\s]\d{3})+|\d{3,7})\b/i);
+  if(!m)return null;const n=+m[1].replace(/[.\s]/g,'');return n>0&&n<3000000?n:null;
+}
+function litrosDaDescricao(t,valor){
+  const s=String(t||'');
+  const m=s.match(/(\d+(?:[.,]\d+)?)\s*(?:l|lt|lts|litros?)\b/i);
+  if(m&&!/\d\s*\/\s*$/.test(s.slice(0,m.index+m[1].length))){const n=lerDecimal(m[1]);if(n>0&&n<1000)return {l:n,origem:'descricao'};}
+  const p=s.match(/(\d+[.,]\d+)\s*\/\s*(?:l|lt|litro)\b/i);
+  if(p&&+valor>0){const pr=lerDecimal(p[1]);if(pr>0)return {l:round2(valor/pr*1000)/1000,origem:'preco',preco:pr};}
+  return null;
+}
+const kmLanc=l=>{if(!l)return null;if(+l.km>0)return {km:+l.km,origem:'campo'};const k=kmDaDescricao(l.observacao);return k?{km:k,origem:'descricao'}:null;};
+const litrosLanc=l=>{if(!l)return null;if(+l.litros>0)return {l:+l.litros,origem:'campo'};return litrosDaDescricao(l.observacao,l.valor);};
+const rotuloOrigem=o=>o==='campo'?'campo do lançamento':o==='descricao'?'descrição do lançamento':o==='preco'?'calculado pelo preço/litro da descrição':o==='manual'?'atualização manual':o==='manut'?'manutenção sem custo':o||'';
 const ehCatCombustivel=c=>!!(c&&c.veicular&&(c.id==='c-comb'||/combust|abastec|gasolina|etanol|diesel/i.test(c.nome||'')));
 const ehCombustivel=l=>ehCatCombustivel(cat(l.categoriaId));
 const ehNomeFixo=n=>/seguro|ipva|licenc|vistoria|despachante|financiamento|consorcio|emplacamento|documenta|multa/.test(semAcento(n));
@@ -4343,14 +4365,15 @@ const despesasVeiculo=v=>D().lancamentos.filter(l=>l.veiculoId===v.id&&l.tipo===
 function leiturasVeiculo(v,ignorar){
   const out=[],vistos=new Set(),ig=ignorar||{};if(!v)return out;
   D().lancamentos.forEach(l=>{
-    if(l.veiculoId!==v.id||situacao(l)==='cancelado'||!(+l.km>0))return;
+    if(l.veiculoId!==v.id||situacao(l)==='cancelado')return;
     if(ig.ids&&ig.ids.has(l.id))return;if(ig.compraId&&l.compraId===ig.compraId)return;
-    const k=l.compraId||l.id;if(vistos.has(k))return;vistos.add(k);
-    out.push({data:dataConsumo(l),km:+l.km,fonte:'lanc',id:l.id,desc:l.observacao||nomeCat(l.categoriaId)});
+    const k=kmLanc(l);if(!k)return;
+    const ch=l.compraId||l.id;if(vistos.has(ch))return;vistos.add(ch);
+    out.push({data:dataConsumo(l),km:k.km,fonte:'lanc',origem:k.origem,id:l.id,desc:l.observacao||nomeCat(l.categoriaId),cat:nomeCat(l.categoriaId)});
   });
-  (v.leiturasKm||[]).forEach(r=>{if(ig.leitura===r.id)return;out.push({data:r.data,km:+r.km,fonte:'manual',id:r.id,desc:'Atualização de quilometragem'});});
+  (v.leiturasKm||[]).forEach(r=>{if(ig.leitura===r.id)return;out.push({data:r.data,km:+r.km,fonte:'manual',origem:'manual',id:r.id,desc:'Atualização de quilometragem'});});
   (v.eventosManut||[]).forEach(e=>{if(!(+e.km>0)||ig.evento===e.id)return;
-    out.push({data:e.data,km:+e.km,fonte:'manut',id:e.id,desc:'Manutenção sem custo: '+(nomeTipoManut(v,e.tipoId)||'registro')});});
+    out.push({data:e.data,km:+e.km,fonte:'manut',origem:'manut',id:e.id,desc:'Manutenção sem custo: '+(nomeTipoManut(v,e.tipoId)||'registro')});});
   out.sort((a,b)=>a.data<b.data?-1:a.data>b.data?1:a.km-b.km);
   avaliarLeituras(out);
   return out;
@@ -4367,11 +4390,19 @@ function avaliarLeituras(L){
   return L;
 }
 const ultimaValida=L=>{for(let i=L.length-1;i>=0;i--)if(L[i].valida)return L[i];return null;};
-/* Leituras incompatíveis com uma nova leitura (para avisar antes de salvar). */
+const chaveLeitura=(d,km)=>d+'|'+Math.round(km);
 function conflitosKm(v,data,km,ignorar){
   return leiturasVeiculo(v,ignorar).filter(r=>(r.data<data&&r.km>km)||(r.data>data&&r.km<km));
 }
-/* Distância entre a primeira e a última leitura válida dentro de [dA,dB]. */
+/* Km numa data: leitura real do dia, ou estimativa linear entre a leitura
+   válida anterior e a posterior (nunca além da última). */
+function kmNaData(L,data){
+  const val=L.filter(r=>r.valida),mesmo=val.filter(r=>r.data===data);
+  if(mesmo.length)return {km:Math.max(...mesmo.map(r=>r.km)),est:false};
+  let a=null,b=null;for(const r of val){if(r.data<data)a=r;else if(r.data>data){b=r;break;}}
+  if(a&&b){const t=diasEntre(a.data,data)/diasEntre(a.data,b.data);return {km:Math.round(a.km+(b.km-a.km)*t),est:true,a,b};}
+  return null;
+}
 function intervaloKm(L,dA,dB){
   const p=L.filter(r=>r.valida&&r.data>=dA&&r.data<=dB);
   if(p.length<2)return {ok:false,n:p.length,motivo:p.length?'Há só 1 leitura válida no período; são necessárias 2 em datas diferentes.':'Não há leituras do hodômetro no período.'};
@@ -4379,8 +4410,6 @@ function intervaloKm(L,dA,dB){
   if(a.data===b.data||!(b.km>a.km))return {ok:false,n:p.length,motivo:'As leituras do período não mostram deslocamento entre datas diferentes.'};
   return {ok:true,de:a,ate:b,km:b.km-a.km,dias:diasEntre(a.data,b.data),n:p.length};
 }
-/* Despesas do veículo entre duas leituras: depois da primeira e até a última
-   (o abastecimento feito na leitura inicial abastece o trecho seguinte). */
 function despesasEntre(desp,dA,dB,excl){
   const itens=desp.filter(l=>l.incluiCustoVeiculo!==false&&!excl.has(l.categoriaId)&&dataConsumo(l)>dA&&dataConsumo(l)<=dB)
     .sort((a,b)=>dataConsumo(a)<dataConsumo(b)?-1:1);
@@ -4393,61 +4422,115 @@ const exclCustoKm=v=>{const p=D().prefs||{};return new Set(((p.custoKmExcl||{})[
 function comprasCombustivel(lancs){
   const g=new Map();
   lancs.filter(ehCombustivel).forEach(l=>{const k=l.compraId||l.id;
-    const c=g.get(k)||{data:dataConsumo(l),valor:0,litros:0,km:0,lid:null};
-    c.valor=round2(c.valor+(+l.valor||0));if(+l.litros>0)c.litros=+l.litros;if(+l.km>0&&!c.km){c.km=+l.km;c.lid=l.id;}g.set(k,c);});
+    const c=g.get(k)||{data:dataConsumo(l),valor:0,litros:0,origemL:'',km:0,origemKm:'',lid:l.id,desc:l.observacao||''};
+    c.valor=round2(c.valor+(+l.valor||0));
+    const lt=litrosLanc(l);if(lt&&!c.litros){c.litros=lt.l;c.origemL=lt.origem;}
+    const km=kmLanc(l);if(km&&!c.km){c.km=km.km;c.origemKm=km.origem;}
+    g.set(k,c);});
   return [...g.values()].sort((a,b)=>a.data<b.data?-1:a.data>b.data?1:a.km-b.km);
 }
-/* Trechos de consumo real: litros e valor do abastecimento B repõem o que foi
-   gasto desde o abastecimento A; os dois com km de leitura válida. */
+/* Consumo real, abastecimento a abastecimento: os litros do abastecimento B
+   repõem o que foi rodado desde A. Km de A e B precisam ser leituras válidas
+   (do próprio lançamento ou registradas no mesmo dia). */
 function segmentosConsumo(L,lancs){
-  const ok=new Set(L.filter(r=>r.valida&&r.fonte==='lanc').map(r=>r.id));
-  const cs=comprasCombustivel(lancs).filter(c=>c.km>0&&ok.has(c.lid)),out=[];
+  const ok=new Set(L.filter(r=>r.valida).map(r=>chaveLeitura(r.data,r.km)));
+  const cs=comprasCombustivel(lancs).map(c=>{
+    if(c.km&&ok.has(chaveLeitura(c.data,c.km)))return c;
+    const r=L.filter(x=>x.valida&&x.data===c.data);return r.length?{...c,km:Math.max(...r.map(x=>x.km)),origemKm:'leitura do dia'}:{...c,km:0};
+  }).filter(c=>c.km>0),out=[];
   for(let i=1;i<cs.length;i++){const a=cs[i-1],b=cs[i];
-    if(b.litros>0&&b.valor>0&&b.km>a.km&&b.data>=a.data)out.push({de:a.data,data:b.data,km:b.km-a.km,litros:b.litros,valor:b.valor});}
+    if(b.litros>0&&b.valor>0&&b.km>a.km)out.push({de:a.data,data:b.data,kmA:a.km,kmB:b.km,km:b.km-a.km,litros:b.litros,valor:b.valor,kmL:(b.km-a.km)/b.litros});}
   return out;
 }
 
-/* ---- manutenções ---- */
-function sugestoesManut(){
-  const cats=D().categorias.filter(c=>c.veicular);
-  const oleo=cats.filter(c=>/oleo/.test(semAcento(c.nome))).map(c=>c.id);
-  const pneu=cats.filter(c=>/pneu/.test(semAcento(c.nome))).map(c=>c.id);
-  return [{id:'oleo',nome:'Troca de óleo',cats:oleo,palavra:oleo.length?'':'oleo',intervaloKm:null,intervaloDias:null,avisoKm:300,avisoDias:15,sugerido:true},
-          {id:'pneus',nome:'Pneus',cats:pneu,palavra:pneu.length?'':'pneu',intervaloKm:null,intervaloDias:null,avisoKm:500,avisoDias:30,sugerido:true}];
+/* ---- peças e manutenções: identificação pelo histórico ----
+   Pela categoria (ex.: "Troca de óleo") ou por palavras na descrição
+   (ex.: "Troca de Pneu traseiro…", "Pastilha de freios dianteiro"). */
+const GRUPOS_PECAS={motor:'Motor e óleo',pneus:'Pneus',freios:'Freios',transmissao:'Transmissão',suspensao:'Suspensão',eletrica:'Elétrica',outros:'Outros'};
+const CATALOGO_PECAS=[
+  {id:'oleo',nome:'Troca de óleo',grupo:'motor',cat:/oleo/,re:/\boleo\b/,nao:/filtro d[eo] oleo/},
+  {id:'filtro-oleo',nome:'Filtro de óleo',grupo:'motor',re:/filtro d[eo] oleo/},
+  {id:'filtro-ar',nome:'Filtro de ar',grupo:'motor',re:/filtro d[eo] ar\b/},
+  {id:'vela',nome:'Vela de ignição',grupo:'motor',re:/\bvelas?\b/},
+  {id:'revisao',nome:'Revisão',grupo:'motor',re:/revisao/},
+  {id:'pneu-tras',nome:'Pneu traseiro',grupo:'pneus',re:/pneu/,e:/tras/},
+  {id:'pneu-diant',nome:'Pneu dianteiro',grupo:'pneus',re:/pneu/,e:/diant|frente|frontal/},
+  {id:'pneus',nome:'Pneus (sem posição)',grupo:'pneus',cat:/pneu/,re:/pneu/,nao:/tras|diant|frente|frontal/},
+  {id:'camara',nome:'Câmara de ar',grupo:'pneus',re:/camara de ar/},
+  {id:'freio-diant',nome:'Freio dianteiro',grupo:'freios',re:/pastilha|freio|disco/,e:/diant|frente|frontal/},
+  {id:'freio-tras',nome:'Freio traseiro',grupo:'freios',re:/lona|pastilha|freio/,e:/tras/},
+  {id:'relacao',nome:'Relação (corrente, coroa e pinhão)',grupo:'transmissao',re:/relacao|corrente|coroa|pinhao|kit transmiss/},
+  {id:'embreagem',nome:'Embreagem',grupo:'transmissao',re:/embreag/},
+  {id:'suspensao',nome:'Suspensão',grupo:'suspensao',re:/amortecedor|bengala|retentor|suspensao/},
+  {id:'bateria',nome:'Bateria',grupo:'eletrica',re:/bateria/},
+  {id:'lampada',nome:'Lâmpadas',grupo:'eletrica',re:/lampada/}
+];
+const pecaCat=id=>CATALOGO_PECAS.find(c=>c.id===id);
+function pecasDoLanc(l){
+  const c=cat(l.categoriaId);if(!c||!c.veicular||ehCatCombustivel(c))return [];
+  const nc=semAcento(c.nome||''),o=semAcento(l.observacao||''),docs=ehNomeFixo(c.nome)||/aquisi/.test(nc),out=[];
+  CATALOGO_PECAS.forEach(p=>{
+    if(p.cat&&p.cat.test(nc)){out.push(p.id);return;}
+    if(docs)return;
+    if(p.re.test(o)&&(!p.e||p.e.test(o))&&(!p.nao||!p.nao.test(o)))out.push(p.id);});
+  if(out.includes('pneu-tras')||out.includes('pneu-diant'))return out.filter(x=>x!=='pneus');
+  return out;
 }
-const tiposManutencao=v=>Array.isArray(v.manutencoes)?v.manutencoes:sugestoesManut();
-const nomeTipoManut=(v,id)=>(tiposManutencao(v).find(t=>t.id===id)||{}).nome||'';
+function tiposManutencao(v){
+  const conf=Array.isArray(v.manutencoes)?v.manutencoes:[],ocultos=new Set(v.manutOcultos||[]),presentes=new Set(['oleo']);
+  despesasVeiculo(v).forEach(l=>pecasDoLanc(l).forEach(id=>presentes.add(id)));
+  conf.forEach(x=>{if(pecaCat(x.id))presentes.add(x.id);});
+  (v.eventosManut||[]).forEach(e=>{if(pecaCat(e.tipoId))presentes.add(e.tipoId);});
+  const out=[];
+  CATALOGO_PECAS.forEach(c=>{if(!presentes.has(c.id)||ocultos.has(c.id))return;const o=conf.find(x=>x.id===c.id)||{};
+    out.push({id:c.id,nome:o.nome||c.nome,grupo:c.grupo,catalogo:true,cats:o.cats||[],palavra:o.palavra||'',
+      intervaloKm:o.intervaloKm||null,intervaloDias:o.intervaloDias||null,avisoKm:o.avisoKm!=null?o.avisoKm:null,avisoDias:o.avisoDias!=null?o.avisoDias:null,refDaMedia:!!o.refDaMedia});});
+  conf.filter(x=>!pecaCat(x.id)).forEach(x=>out.push({grupo:'outros',...x,catalogo:false}));
+  return out;
+}
+const nomeTipoManut=(v,id)=>{const t=(Array.isArray(v.manutencoes)?v.manutencoes:[]).find(x=>x.id===id);return (t&&t.nome)||(pecaCat(id)||{}).nome||'';};
+function casaTipo(t,l){
+  const pal=semAcento(t.palavra||'').trim(),temCats=!!(t.cats&&t.cats.length);
+  if(t.catalogo&&!temCats&&!pal)return pecasDoLanc(l).includes(t.id);
+  if(!temCats&&!pal)return false;
+  if(temCats&&!t.cats.includes(l.categoriaId))return false;
+  if(!temCats&&!cat(l.categoriaId)?.veicular)return false;
+  if(pal&&!semAcento(l.observacao||'').includes(pal))return false;
+  return true;
+}
 function eventosManut(v,t,L){
-  const pal=semAcento(t.palavra||'').trim(),temCats=!!(t.cats&&t.cats.length),ev=[];
-  if(temCats||pal)despesasVeiculo(v).forEach(l=>{
-    if(dataConsumo(l)>HOJE)return;
-    if(temCats&&!t.cats.includes(l.categoriaId))return;
-    if(!temCats&&!cat(l.categoriaId)?.veicular)return;
-    if(pal&&!semAcento(l.observacao||'').includes(pal))return;
-    ev.push({data:dataConsumo(l),km:+l.km>0?+l.km:null,valor:+l.valor||0,fonte:'lanc',id:l.id,desc:l.observacao||nomeCat(l.categoriaId)});});
-  (v.eventosManut||[]).filter(e=>e.tipoId===t.id).forEach(e=>ev.push({data:e.data,km:+e.km>0?+e.km:null,valor:0,fonte:'manual',id:e.id,desc:e.obs||'Registro sem custo'}));
+  const ign=new Set(v.manutIgnorar||[]),itens=[],ignorados=[];
+  despesasVeiculo(v).forEach(l=>{if(dataConsumo(l)>HOJE||!casaTipo(t,l))return;
+    const k=kmLanc(l),it={data:dataConsumo(l),km:k?k.km:null,origemKm:k?k.origem:'',valor:+l.valor||0,fonte:'lanc',id:l.id,desc:l.observacao||nomeCat(l.categoriaId)};
+    (ign.has(t.id+':'+l.id)?ignorados:itens).push(it);});
+  (v.eventosManut||[]).filter(e=>e.tipoId===t.id).forEach(e=>itens.push({data:e.data,km:+e.km>0?+e.km:null,origemKm:'manut',valor:0,fonte:'manual',id:e.id,desc:e.obs||'Registro sem custo'}));
+  const ok=new Set((L||[]).filter(r=>r.valida).map(r=>chaveLeitura(r.data,r.km)));
   const porDia=new Map();
-  ev.forEach(e=>{const x=porDia.get(e.data)||{data:e.data,km:null,valor:0,itens:[]};
-    x.valor=round2(x.valor+e.valor);if(e.km&&(!x.km||e.km>x.km))x.km=e.km;x.itens.push(e);porDia.set(e.data,x);});
-  const val=(L||[]).filter(r=>r.valida);
-  return [...porDia.values()].sort((a,b)=>a.data<b.data?-1:1).map(x=>{
-    if(!x.km){const r=val.find(r=>r.data===x.data);if(r){x.km=r.km;x.kmDaLeitura=true;}}return x;});
+  itens.forEach(e=>{const x=porDia.get(e.data)||{data:e.data,km:null,est:false,valor:0,itens:[],kmConflito:[]};
+    x.valor=round2(x.valor+e.valor);
+    if(e.km){if(ok.has(chaveLeitura(e.data,e.km))){if(!x.km||e.km>x.km){x.km=e.km;x.origemKm=e.origemKm;}}else x.kmConflito.push(e.km);}
+    x.itens.push(e);porDia.set(e.data,x);});
+  const ev=[...porDia.values()].sort((a,b)=>a.data<b.data?-1:1).map(x=>{
+    if(!x.km){const r=kmNaData(L||[],x.data);if(r){x.km=r.km;x.est=r.est;x.origemKm=r.est?'estimado':'leitura do dia';x.estDe=r.a;x.estAte=r.b;}}return x;});
+  ev.ignorados=ignorados;
+  return ev;
 }
 function statusManut(v,t,L){
   const ev=eventosManut(v,t,L),ult=ev[ev.length-1]||null,atual=ultimaValida(L);
   const iD=+t.intervaloDias||0,iK=+t.intervaloKm||0;
   const aD=t.avisoDias!=null&&t.avisoDias!==''?+t.avisoDias:15,aK=t.avisoKm!=null&&t.avisoKm!==''?+t.avisoKm:300;
-  const r={tipo:t,eventos:ev,ultimo:ult,iD,iK,aD,aK,diasDesde:null,kmDesde:null,motivoKm:'',mediaDias:null,mediaKm:null,nDias:0,nKm:0,
-    faltaDias:null,faltaKm:null,venceEm:null,avisoEm:null,status:(iD||iK)?'ok':'sem-ref'};
+  const r={tipo:t,eventos:ev,ultimo:ult,iD,iK,aD,aK,diasDesde:null,kmDesde:null,kmEst:false,ateLeitura:null,motivoKm:'',
+    mediaDias:null,nDias:0,mediaKm:null,nKm:0,mediaKmEst:false,faltaDias:null,faltaKm:null,venceEm:null,avisoEm:null,status:(iD||iK)?'ok':'sem-ref'};
   if(!ult){r.status='sem-evento';return r;}
   r.diasDesde=diasEntre(ult.data,HOJE);
-  if(ult.km&&atual&&atual.data>=ult.data&&atual.km>=ult.km)r.kmDesde=atual.km-ult.km;
-  else r.motivoKm=!ult.km?'o último registro não tem quilometragem':'não há leitura posterior ao último registro';
-  const di=[],dk=[];
+  if(ult.km&&atual&&atual.data>=ult.data&&atual.km>=ult.km){r.kmDesde=atual.km-ult.km;r.kmEst=!!ult.est;r.ateLeitura=atual;}
+  else r.motivoKm=!ult.km?'sem leitura do hodômetro perto desta data':'não há leitura depois do último registro';
+  const di=[],dk=[],dkE=[];
   for(let i=1;i<ev.length;i++){di.push(diasEntre(ev[i-1].data,ev[i].data));
-    if(ev[i-1].km&&ev[i].km&&ev[i].km>ev[i-1].km)dk.push(ev[i].km-ev[i-1].km);}
-  if(di.length){r.mediaDias=Math.round(di.reduce((a,b)=>a+b,0)/di.length);r.nDias=di.length;}
-  if(dk.length){r.mediaKm=Math.round(dk.reduce((a,b)=>a+b,0)/dk.length);r.nKm=dk.length;}
+    const a=ev[i-1],b=ev[i];if(a.km&&b.km&&b.km>a.km)(a.est||b.est?dkE:dk).push(b.km-a.km);}
+  if(di.length){r.mediaDias=Math.round(di.reduce((s,x)=>s+x,0)/di.length);r.nDias=di.length;}
+  if(dk.length){r.mediaKm=Math.round(dk.reduce((s,x)=>s+x,0)/dk.length);r.nKm=dk.length;}
+  else if(dkE.length){r.mediaKm=Math.round(dkE.reduce((s,x)=>s+x,0)/dkE.length);r.nKm=dkE.length;r.mediaKmEst=true;}
   if(!iD&&!iK)return r;
   let st='ok';
   if(iD){r.faltaDias=iD-r.diasDesde;r.venceEm=addDiasYmd(ult.data,iD);r.avisoEm=addDiasYmd(ult.data,Math.max(0,iD-aD));
@@ -4455,20 +4538,41 @@ function statusManut(v,t,L){
   if(iK&&r.kmDesde!=null){r.faltaKm=iK-r.kmDesde;if(r.faltaKm<=0)st='vencido';else if(r.faltaKm<=aK&&st!=='vencido')st='proximo';}
   r.status=st;return r;
 }
+const kmTxt=(km,est)=>(est?'≈ ':'')+fmtKm(km);
 function textoManut(s){
   const p=[];
   if(s.faltaDias!=null)p.push(s.faltaDias>0?`faltam ${s.faltaDias} ${s.faltaDias===1?'dia':'dias'} (referência de ${s.iD} dias)`:`passou ${-s.faltaDias} ${s.faltaDias===-1?'dia':'dias'} da referência de ${s.iD} dias`);
-  if(s.faltaKm!=null)p.push(s.faltaKm>0?`faltam ${fmtKm(s.faltaKm)} (referência de ${fmtKm(s.iK)})`:`passou ${fmtKm(-s.faltaKm)} da referência de ${fmtKm(s.iK)}`);
+  if(s.faltaKm!=null)p.push(s.faltaKm>0?`faltam ${kmTxt(s.faltaKm,s.kmEst)} (referência de ${fmtKm(s.iK)})`:`passou ${kmTxt(-s.faltaKm,s.kmEst)} da referência de ${fmtKm(s.iK)}`);
   else if(s.iK)p.push('km: '+INSUF.toLowerCase()+' ('+s.motivoKm+')');
   return (p.join(' · ')||'sem referência configurada')+'. Último registro em '+fmtData(s.ultimo.data)+'.';
 }
-/* Avisos de manutenção atuais (referências configuradas por você). */
 function alertasManutencao(){
   const out=[];
   (D().veiculos||[]).forEach(v=>{const L=leiturasVeiculo(v);
-    tiposManutencao(v).forEach(t=>{const s=statusManut(v,t,L);
+    tiposManutencao(v).forEach(t=>{if(!t.intervaloDias&&!t.intervaloKm)return;const s=statusManut(v,t,L);
       if(s.status==='proximo'||s.status==='vencido')out.push({v,t,s,chave:'man:'+v.id+':'+t.id+':'+s.ultimo.data+':'+s.status});});});
   return out;
+}
+/* Histórico de peças e serviços: despesas do veículo que não são
+   combustível, impostos, documentação ou aquisição. */
+function historicoPecas(v,L){
+  const atual=ultimaValida(L);
+  const lista=despesasVeiculo(v).filter(l=>{const c=cat(l.categoriaId);return c&&!ehCatCombustivel(c)&&!ehNomeFixo(c.nome)&&!/aquisi/.test(semAcento(c.nome))&&dataConsumo(l)<=HOJE;})
+    .map(l=>{const ids=pecasDoLanc(l),k=kmLanc(l),ok=k&&L.some(r=>r.valida&&r.data===dataConsumo(l)&&r.km===k.km);
+      const kd=ok?{km:k.km,est:false}:kmNaData(L,dataConsumo(l));
+      return {l,data:dataConsumo(l),desc:l.observacao||nomeCat(l.categoriaId),cat:nomeCat(l.categoriaId),valor:+l.valor||0,
+        pecas:ids,grupo:ids.length?pecaCat(ids[0]).grupo:'outros',km:kd?kd.km:null,est:kd?!!kd.est:false,kmConflito:k&&!ok?k.km:null,
+        dias:diasEntre(dataConsumo(l),HOJE),kmDesde:kd&&atual&&atual.data>=dataConsumo(l)?atual.km-kd.km:null};});
+  (v.eventosManut||[]).forEach(e=>{const kd=+e.km>0?{km:+e.km,est:false}:kmNaData(L,e.data),p=pecaCat(e.tipoId);
+    lista.push({l:null,data:e.data,desc:(e.obs||'Registro sem custo'),cat:'Sem custo',valor:0,pecas:[e.tipoId],grupo:p?p.grupo:'outros',
+      km:kd?kd.km:null,est:kd?!!kd.est:false,dias:diasEntre(e.data,HOJE),kmDesde:kd&&atual&&atual.data>=e.data?atual.km-kd.km:null});});
+  return lista.sort((a,b)=>a.data<b.data?1:-1);
+}
+/* uso médio do veículo entre a primeira e a última leitura válida */
+function usoMedio(L,dA,dB){
+  const p=L.filter(r=>r.valida&&(!dA||r.data>=dA)&&(!dB||r.data<=dB));if(p.length<2)return null;
+  const a=p[0],b=p[p.length-1],dias=diasEntre(a.data,b.data);if(dias<=0||b.km<=a.km)return null;
+  return {kmDia:(b.km-a.km)/dias,km:b.km-a.km,dias,de:a,ate:b};
 }
 
 /* ---- análise de um veículo seu ---- */
@@ -4480,13 +4584,11 @@ function analiseVeiculo(v,de,ate){
     .map(id=>({id,nome:nomeCat(id)})).sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
   const ck=iv.ok?despesasEntre(desp,iv.de.data,iv.ate.data,excl):null;
   const cpk=ck&&iv.km>0?ck.total/iv.km:null;
-  // trechos entre leituras válidas no período
   const pts=L.filter(r=>r.valida&&r.data>=dA&&r.data<=dB),trechos=[];
   for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i];if(b.data===a.data)continue;
     const g=despesasEntre(desp,a.data,b.data,excl),km=b.km-a.km,dias=diasEntre(a.data,b.data);
     trechos.push({a,b,km,dias,kmDia:dias>0?km/dias:null,gasto:g.total,custoKm:km>0?g.total/km:null});}
-  // combustível
-  const segs=segmentosConsumo(L,desp).filter(x=>x.data>=dA&&x.data<=dB);
+  const segsAll=segmentosConsumo(L,desp),segs=segsAll.filter(x=>x.data>=dA&&x.data<=dB);
   const litSeg=segs.reduce((s,x)=>s+x.litros,0),kmSeg=segs.reduce((s,x)=>s+x.km,0),valSeg=segs.reduce((s,x)=>s+x.valor,0);
   const medido=litSeg>0?kmSeg/litSeg:null;
   const ref=+v.kmPorLitro>0?+v.kmPorLitro:null;
@@ -4507,15 +4609,20 @@ function analiseVeiculo(v,de,ate){
   const nUso=meses.length?meses[meses.length-1].idx-meses[0].idx+1:0;
   const combTot=round2(meses.reduce((s,m)=>s+m.valor,0));
   const tipos=tiposManutencao(v).map(t=>statusManut(v,t,L));
+  // parâmetros do histórico completo (independem do período)
+  const litAll=segsAll.reduce((s,x)=>s+x.litros,0),kmAll=segsAll.reduce((s,x)=>s+x.km,0),valAll=segsAll.reduce((s,x)=>s+x.valor,0);
+  const hist={uso:usoMedio(L),medido:litAll>0?kmAll/litAll:null,segs:segsAll.length,kmSeg:kmAll,litSeg:litAll,precoL:litAll>0?valAll/litAll:null,
+    combKm:kmAll>0?valAll/kmAll:null,primeira:L.find(r=>r.valida)||null};
+  const origens={descricao:L.filter(r=>r.origem==='descricao').length,campo:L.filter(r=>r.origem==='campo').length,manual:L.filter(r=>r.origem==='manual').length,manut:L.filter(r=>r.origem==='manut').length};
   return {v,L,iv,catsOp,excl,ck,cpk,trechos,segs,medido,valSeg,litSeg,ref,estim,meses,porLitros,
     maior:ord[0]||null,menor:ord.length>1?ord[ord.length-1]:null,mediaComb:nUso?round2(combTot/nUso):0,nUso,
-    atual:ultimaValida(L),tipos,dA,dB};
+    atual:ultimaValida(L),tipos,dA,dB,hist,origens,conflitos:L.filter(r=>r.conflito),usoP:usoMedio(L,dA,dB),pecas:historicoPecas(v,L)};
 }
 
 /* ---- modais ---- */
 async function confirmarConflitoKm(confs){
   if(!confs.length)return true;
-  const lista=confs.slice(0,3).map(c=>`${fmtKm(c.km)} em ${fmtData(c.data)} (${c.fonte==='manual'?'atualização manual':c.fonte==='manut'?'manutenção':esc(c.desc)})`).join('; ');
+  const lista=confs.slice(0,3).map(c=>`${fmtKm(c.km)} em ${fmtData(c.data)} (${esc(rotuloOrigem(c.origem))}${c.fonte==='lanc'?': '+esc(c.desc):''})`).join('; ');
   return await confirmar({titulo:'Leitura incompatível',perigo:false,botao:'Salvar para conferir',
     texto:`Esta leitura não confere com: ${lista}. O hodômetro não costuma voltar. Você pode salvar mesmo assim: as leituras ficam marcadas “conferir” e nada é corrigido ou apagado automaticamente.`});
 }
@@ -4526,9 +4633,9 @@ function formAtualizarKm(vid){
     corpo:`<div class="field"><label for="kmVeic">Veículo</label><select id="kmVeic" class="input">${opcoes(meus,{selecionado:vid||meus[0].id})}</select></div>
       <div class="field" style="margin-top:12px"><label for="kmData">Data da leitura</label><input id="kmData" class="input" type="date" value="${HOJE}" max="${HOJE}"></div>
       <div class="field" style="margin-top:12px"><label for="kmValor">Quilometragem do hodômetro</label>
-        <input id="kmValor" class="input" type="number" inputmode="numeric" min="0" step="1" placeholder="Ex.: 27600">
+        <input id="kmValor" class="input" type="number" inputmode="numeric" min="0" step="1" placeholder="Ex.: 38713">
         <span class="err" id="eKmValor"></span><span class="tiny muted" id="kmUlt"></span></div>
-      <p class="tiny muted" style="margin-top:10px">Aceita leituras atuais e retroativas (por exemplo, a do primeiro abastecimento). Não cria despesa.</p>`,
+      <p class="tiny muted" style="margin-top:10px">Aceita leituras atuais e retroativas. Não cria despesa.</p>`,
     rodape:`<button class="btn" data-fechar>Cancelar</button><button class="btn btn-primary" id="okKm">Salvar leitura</button>`,
     aoAbrir:m=>{
       const dica=()=>{const v=D().veiculos.find(x=>x.id===$('#kmVeic',m).value);const u=ultimaValida(leiturasVeiculo(v));
@@ -4546,75 +4653,124 @@ function formAtualizarKm(vid){
         salvar();fecharModal();toast('Quilometragem registrada: '+fmtKm(km)+' em '+fmtData(data)+'.','ok');renderVeiculos();atualizarNotif();};
     }});
 }
+function garantirConfManut(v){if(!Array.isArray(v.manutencoes))v.manutencoes=[];return v.manutencoes;}
+function regraTipoTxt(t){
+  const c=pecaCat(t.id);
+  if(t.catalogo&&!(t.cats&&t.cats.length)&&!t.palavra){
+    if(t.id==='oleo')return 'categoria com “óleo” no nome ou descrição com “óleo”';
+    const ex={'pneu-tras':'“pneu” + “traseiro”','pneu-diant':'“pneu” + “dianteiro/frente”','pneus':'“pneu” sem posição','freio-diant':'“pastilha/freio/disco” + “dianteiro”',
+      'freio-tras':'“lona/pastilha/freio” + “traseiro”','relacao':'“relação/corrente/coroa/pinhão”','embreagem':'“embreagem”','suspensao':'“amortecedor/bengala/retentor”'}[t.id];
+    return 'descrição com '+(ex||'“'+(c?c.nome.toLowerCase():t.nome)+'”');
+  }
+  return [t.cats&&t.cats.length?'categoria '+t.cats.map(nomeCat).join(', '):'',t.palavra?'descrição com “'+t.palavra+'”':''].filter(Boolean).join(' e ');
+}
 function formTipoManut(v,tipoId){
-  const tipos=tiposManutencao(v),t=tipoId?tipos.find(x=>x.id===tipoId):null;
+  const tipos=tiposManutencao(v),t=tipoId?tipos.find(x=>x.id===tipoId):null,catalogo=!!(t&&t.catalogo);
   const cats=D().categorias.filter(c=>c.veicular&&c.ativo!==false);
   const val=x=>x!=null&&x!==''?x:'';
-  abrirModal({titulo:t?'Manutenção: '+t.nome:'Novo tipo de manutenção',
-    corpo:`<div class="field"><label for="mtNome">Nome</label><input id="mtNome" class="input" value="${esc(t?t.nome:'')}" placeholder="Ex.: Troca de óleo, Pneu traseiro, Relação"></div>
-      <div class="field" style="margin-top:12px"><span class="small"><b>Quais despesas contam como este evento</b></span>
+  abrirModal({titulo:t?t.nome:'Novo item de manutenção',
+    corpo:`<div class="field"><label for="mtNome">Nome</label><input id="mtNome" class="input" value="${esc(t?t.nome:'')}" placeholder="Ex.: Relação, Vela, Filtro de ar"></div>
+      ${catalogo?`<p class="small" style="margin-top:12px">Identificado automaticamente no histórico por: <b>${esc(regraTipoTxt(t))}</b>.</p>`:
+      `<div class="field" style="margin-top:12px"><span class="small"><b>Quais despesas contam</b></span>
         <div class="stack" style="gap:6px;margin-top:6px">${cats.map(c=>`<label class="check"><input type="checkbox" data-mtcat="${esc(c.id)}" ${t&&t.cats&&t.cats.includes(c.id)?'checked':''}><span>${esc(c.nome)}</span></label>`).join('')}</div></div>
-      <div class="field" style="margin-top:12px"><label for="mtPal">Palavra na descrição (opcional)</label><input id="mtPal" class="input" value="${esc(t?t.palavra||'':'')}" placeholder="Ex.: pneu, óleo, relação">
-        <span class="tiny muted">Útil quando várias peças ficam na mesma categoria: só contam as despesas com esta palavra na descrição.</span></div>
+      <div class="field" style="margin-top:12px"><label for="mtPal">Palavra na descrição (opcional)</label><input id="mtPal" class="input" value="${esc(t?t.palavra||'':'')}" placeholder="Ex.: vela, relação">
+        <span class="tiny muted">Quando várias peças ficam na mesma categoria, só contam as despesas com esta palavra.</span></div>`}
       <div class="form-grid" style="margin-top:12px">
-        <div class="field"><label for="mtIK">Referência em km (opcional)</label><input id="mtIK" class="input" type="number" min="0" step="1" value="${val(t&&t.intervaloKm)}" placeholder="Ex.: 1000"></div>
-        <div class="field"><label for="mtID">Referência em dias (opcional)</label><input id="mtID" class="input" type="number" min="0" step="1" value="${val(t&&t.intervaloDias)}" placeholder="Ex.: 90"></div>
-        <div class="field"><label for="mtAK">Avisar com antecedência (km)</label><input id="mtAK" class="input" type="number" min="0" step="1" value="${val(t?t.avisoKm:300)}"></div>
-        <div class="field"><label for="mtAD">Avisar com antecedência (dias)</label><input id="mtAD" class="input" type="number" min="0" step="1" value="${val(t?t.avisoDias:15)}"></div>
+        <div class="field"><label for="mtIK">Referência em km</label><input id="mtIK" class="input" type="number" min="0" step="1" value="${val(t&&t.intervaloKm)}" placeholder="Ex.: 2000"></div>
+        <div class="field"><label for="mtID">Referência em dias</label><input id="mtID" class="input" type="number" min="0" step="1" value="${val(t&&t.intervaloDias)}" placeholder="Ex.: 90"></div>
+        <div class="field"><label for="mtAK">Avisar antes (km)</label><input id="mtAK" class="input" type="number" min="0" step="1" value="${val(t&&t.avisoKm!=null?t.avisoKm:300)}"></div>
+        <div class="field"><label for="mtAD">Avisar antes (dias)</label><input id="mtAD" class="input" type="number" min="0" step="1" value="${val(t&&t.avisoDias!=null?t.avisoDias:15)}"></div>
       </div>
-      <p class="tiny muted" style="margin-top:10px">A referência é você quem define (manual do veículo ou mecânico). A média histórica mostrada no painel descreve o seu uso e não é recomendação técnica.</p>`,
-    rodape:`${t?'<button class="btn btn-danger" id="mtDel" style="margin-right:auto">Excluir tipo</button>':''}<button class="btn" data-fechar>Cancelar</button><button class="btn btn-primary" id="mtOk">Salvar</button>`,
+      <p class="tiny muted" style="margin-top:10px">Deixe em branco para só acompanhar, sem alertas. A média histórica descreve o seu uso; o manual do veículo ou o mecânico indicam a referência técnica.</p>`,
+    rodape:`${t?`<button class="btn btn-danger" id="mtDel" style="margin-right:auto">${catalogo?'Ocultar item':'Excluir item'}</button>`:''}<button class="btn" data-fechar>Cancelar</button><button class="btn btn-primary" id="mtOk">Salvar</button>`,
     aoAbrir:m=>{
-      const garantir=()=>{if(!Array.isArray(v.manutencoes))v.manutencoes=sugestoesManut().map(x=>{const y={...x};delete y.sugerido;return y;});};
       $('#mtOk',m).onclick=()=>{
         const nome=$('#mtNome',m).value.trim();if(!nome){toast('Informe o nome.','err');return;}
-        const catsSel=$$('[data-mtcat]',m).filter(x=>x.checked).map(x=>x.dataset.mtcat),pal=$('#mtPal',m).value.trim();
-        if(!catsSel.length&&!pal){toast('Escolha ao menos uma categoria ou uma palavra da descrição.','err');return;}
         const num=id=>{const x=$(id,m).value;return x===''?null:Math.max(0,Math.round(+x));};
-        garantir();
-        const o=t?v.manutencoes.find(x=>x.id===t.id):null,alvo=o||{id:uid('mt')};
-        Object.assign(alvo,{nome,cats:catsSel,palavra:pal,intervaloKm:num('#mtIK')||null,intervaloDias:num('#mtID')||null,avisoKm:num('#mtAK'),avisoDias:num('#mtAD')});
-        if(!o)v.manutencoes.push(alvo);
-        salvar();fecharModal();toast('Manutenção configurada.','ok');renderVeiculos();atualizarNotif();};
+        const conf=garantirConfManut(v);
+        let alvo=t?conf.find(x=>x.id===t.id):null;
+        if(!alvo){alvo={id:t?t.id:uid('mt')};conf.push(alvo);}
+        Object.assign(alvo,{nome,intervaloKm:num('#mtIK')||null,intervaloDias:num('#mtID')||null,avisoKm:num('#mtAK'),avisoDias:num('#mtAD'),refDaMedia:false});
+        if(!catalogo){const catsSel=$$('[data-mtcat]',m).filter(x=>x.checked).map(x=>x.dataset.mtcat),pal=$('#mtPal',m).value.trim();
+          if(!catsSel.length&&!pal){toast('Escolha ao menos uma categoria ou uma palavra da descrição.','err');conf.splice(conf.indexOf(alvo),1);return;}
+          Object.assign(alvo,{cats:catsSel,palavra:pal,grupo:'outros'});}
+        salvar();fecharModal();toast('Item de manutenção salvo.','ok');renderVeiculos();atualizarNotif();};
       const del=$('#mtDel',m);
       if(del)del.onclick=async()=>{fecharModal();
-        if(await confirmar({titulo:'Excluir tipo de manutenção',texto:`Excluir “${t.nome}”? As despesas continuam nos lançamentos; só o acompanhamento deste tipo é removido.`,botao:'Excluir'})){
-          garantir();v.manutencoes=v.manutencoes.filter(x=>x.id!==t.id);salvar();toast('Tipo removido.','ok');renderVeiculos();atualizarNotif();}};
+        if(await confirmar({titulo:catalogo?'Ocultar item':'Excluir item',texto:catalogo?`Ocultar “${t.nome}” do acompanhamento? As despesas continuam nos lançamentos e o item pode ser mostrado de novo.`:`Excluir “${t.nome}”? As despesas continuam nos lançamentos.`,botao:catalogo?'Ocultar':'Excluir'})){
+          if(catalogo){v.manutOcultos=[...new Set([...(v.manutOcultos||[]),t.id])];}
+          else v.manutencoes=(v.manutencoes||[]).filter(x=>x.id!==t.id);
+          salvar();toast(catalogo?'Item ocultado.':'Item excluído.','ok');renderVeiculos();atualizarNotif();}};
     }});
 }
 function formEventoManut(v,tipoId){
-  const tipos=tiposManutencao(v);
+  const ja=tiposManutencao(v),tipos=[...ja,...CATALOGO_PECAS.filter(c=>!ja.some(t=>t.id===c.id)).map(c=>({id:c.id,nome:c.nome}))];
   abrirModal({titulo:'Registrar manutenção sem custo',pequeno:true,
-    corpo:`<div class="field"><label for="emTipo">Tipo</label><select id="emTipo" class="input">${opcoes(tipos,{selecionado:tipoId||tipos[0]?.id})}</select></div>
+    corpo:`<div class="field"><label for="emTipo">Item</label><select id="emTipo" class="input">${opcoes(tipos,{selecionado:tipoId||'oleo'})}</select></div>
       <div class="field" style="margin-top:12px"><label for="emData">Data</label><input id="emData" class="input" type="date" value="${HOJE}" max="${HOJE}"></div>
       <div class="field" style="margin-top:12px"><label for="emKm">Quilometragem (opcional)</label><input id="emKm" class="input" type="number" min="0" step="1"></div>
       <div class="field" style="margin-top:12px"><label for="emObs">Observação (opcional)</label><input id="emObs" class="input" placeholder="Ex.: troca na garantia, registro antigo"></div>
-      <p class="tiny muted" style="margin-top:10px">Para manutenção com custo, use “Novo lançamento” com o veículo: a despesa entra no financeiro e no histórico de manutenções.</p>`,
+      <p class="tiny muted" style="margin-top:10px">Para manutenção com custo, use “Novo lançamento” com o veículo e descreva a peça (ex.: “Pneu traseiro”): ela é identificada automaticamente.</p>`,
     rodape:`<button class="btn" data-fechar>Cancelar</button><button class="btn btn-primary" id="emOk">Registrar</button>`,
     aoAbrir:m=>{$('#emOk',m).onclick=async()=>{
       const tipoSel=$('#emTipo',m).value,data=$('#emData',m).value||HOJE,kmTxt=$('#emKm',m).value,km=kmTxt?Math.round(+kmTxt):null,obs=$('#emObs',m).value.trim();
       if(data>HOJE){toast('A data não pode ser futura.','err');return;}
       if(kmTxt&&!(km>0)){toast('Quilometragem inválida.','err');return;}
       if(km&&!(await confirmarConflitoKm(conflitosKm(v,data,km))))return;
-      if(!Array.isArray(v.manutencoes))v.manutencoes=sugestoesManut().map(x=>{const y={...x};delete y.sugerido;return y;});
       if(!v.eventosManut)v.eventosManut=[];
       v.eventosManut.push({id:uid('e'),tipoId:tipoSel,data,km:km||null,obs});
       salvar();fecharModal();toast('Manutenção registrada.','ok');renderVeiculos();atualizarNotif();};}});
 }
+async function usarMediaComoRef(v,s){
+  const iD=s.mediaDias||null,iK=s.mediaKm?Math.round(s.mediaKm/50)*50:null;
+  if(!iD&&!iK){toast('Ainda não há média: são necessários pelo menos 2 registros.','warn');return;}
+  const txt=[iK?`${fmtKm(iK)}${s.mediaKmEst?' (com km estimados)':''}`:'',iD?`${iD} dias`:''].filter(Boolean).join(' ou ');
+  if(!(await confirmar({titulo:'Usar média como referência',perigo:false,botao:'Usar média',
+    texto:`Definir a referência de “${s.tipo.nome}” pela sua média histórica: a cada ${txt}. Ela gera alertas a partir de agora; não é uma recomendação técnica e você pode ajustar em Configurar.`})))return;
+  const conf=garantirConfManut(v);let alvo=conf.find(x=>x.id===s.tipo.id);
+  if(!alvo){alvo={id:s.tipo.id,nome:s.tipo.nome};if(!s.tipo.catalogo)Object.assign(alvo,{cats:s.tipo.cats,palavra:s.tipo.palavra});conf.push(alvo);}
+  Object.assign(alvo,{intervaloDias:iD,intervaloKm:iK,avisoDias:alvo.avisoDias!=null?alvo.avisoDias:15,avisoKm:alvo.avisoKm!=null?alvo.avisoKm:300,refDaMedia:true});
+  salvar();toast('Referência definida pela média histórica.','ok');renderVeiculos();atualizarNotif();
+}
 
-/* ---- HTML do painel de um veículo seu ---- */
+/* ---- HTML ---- */
 const tagStatusManut=s=>s.status==='vencido'?'<span class="tag can">referência atingida</span>':s.status==='proximo'?'<span class="tag fut">próxima</span>':
-  s.status==='ok'?'<span class="tag ok">em dia</span>':s.status==='sem-evento'?'<span class="tag">sem registros</span>':'<span class="tag">sem referência</span>';
+  s.status==='ok'?'<span class="tag ok">em dia</span>':s.status==='sem-evento'?'<span class="tag">sem registros</span>':'<span class="tag">acompanhando</span>';
+const ORDEM_ST={vencido:0,proximo:1,ok:2,'sem-ref':3,'sem-evento':4};
+const vstat=(rot,val,sub)=>`<div class="vstat"><span class="tiny muted">${rot}</span><b>${val}</b><span class="tiny muted">${sub||''}</span></div>`;
+function desdeTxt(s){
+  if(!s.ultimo)return 'sem registros';
+  return `há <b>${s.diasDesde} ${s.diasDesde===1?'dia':'dias'}</b> · ${s.kmDesde!=null?'<b>'+kmTxt(s.kmDesde,s.kmEst)+'</b>':'km: '+INSUF.toLowerCase()}`;
+}
+function htmlPainel(a){
+  const h=a.hist,u=h.uso;
+  const mt=a.tipos.filter(s=>s.ultimo).sort((x,y)=>(ORDEM_ST[x.status]-ORDEM_ST[y.status])||(x.tipo.id==='oleo'?-1:y.tipo.id==='oleo'?1:0)||(x.ultimo.data<y.ultimo.data?1:-1)).slice(0,5);
+  return `<div class="card" style="margin-bottom:14px"><div class="card-head"><h2>${esc(a.v.nome)}</h2>${a.v.tipo?`<span class="tag">${esc(a.v.tipo)}</span>`:''}
+      <button class="btn btn-sm btn-primary" id="veiKmAtual" style="margin-left:auto">Atualizar quilometragem</button></div>
+    <div class="card-pad">
+      <div class="vgrid">
+        ${vstat('Hodômetro',a.atual?fmtKm(a.atual.km):'—',a.atual?'leitura de '+fmtData(a.atual.data)+' · '+esc(rotuloOrigem(a.atual.origem)):'sem leituras ainda')}
+        ${vstat('Uso médio',u?NUM1.format(u.kmDia)+' km/dia':INSUF,u?fmtKm(u.km)+' em '+u.dias+' dias, desde '+fmtData(u.de.data):'precisa de 2 leituras')}
+        ${vstat('Consumo medido',h.medido?fmtKmL(h.medido):INSUF,h.medido?h.segs+' abastecimentos · '+fmtKm(h.kmSeg)+' / '+fmtL(h.litSeg)+(a.ref?' · referência '+fmtKmL(a.ref):''):'precisa de abastecimentos com litros e km')}
+        ${vstat('Combustível por km',h.combKm?fmtPorKm(h.combKm):INSUF,h.precoL?'preço médio '+fmt(h.precoL)+'/L':'')}
+      </div>
+      ${mt.length?`<div class="small" style="margin:14px 0 6px"><b>Desde a última troca</b></div>
+      <div class="stack" style="gap:6px">${mt.map(s=>`<button type="button" class="vlinha" data-irmanut="${esc(s.tipo.id)}">
+        <span><b>${esc(s.tipo.nome)}</b> ${tagStatusManut(s)}<br><span class="small">${desdeTxt(s)}</span>
+        <br><span class="tiny muted">${s.mediaDias!=null||s.mediaKm!=null?'média: '+[s.mediaDias!=null?s.mediaDias+' dias':'',s.mediaKm!=null?kmTxt(s.mediaKm,s.mediaKmEst):''].filter(Boolean).join(' / '):'1 registro: sem média ainda'}</span></span><span aria-hidden="true">›</span></button>`).join('')}</div>`:''}
+      <p class="tiny muted" style="margin-top:12px">Parâmetros do histórico completo: ${a.L.length} leituras do hodômetro (${a.origens.descricao} das descrições dos lançamentos, ${a.origens.manual} manuais${a.origens.campo?', '+a.origens.campo+' do campo km':''}${a.origens.manut?', '+a.origens.manut+' de manutenções':''})${a.conflitos.length?` · <button class="linkbtn" data-vaba="km">${a.conflitos.length} para conferir</button>`:''}. “≈” indica km estimado entre duas leituras reais.</p>
+    </div></div>`;
+}
 function htmlLeituras(a){
   const L=a.L;if(!L.length)return '';
   const nConf=L.filter(r=>r.conflito).length;
   return `<details class="mais-opcoes" style="margin-top:12px"${nConf?' open':''}><summary><span class="tres-pontos" aria-hidden="true">⋯</span> Leituras do hodômetro <span class="tiny muted">${L.length}${nConf?' · '+nConf+' para conferir':''}</span></summary>
     <div class="table-wrap"><table class="tbl"><thead><tr><th>Data</th><th class="r">Hodômetro</th><th>Origem</th><th>Situação</th><th class="r">Ações</th></tr></thead>
     <tbody>${L.slice().reverse().map(r=>`<tr><td>${fmtData(r.data)}</td><td class="r">${fmtKm(r.km)}</td>
-      <td class="wrap">${r.fonte==='manual'?'Atualização manual':r.fonte==='manut'?esc(r.desc):'Lançamento: '+esc(r.desc)}</td>
+      <td class="wrap">${esc(rotuloOrigem(r.origem))}${r.fonte==='lanc'?': '+esc(r.cat)+(r.desc&&r.desc!==r.cat?' — '+esc(r.desc):''):''}</td>
       <td>${r.conflito?(r.valida?'<span class="tag fut">conferir</span>':'<span class="tag can">conferir · fora do cálculo</span>'):'<span class="tag ok">ok</span>'}</td>
-      <td class="r">${r.fonte==='manual'?`<button class="btn btn-sm btn-danger" data-kmdel="${esc(r.id)}">Excluir</button>`:r.fonte==='lanc'?`<button class="btn btn-sm" data-kmedit="${esc(r.id)}">Editar</button>`:''}</td></tr>`).join('')}</tbody></table></div>
-    ${nConf?'<p class="tiny muted" style="margin-top:6px">Leituras “conferir” contradizem outra (data anterior com km maior). O cálculo usa o maior conjunto coerente; corrija ou exclua a leitura errada quando puder.</p>':''}</details>`;
+      <td class="r">${r.fonte==='manual'?`<button class="btn btn-sm btn-danger" data-kmdel="${esc(r.id)}">Excluir</button>`:r.fonte==='lanc'?`<button class="btn btn-sm" data-kmedit="${esc(r.id)}">Abrir</button>`:''}</td></tr>`).join('')}</tbody></table></div>
+    ${nConf?'<p class="tiny muted" style="margin-top:6px">“Conferir”: leituras que se contradizem (data anterior com km maior). O cálculo usa o maior conjunto coerente; corrija a descrição ou o campo do lançamento errado quando puder.</p>':''}</details>`;
 }
 function htmlKmCusto(a){
   const iv=a.iv,ck=a.ck;
@@ -4622,7 +4778,7 @@ function htmlKmCusto(a){
   const chips=a.catsOp.length?`<div class="small" style="margin:4px 0 6px"><b>Categorias no custo por km</b> <span class="tiny muted">(toque para incluir ou retirar)</span></div>
     <div class="chips-inst" role="group" aria-label="Categorias consideradas no custo por km">${a.catsOp.map(c=>`<button type="button" class="chip-inst" data-ckcat="${esc(c.id)}" aria-pressed="${!a.excl.has(c.id)}">${esc(c.nome)}</button>`).join('')}</div>`:'';
   const detalhe=ck&&ck.itens.length?`<details class="mais-opcoes" style="margin-top:10px"><summary><span class="tres-pontos" aria-hidden="true">⋯</span> Despesas consideradas <span class="tiny muted">${ck.itens.length} · ${fmt(ck.total)}</span></summary>
-      <p class="tiny muted" style="margin:6px 0">Despesas do veículo depois de ${fmtData(iv.de.data)} e até ${fmtData(iv.ate.data)}, marcadas “Inclui” no custo operacional e nas categorias selecionadas. Compras no cartão contam pela data da compra.</p>
+      <p class="tiny muted" style="margin:6px 0">Despesas depois de ${fmtData(iv.de.data)} e até ${fmtData(iv.ate.data)}, marcadas “Inclui” e nas categorias selecionadas. Compras no cartão contam pela data da compra.</p>
       <div class="stack" style="gap:4px;margin-bottom:8px">${ck.porCat.map(c=>`<div class="row" style="justify-content:space-between"><span class="small">${esc(c.nome)}</span><b class="small money">${fmt(c.valor)}</b></div>`).join('')}</div>
       <div class="table-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Categoria</th><th>Descrição</th><th class="r">Valor</th></tr></thead>
       <tbody>${ck.itens.map(l=>`<tr><td>${fmtData(dataConsumo(l))}</td><td>${esc(nomeCat(l.categoriaId))}</td><td class="wrap">${esc(l.observacao||'—')}</td><td class="r money">${fmt(l.valor)}</td></tr>`).join('')}</tbody></table></div></details>`:'';
@@ -4630,14 +4786,13 @@ function htmlKmCusto(a){
       <div class="table-wrap"><table class="tbl"><thead><tr><th>De</th><th>Até</th><th class="r">Distância</th><th class="r">Dias</th><th class="r">Km/dia</th><th class="r">Gastos</th><th class="r">Custo/km</th></tr></thead>
       <tbody>${a.trechos.slice().reverse().map(t=>`<tr><td>${fmtData(t.a.data)}</td><td>${fmtData(t.b.data)}</td><td class="r">${fmtKm(t.km)}</td><td class="r">${t.dias}</td>
         <td class="r">${t.kmDia!=null?NUM1.format(t.kmDia):'—'}</td><td class="r money">${fmt(t.gasto)}</td><td class="r money">${fmtPorKm(t.custoKm)}</td></tr>`).join('')}</tbody></table></div></details>`:'';
-  return `<div class="card" style="margin-bottom:14px" id="veiKmCard"><div class="card-head"><h2>Quilometragem e custo por km</h2>
-      <button class="btn btn-sm btn-primary" id="veiKmAtual" style="margin-left:auto">Atualizar quilometragem</button></div>
+  return `<div class="card" style="margin-bottom:14px" id="veiKmCard"><div class="card-head"><h2>Quilometragem e custo por km</h2><span class="tiny muted" style="margin-left:auto">no período escolhido</span></div>
     <div class="card-pad">
       <div class="kpi-row scroller" style="margin-bottom:12px">
-        <div class="kpi k-brand"><div class="kpi-label">Hodômetro atual</div><div class="kpi-value">${a.atual?fmtKm(a.atual.km):'—'}</div>
-          <div class="tiny muted">${a.atual?'leitura de '+fmtData(a.atual.data):'sem leituras ainda'}</div></div>
         <div class="kpi k-brand"><div class="kpi-label">Distância no período</div><div class="kpi-value">${iv.ok?fmtKm(iv.km):INSUF}</div>
           <div class="tiny muted">${intervalo}</div></div>
+        <div class="kpi k-brand"><div class="kpi-label">Uso médio no período</div><div class="kpi-value">${a.usoP?NUM1.format(a.usoP.kmDia)+' km/dia':INSUF}</div>
+          <div class="tiny muted">${a.usoP?a.usoP.dias+' dias entre a primeira e a última leitura':'precisa de 2 leituras'}</div></div>
         <div class="kpi k-warn"><div class="kpi-label">Gastos no intervalo</div><div class="kpi-value">${ck?fmt(ck.total):'—'}</div>
           <div class="tiny muted">${ck?ck.itens.length+' despesas · '+(a.catsOp.length-a.excl.size)+' de '+a.catsOp.length+' categorias':'depende do intervalo de km'}</div></div>
         <div class="kpi k-neg"><div class="kpi-label">Custo médio por km</div><div class="kpi-value">${a.cpk!=null?fmtPorKm(a.cpk):INSUF}</div>
@@ -4652,14 +4807,18 @@ function htmlConsumo(a){
     <tbody>${m.slice().reverse().map(x=>`<tr><td style="white-space:nowrap">${mesLabel(x.idx)}${a.maior&&a.maior.idx===x.idx?' <span class="tag can">maior</span>':''}${a.menor&&a.menor.idx===x.idx?' <span class="tag ok">menor</span>':''}</td>
       <td class="r">${x.abast}</td><td class="r money">${fmt(x.valor)}</td><td class="r">${x.litros>0?fmtL(x.litros)+(x.cobertura?'':' <span class="tiny muted">(parcial)</span>'):'—'}</td>
       <td class="r money">${x.preco?fmt(x.preco):'—'}</td><td class="r">${x.kmL?fmtKmL(x.kmL):'—'}</td></tr>`).join('')}</tbody></table></div>
-    <p class="tiny muted" style="margin-top:6px">Maior e menor consumo ${a.porLitros?'pelos litros abastecidos':'pelo valor abastecido (nem todos os abastecimentos têm litros)'}. Litros só aparecem quando informados; nada é estimado nesta tabela.</p>`
+    <p class="tiny muted" style="margin-top:6px">Maior e menor consumo ${a.porLitros?'pelos litros abastecidos':'pelo valor abastecido (nem todos os abastecimentos têm litros)'}. Litros vêm do campo ou da descrição (ex.: “9,798 L”); nada é estimado nesta tabela.</p>`
     :'<p class="small muted" style="margin-top:8px">Nenhum abastecimento no período.</p>';
+  const segs=a.segs.length?`<details class="mais-opcoes" style="margin-top:10px"><summary><span class="tres-pontos" aria-hidden="true">⋯</span> Consumo por abastecimento <span class="tiny muted">${a.segs.length}</span></summary>
+    <div class="table-wrap"><table class="tbl"><thead><tr><th>Abastecimento</th><th class="r">Km</th><th class="r">Rodados</th><th class="r">Litros</th><th class="r">Km/l</th></tr></thead>
+    <tbody>${a.segs.slice().reverse().map(x=>`<tr><td>${fmtData(x.data)}</td><td class="r">${fmtKm(x.kmB)}</td><td class="r">${fmtKm(x.km)}</td><td class="r">${fmtL(x.litros)}</td><td class="r">${fmtKmL(x.kmL)}</td></tr>`).join('')}</tbody></table></div>
+    <p class="tiny muted" style="margin-top:6px">Cada linha: km rodados desde o abastecimento anterior ÷ litros colocados agora. Variações entre linhas são normais quando o tanque não é completado; a média do período compensa isso.</p></details>`:'';
   return `<div class="card" style="margin-bottom:14px"><div class="card-head"><h2>Consumo de combustível</h2>
       <button class="btn btn-sm" id="veiKmRef" style="margin-left:auto">Consumo de referência</button></div>
     <div class="card-pad">
       <div class="kpi-row scroller" style="margin-bottom:4px">
         <div class="kpi k-pos"><div class="kpi-label">Consumo real medido</div><div class="kpi-value">${a.medido?fmtKmL(a.medido):INSUF}</div>
-          <div class="tiny muted">${a.medido?a.segs.length+(a.segs.length===1?' trecho':' trechos')+' entre abastecimentos · '+fmtKm(a.segs.reduce((s,x)=>s+x.km,0))+' / '+fmtL(a.litSeg):'precisa de 2 abastecimentos seguidos com km e litros'}</div></div>
+          <div class="tiny muted">${a.medido?a.segs.length+(a.segs.length===1?' trecho':' trechos')+' · '+fmtKm(a.segs.reduce((s,x)=>s+x.km,0))+' / '+fmtL(a.litSeg):'precisa de 2 abastecimentos seguidos com km e litros no período'}</div></div>
         <div class="kpi k-brand"><div class="kpi-label">Referência (estimativa)</div><div class="kpi-value">${a.ref?fmtKmL(a.ref):'—'}</div>
           <div class="tiny muted">${a.ref?'valor cadastrado por você; não é medição':'cadastre em “Consumo de referência”'}</div></div>
         <div class="kpi k-warn"><div class="kpi-label">Estimativa no intervalo</div><div class="kpi-value">${a.estim?'≈ '+fmtL(a.estim.litros):'—'}</div>
@@ -4669,49 +4828,77 @@ function htmlConsumo(a){
         <div class="kpi k-neg"><div class="kpi-label">Maior consumo</div><div class="kpi-value">${a.maior?mesLabel(a.maior.idx,false):'—'}</div>
           <div class="tiny muted">${a.maior?fmt(a.maior.valor)+(a.maior.litros?' · '+fmtL(a.maior.litros):''):'—'}${a.menor?'<br>Menor: '+mesLabel(a.menor.idx)+' · '+fmt(a.menor.valor):''}</div></div>
       </div>
-      ${tabela}
+      ${tabela}${segs}
     </div></div>`;
 }
 function htmlManut(a){
-  const linhas=a.tipos.map(s=>{const t=s.tipo,u=s.ultimo;
-    const historico=s.eventos.length?`<details style="margin-top:6px"><summary class="tiny">Histórico (${s.eventos.length})</summary>
-      <div class="table-wrap"><table class="tbl"><thead><tr><th>Data</th><th class="r">Km</th><th class="r">Custo</th><th>Origem</th><th></th></tr></thead><tbody>
-      ${s.eventos.slice().reverse().map(e=>`<tr><td>${fmtData(e.data)}</td><td class="r">${e.km?fmtKm(e.km)+(e.kmDaLeitura?' <span class="tiny muted">(leitura do dia)</span>':''):'—'}</td><td class="r money">${e.valor?fmt(e.valor):'—'}</td>
-        <td class="wrap">${e.itens.map(i=>esc(i.desc)).join('; ')}</td><td class="r">${e.itens.filter(i=>i.fonte==='manual').map(i=>`<button class="btn btn-sm btn-danger" data-evdel="${esc(i.id)}">Excluir</button>`).join('')}</td></tr>`).join('')}
+  const v=a.v,g=VEI.grupo||'';
+  const gruposPres=[...new Set([...a.tipos.map(s=>s.tipo.grupo||'outros'),...a.pecas.map(p=>p.grupo)])];
+  const ordemG=Object.keys(GRUPOS_PECAS).filter(k=>gruposPres.includes(k));
+  const tipos=a.tipos.filter(s=>!g||(s.tipo.grupo||'outros')===g).sort((x,y)=>(ORDEM_ST[x.status]-ORDEM_ST[y.status])||((x.ultimo?0:1)-(y.ultimo?0:1))||(x.tipo.id==='oleo'?-1:y.tipo.id==='oleo'?1:0)||(x.ultimo&&y.ultimo?(x.ultimo.data<y.ultimo.data?1:-1):0));
+  const pecas=a.pecas.filter(p=>!g||p.grupo===g);
+  const ign=new Set(v.manutIgnorar||[]);
+  const cards=tipos.map(s=>{const t=s.tipo,u=s.ultimo;
+    const hist=(s.eventos.length||(s.eventos.ignorados||[]).length)?`<details style="margin-top:8px"><summary class="tiny">Registros (${s.eventos.length}${s.eventos.ignorados&&s.eventos.ignorados.length?' + '+s.eventos.ignorados.length+' não contados':''})</summary>
+      <div class="table-wrap"><table class="tbl"><thead><tr><th>Data</th><th class="r">Km</th><th class="r">Intervalo</th><th class="r">Custo</th><th>Descrição</th><th></th></tr></thead><tbody>
+      ${s.eventos.map((e,i)=>{const p=s.eventos[i-1];const intv=p?diasEntre(p.data,e.data)+' d'+(p.km&&e.km&&e.km>p.km?' · '+kmTxt(e.km-p.km,p.est||e.est):''):'—';
+        return `<tr><td>${fmtData(e.data)}</td><td class="r">${e.km?kmTxt(e.km,e.est):'—'}${e.kmConflito.length?' <span class="tag fut" title="km da descrição não confere">conferir '+e.kmConflito.map(k=>NUMI.format(k)).join(', ')+'</span>':''}</td>
+        <td class="r">${intv}</td><td class="r money">${e.valor?fmt(e.valor):'—'}</td><td class="wrap">${e.itens.map(i=>esc(i.desc)).join('; ')}</td>
+        <td class="r">${e.itens.map(i=>i.fonte==='manual'?`<button class="btn btn-sm btn-danger" data-evdel="${esc(i.id)}">Excluir</button>`:`<button class="btn btn-sm" data-mign="${esc(t.id+':'+i.id)}" title="Não usar este lançamento no acompanhamento">Não contar</button>`).join(' ')}</td></tr>`;}).reverse().join('')}
+      ${(s.eventos.ignorados||[]).map(i=>`<tr class="muted"><td>${fmtData(i.data)}</td><td class="r">—</td><td class="r">—</td><td class="r money">${fmt(i.valor)}</td><td class="wrap">${esc(i.desc)} <span class="tag">não contado</span></td>
+        <td class="r"><button class="btn btn-sm" data-mign="${esc(t.id+':'+i.id)}">Contar</button></td></tr>`).join('')}
       </tbody></table></div></details>`:'';
+    const temMedia=s.mediaDias!=null||s.mediaKm!=null;
     return `<div class="veic-item" style="display:block">
-      <div class="row" style="justify-content:space-between;gap:8px"><b>${esc(t.nome)}</b><span class="row" style="gap:6px">${tagStatusManut(s)}
-        <button class="btn btn-sm" data-mtcfg="${esc(t.id)}">Configurar</button></span></div>
-      ${u?`<div class="small" style="margin-top:6px">Último: <b>${fmtData(u.data)}</b>${u.km?' · '+fmtKm(u.km):''}${u.valor?' · '+fmt(u.valor):''}</div>
-      <div class="small">Desde então: <b>${s.diasDesde} ${s.diasDesde===1?'dia':'dias'}</b> · ${s.kmDesde!=null?'<b>'+fmtKm(s.kmDesde)+'</b>':'km: '+INSUF.toLowerCase()+' <span class="tiny muted">('+esc(s.motivoKm)+')</span>'}</div>
-      <div class="small">Média histórica entre trocas: ${s.mediaDias!=null?'<b>'+s.mediaDias+' dias</b> <span class="tiny muted">('+s.nDias+(s.nDias===1?' intervalo':' intervalos')+')</span>':INSUF.toLowerCase()+' <span class="tiny muted">(precisa de 2 registros)</span>'}
-        · ${s.mediaKm!=null?'<b>'+fmtKm(s.mediaKm)+'</b> <span class="tiny muted">('+s.nKm+')</span>':'km: '+INSUF.toLowerCase()}</div>`
-      :`<div class="small muted" style="margin-top:6px">Nenhum registro encontrado ${t.cats&&t.cats.length?'nas categorias escolhidas':''}${t.palavra?' com a palavra “'+esc(t.palavra)+'” na descrição':''}.</div>`}
-      <div class="small">Referência: ${s.iD||s.iK?[s.iK?'a cada '+fmtKm(s.iK):'',s.iD?'a cada '+s.iD+' dias':''].filter(Boolean).join(' ou ')+(u&&(s.status==='proximo'||s.status==='vencido'||s.status==='ok')?' — '+esc(textoManut(s)):''):'<span class="muted">não configurada (sem alertas)</span>'}</div>
-      ${t.sugerido?'<div class="tiny muted">Sugestão automática: '+(t.cats&&t.cats.length?'categoria '+t.cats.map(id=>esc(nomeCat(id))).join(', '):'descrição com “'+esc(t.palavra)+'”')+'. Configure para ajustar.</div>':''}
-      ${historico}</div>`;}).join('');
+      <div class="row" style="justify-content:space-between;gap:8px;align-items:flex-start"><span><b>${esc(t.nome)}</b> ${tagStatusManut(s)}<br><span class="tiny muted">${esc(GRUPOS_PECAS[t.grupo||'outros'])}</span></span>
+        <button class="btn btn-sm" data-mtcfg="${esc(t.id)}">Configurar</button></div>
+      ${u?`<div class="mgrid">
+        <div><span class="tiny muted">Última</span><b>${fmtData(u.data)}</b><span class="tiny">${u.km?kmTxt(u.km,u.est)+(u.est?' estimado':''):'km desconhecido'}${u.valor?' · '+fmt(u.valor):''}</span></div>
+        <div><span class="tiny muted">Desde então</span><b>${s.diasDesde} ${s.diasDesde===1?'dia':'dias'}</b><span class="tiny">${s.kmDesde!=null?kmTxt(s.kmDesde,s.kmEst)+(s.ateLeitura?' até '+fmtData(s.ateLeitura.data):''):'km: '+INSUF.toLowerCase()}</span></div>
+        <div><span class="tiny muted">Média histórica</span><b>${s.mediaDias!=null?s.mediaDias+' dias':'—'}</b><span class="tiny">${s.mediaKm!=null?kmTxt(s.mediaKm,s.mediaKmEst)+' · '+s.nKm+(s.nKm===1?' intervalo':' intervalos'):s.nDias?'km: '+INSUF.toLowerCase():'precisa de 2 registros'}</span></div>
+        <div><span class="tiny muted">Referência</span><b>${s.iD||s.iK?[s.iK?fmtKm(s.iK):'',s.iD?s.iD+' dias':''].filter(Boolean).join(' / '):'—'}</b><span class="tiny">${s.iD||s.iK?(t.refDaMedia?'pela sua média':'definida por você')+(u&&s.status!=='sem-ref'?' · '+esc(textoManut(s).split('. Último')[0]):''):'sem alertas'}</span></div>
+      </div>
+      ${!s.iD&&!s.iK&&temMedia?`<button class="btn btn-sm" data-mmedia="${esc(t.id)}" style="margin-top:8px">Usar média como referência</button>`:''}`
+      :`<div class="small muted" style="margin-top:6px">Nenhum registro identificado (${esc(regraTipoTxt(t))}).</div>`}
+      ${hist}</div>`;}).join('');
+  const tabela=pecas.length?`<div class="table-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Descrição</th><th>Identificado como</th><th class="r">Km na data</th><th class="r">Desde então</th><th class="r">Valor</th></tr></thead>
+    <tbody>${pecas.map(p=>`<tr><td>${fmtData(p.data)}</td><td class="wrap">${esc(p.desc)}<br><span class="tiny muted">${esc(p.cat)}</span></td>
+      <td>${p.pecas.length?p.pecas.map(id=>`<span class="tag">${esc(nomeTipoManut(v,id)||id)}</span>`).join(' '):'<span class="tiny muted">outros / acessório</span>'}</td>
+      <td class="r">${p.km?kmTxt(p.km,p.est):'—'}${p.kmConflito?' <span class="tag fut">conferir</span>':''}</td>
+      <td class="r">${p.dias} d${p.kmDesde!=null?'<br><span class="tiny">'+kmTxt(p.kmDesde,p.est)+'</span>':''}</td><td class="r money">${p.valor?fmt(p.valor):'—'}</td></tr>`).join('')}</tbody></table></div>`
+    :'<div class="card-pad"><p class="small muted">Nenhuma peça ou serviço neste grupo.</p></div>';
+  const ocultos=(v.manutOcultos||[]).length;
   return `<div class="card" style="margin-bottom:14px"><div class="card-head"><h2>Peças e manutenções</h2>
-      <div class="row" style="margin-left:auto;gap:6px"><button class="btn btn-sm" id="mtNovo">Novo tipo</button><button class="btn btn-sm" id="mtEvento">Registrar sem custo</button></div></div>
-    <div class="veic-lista" style="padding-top:10px">${linhas||'<p class="small muted">Nenhum tipo configurado.</p>'}</div>
-    <div class="card-pad" style="padding-top:0"><p class="tiny muted">Eventos vêm das despesas do veículo (pela categoria e, se você quiser, por uma palavra na descrição) e dos registros sem custo. A média histórica descreve o seu uso; alertas só usam a referência que você configurar.</p></div></div>`;
+      <div class="row" style="margin-left:auto;gap:6px"><button class="btn btn-sm" id="mtNovo">Novo item</button><button class="btn btn-sm" id="mtEvento">Registrar sem custo</button></div></div>
+    <div class="card-pad" style="padding-bottom:4px"><div class="chips-inst" role="group" aria-label="Filtrar por grupo de peças">
+      <button type="button" class="chip-inst" data-vgrupo="" aria-pressed="${!g}">Todos</button>
+      ${ordemG.map(k=>`<button type="button" class="chip-inst" data-vgrupo="${k}" aria-pressed="${g===k}">${GRUPOS_PECAS[k]}</button>`).join('')}</div></div>
+    <div class="veic-lista" style="padding-top:6px">${cards||'<p class="small muted">Nenhum item neste grupo.</p>'}</div>
+    <div class="card-pad" style="padding-top:0"><p class="tiny muted">Itens identificados no seu histórico pela categoria ou pela descrição (ex.: “Troca de Pneu traseiro”). Km vem da descrição, do campo do lançamento ou de uma leitura do mesmo dia; sem isso, é estimado entre leituras (≈). A média histórica descreve o seu uso; alertas só usam uma referência definida por você.${ocultos?` <button class="linkbtn" id="mtMostrar">Mostrar ${ocultos} oculto(s)</button>`:''}</p></div></div>
+   <div class="card" style="margin-bottom:14px"><div class="card-head"><h2>Histórico de peças e serviços</h2><span class="tiny muted" style="margin-left:auto">${pecas.length} registros${g?' · '+GRUPOS_PECAS[g]:''}</span></div>${tabela}</div>`;
 }
 function htmlResumoVeiculos(lista){
   if(!lista.length)return '';
   return `<div class="card" style="margin-bottom:14px"><div class="card-head"><h2>Quilometragem e manutenção por veículo</h2>
       <button class="btn btn-sm btn-primary" id="veiKmAtual" style="margin-left:auto">Atualizar quilometragem</button></div>
-    <div class="table-wrap"><table class="tbl"><thead><tr><th>Veículo</th><th class="r">Hodômetro</th><th class="r">Distância no período</th><th class="r">Custo/km</th><th class="r">Consumo real</th><th>Manutenções</th></tr></thead>
-    <tbody>${lista.map(a=>{const al=a.tipos.filter(s=>s.status==='proximo'||s.status==='vencido');
+    <div class="table-wrap"><table class="tbl"><thead><tr><th>Veículo</th><th class="r">Hodômetro</th><th class="r">Uso médio</th><th class="r">Custo/km no período</th><th class="r">Consumo medido</th><th>Óleo</th><th>Alertas</th></tr></thead>
+    <tbody>${lista.map(a=>{const al=a.tipos.filter(s=>s.status==='proximo'||s.status==='vencido'),o=a.tipos.find(s=>s.tipo.id==='oleo');
       return `<tr><td><button class="linkbtn" data-veikm="${esc(DB.usuarioAtual+':'+a.v.id)}">${esc(a.v.nome)}</button></td>
-      <td class="r">${a.atual?fmtKm(a.atual.km):'—'}</td><td class="r">${a.iv.ok?fmtKm(a.iv.km):'<span class="tiny muted">'+INSUF+'</span>'}</td>
-      <td class="r money">${a.cpk!=null?fmtPorKm(a.cpk):'<span class="tiny muted">'+INSUF+'</span>'}</td><td class="r">${a.medido?fmtKmL(a.medido):'<span class="tiny muted">'+INSUF+'</span>'}</td>
+      <td class="r">${a.atual?fmtKm(a.atual.km):'—'}</td><td class="r">${a.hist.uso?NUM1.format(a.hist.uso.kmDia)+' km/dia':'<span class="tiny muted">'+INSUF+'</span>'}</td>
+      <td class="r money">${a.cpk!=null?fmtPorKm(a.cpk):'<span class="tiny muted">'+INSUF+'</span>'}</td><td class="r">${a.hist.medido?fmtKmL(a.hist.medido):'<span class="tiny muted">'+INSUF+'</span>'}</td>
+      <td class="small">${o&&o.ultimo?desdeTxt(o):'—'}</td>
       <td>${al.length?al.map(s=>`<span class="tag ${s.status==='vencido'?'can':'fut'}">${esc(s.tipo.nome)}</span>`).join(' '):'<span class="tiny muted">sem alertas</span>'}</td></tr>`;}).join('')}</tbody></table></div>
-    <div class="card-pad" style="padding-top:8px"><p class="tiny muted">Escolha um veículo no filtro acima para ver custo por km, consumo e manutenções em detalhe.${modoCasal()?' Quilometragem e manutenções são privadas: só os seus veículos aparecem aqui.':''}</p></div></div>`;
+    <div class="card-pad" style="padding-top:8px"><p class="tiny muted">Escolha um veículo no filtro para ver o painel completo.${modoCasal()?' Quilometragem e manutenções são privadas: só os seus veículos aparecem aqui.':''}</p></div></div>`;
 }
 function ligarPainelVeiculo(a){
   const at=$('#veiKmAtual');if(at)at.onclick=()=>formAtualizarKm(a&&a.v?a.v.id:null);
   $$('[data-veikm]').forEach(b=>b.onclick=()=>{VEI.sel=b.dataset.veikm;renderVeiculos();});
   if(!a)return;
   const v=a.v;
+  $$('[data-vaba]').forEach(b=>b.onclick=()=>{VEI.aba=b.dataset.vaba;renderVeiculos();});
+  $$('[data-irmanut]').forEach(b=>b.onclick=()=>{VEI.aba='manut';VEI.grupo='';renderVeiculos();
+    setTimeout(()=>{const el=document.querySelector(`[data-mtcfg="${b.dataset.irmanut}"]`);if(el)el.closest('.veic-item').scrollIntoView({block:'center',behavior:'smooth'});},60);});
+  $$('[data-vgrupo]').forEach(b=>b.onclick=()=>{VEI.grupo=b.dataset.vgrupo;renderVeiculos();});
   const rf=$('#veiKmRef');if(rf)rf.onclick=()=>{const i=D().veiculos.findIndex(x=>x.id===v.id);if(i>=0)formCadastro('veiculos',i,()=>renderVeiculos());};
   $$('[data-ckcat]').forEach(b=>b.onclick=()=>{
     const p=D().prefs;if(!p.custoKmExcl)p.custoKmExcl={};const s=new Set(p.custoKmExcl[v.id]||[]),id=b.dataset.ckcat;
@@ -4722,8 +4909,12 @@ function ligarPainelVeiculo(a){
       v.leiturasKm=v.leiturasKm.filter(x=>x.id!==r.id);salvar();toast('Leitura excluída.','ok');renderVeiculos();atualizarNotif();}});
   $$('[data-kmedit]').forEach(b=>b.onclick=()=>abrirFormLancamento(b.dataset.kmedit));
   $$('[data-mtcfg]').forEach(b=>b.onclick=()=>formTipoManut(v,b.dataset.mtcfg));
+  $$('[data-mmedia]').forEach(b=>b.onclick=()=>{const s=a.tipos.find(x=>x.tipo.id===b.dataset.mmedia);if(s)usarMediaComoRef(v,s);});
+  $$('[data-mign]').forEach(b=>b.onclick=()=>{const k=b.dataset.mign,s=new Set(v.manutIgnorar||[]);s.has(k)?s.delete(k):s.add(k);v.manutIgnorar=[...s];
+    salvar();toast(s.has(k)?'Lançamento fora deste acompanhamento (continua nos lançamentos).':'Lançamento voltou a contar.','ok');renderVeiculos();atualizarNotif();});
   const mn=$('#mtNovo');if(mn)mn.onclick=()=>formTipoManut(v,null);
   const me=$('#mtEvento');if(me)me.onclick=()=>formEventoManut(v,null);
+  const mm=$('#mtMostrar');if(mm)mm.onclick=()=>{v.manutOcultos=[];salvar();renderVeiculos();};
   $$('[data-evdel]').forEach(b=>b.onclick=async()=>{
     const e=(v.eventosManut||[]).find(x=>x.id===b.dataset.evdel);if(!e)return;
     if(await confirmar({titulo:'Excluir registro',texto:`Excluir o registro sem custo de ${fmtData(e.data)}?`,botao:'Excluir'})){
@@ -4732,10 +4923,11 @@ function ligarPainelVeiculo(a){
 
 /* ---- painel ---- */
 const TIPOS_CUSTO=[['operacional','Custos operacionais'],['uso','Custos de uso (variáveis)'],['fixos','Custos fixos (seguro, impostos, documentação)'],['fora','Fora da média (aquisição, excepcionais)'],['todos','Todos os custos']];
+const ABAS_VEI=[['manut','Manutenções'],['km','Quilometragem'],['comb','Combustível'],['custos','Custos']];
 function renderVeiculos(){
   const veics=veiculosDoModo();
   if(VEI.sel!=='todos'&&!veics.some(v=>v.chave===VEI.sel))VEI.sel='todos';
-  if(!VEI.tipo)VEI.tipo='operacional';if(VEI.cat==null)VEI.cat='';
+  if(!VEI.tipo)VEI.tipo='operacional';if(VEI.cat==null)VEI.cat='';if(!VEI.aba)VEI.aba='manut';if(VEI.grupo==null)VEI.grupo='';
   const {de,ate}=PERIODOS.vei,nMeses=ate-de+1;
   const casal=modoCasal();
   const todos=custosVeiculos();
@@ -4769,15 +4961,56 @@ function renderVeiculos(){
   const resumo=VEI.sel==='todos'?D().veiculos.map(v=>analiseVeiculo(v,de,ate)):[];
   const vParc=!vMeu&&VEI.sel!=='todos';
   const filtroTxt=[VEI.cat?'categoria '+VEI.cat:'',VEI.tipo!=='operacional'?rotuloCusto.toLowerCase():''].filter(Boolean).join(' · ');
-  // hodômetro por mês (última leitura válida de cada mês; meses sem leitura ficam vazios)
   const odoMes=an?serie.map(m=>{const a=ymdIdx(m.idx),b=ymdIdx(m.idx+1);const r=an.L.filter(x=>x.valida&&x.data>=a&&x.data<b);return r.length?r[r.length-1].km:null;}):null;
   const temOdo=odoMes&&odoMes.some(x=>x!=null);
+  const aba=an?VEI.aba:'custos';
+
+  const ordenados=soRegistros(noPeriodo.filter(l=>passaTipo(l)&&passaCat(l))).sort((a,b)=>a.dataParcela<b.dataParcela?1:-1);
+  const tabelaHtml=ordenados.length?`<table class="tbl"><thead><tr><th>Data</th><th>Veículo</th><th>Categoria</th><th>Observação</th><th class="r">Km</th><th class="r">Valor</th><th>Custo operacional</th><th>Situação</th><th class="r">Ações</th></tr></thead>
+    <tbody>${ordenados.map(l=>{const k=ehMeu(l)?kmLanc(l):null;return `<tr><td>${fmtData(l.dataParcela)}</td><td>${esc(nomeVeicModo(l))}</td><td>${esc(nomeCat(l.categoriaId))}</td>
+      <td class="wrap">${esc(l.observacao||'—')}</td><td class="r">${k?fmtKm(k.km):'—'}</td><td class="r money neg">− ${fmt(l.valor)}</td>
+      <td>${ehMeu(l)?`<button class="btn btn-sm" data-toggle="${l.id}">${l.incluiCustoVeiculo!==false?'Inclui':'Fora'}</button>`:`<span class="tag">${l.incluiCustoVeiculo!==false?'Inclui':'Fora'}</span>`}</td>
+      <td>${tagSituacao(l)}${tagDono(l)?' '+tagDono(l):''}</td><td class="r">${ehMeu(l)?`<button class="btn btn-sm" data-edit="${l.id}">Editar</button>`:soLeitura(l)}</td></tr>`;}).join('')}</tbody></table>`
+    :vazio('Nenhum custo no filtro','Vincule um veículo ao criar um lançamento ou ajuste os filtros.');
+  const custosHtml=`
+   <div class="kpi-row scroller">
+     <div class="kpi k-neg"><div class="kpi-label">${rotuloCusto} no período</div><div class="kpi-value">${fmt(custo)}</div>
+       <div class="kpi-foot">${badgeTrend(variacao(custo,custoAnt),true)} <span>ante os ${nMeses} meses anteriores</span></div></div>
+     <div class="kpi k-brand"><div class="kpi-label">Média mensal</div><div class="kpi-value">${fmt(media)}</div><div class="tiny muted">${nMeses} meses no período${filtroTxt?' · '+esc(filtroTxt):''}</div></div>
+     <div class="kpi k-brand"><div class="kpi-label">No ano de ${HOJE_P.y}</div><div class="kpi-value">${fmt(custoAno)}</div><div class="tiny muted">${esc(rotuloCusto)}</div></div>
+     <div class="kpi k-neg"><div class="kpi-label">Maior mês de gasto</div><div class="kpi-value">${maior&&maior.valor?fmt(maior.valor):'—'}</div>
+       <div class="tiny muted">${maior&&maior.valor?mesLabel(maior.idx,false):'sem movimentação'}</div></div>
+   </div>
+   ${pc.itens.length?`<div class="note" style="margin-bottom:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+     <span>Categoria mais representativa: <b>${esc(pc.itens[0].nome)}</b>, com ${fmt(pc.itens[0].valor)} (${NUM.format(pc.itens[0].pct)}% de ${esc(rotuloCusto.toLowerCase())} no período).</span></div>`:''}
+   ${VEI.sel==='todos'?htmlResumoVeiculos(resumo):''}
+   ${vParc?`<div class="note" style="margin-bottom:14px"><span>Quilometragem, consumo e manutenções deste veículo são privados de ${esc(nomeParceiro())}; aqui aparecem só os custos totais publicados.</span></div>`:''}
+   <div class="split" style="margin-bottom:14px">
+     <div class="card"><div class="card-head"><h2>${temOdo?'Gastos e hodômetro':'Evolução mensal'}</h2></div>
+       <div class="chart-box"><div class="chart-canvas" id="veiEvoBox"><canvas id="chartVeiEvo" role="img" aria-label="Evolução mensal dos gastos${temOdo?' e do hodômetro':''}"></canvas></div></div>
+       ${temOdo?'<div class="card-pad" style="padding-top:0"><p class="tiny muted">Linha: última leitura real do hodômetro em cada mês (meses sem leitura ficam sem ponto).</p></div>':''}</div>
+     <div class="card"><div class="card-head"><h2>Custos por categoria</h2><span class="tiny muted" style="margin-left:auto">Toque numa fatia</span></div>
+       <div class="chart-box"><div class="chart-canvas" id="veiCatBox">${pc.itens.length?'<canvas id="chartVeiCat" role="img" aria-label="Custos por categoria"></canvas>':''}</div></div></div>
+   </div>
+   ${veics.length>1?`<div class="card" style="margin-bottom:14px"><div class="card-head"><h2>Comparação entre veículos</h2>
+     <span class="tiny muted">${esc(rotuloCusto)} no mesmo período</span></div>
+     <div class="chart-box"><div class="chart-canvas" style="height:190px"><canvas id="chartVeiCmp" role="img" aria-label="Comparação de custo entre veículos"></canvas></div></div></div>`:''}
+   ${fora.length?`<div class="card" style="margin-bottom:14px"><div class="card-head"><h2>Fora da média operacional</h2>
+     <span class="tiny muted">${fora.length} lançamentos · ${fmt(somaV(fora))}</span></div>
+     <div class="card-pad"><p class="small muted" style="margin-bottom:10px">Estes lançamentos continuam no fluxo financeiro geral, mas não entram no custo operacional nem no custo por km.</p>
+     ${fora.map(l=>l._agregado?`<div class="alert-item"><span class="alert-ico a-info">✕</span><div><p><b>${esc(nomeCatVeicF(l))}</b> — ${fmt(l.valor)}</p>
+       <div class="tiny">${mesLabel(mesIndex(l.dataParcela),false)} · ${esc(nomeVeicModo(l))} · total de ${esc(nomeParceiro())}</div></div></div>`
+       :`<div class="alert-item"><span class="alert-ico a-info">✕</span><div><p><b>${esc(l.observacao||nomeCat(l.categoriaId))}</b> — ${fmt(l.valor)}</p>
+       <div class="tiny">${fmtData(l.dataParcela)} · ${esc(nomeCat(l.categoriaId))} · ${esc(nomeVeicModo(l))}</div></div></div>`).join('')}</div></div>`:''}
+   <div class="card"><div class="card-head"><h2>${casal?'Seus lançamentos de veículo':'Lançamentos do veículo'}</h2>
+     <span class="tiny muted">${casal?'Os custos de '+esc(nomeParceiro())+' entram nos totais e gráficos acima, sem registros individuais':'Use o botão “Inclui/Fora” para ajustar a média operacional'}</span></div>
+     <div class="table-wrap" id="veiTabela">${tabelaHtml}</div></div>`;
 
   $('#page-veiculos').innerHTML=`
    <div class="note info" style="margin-bottom:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
      <span>${casal
        ?`Modo casal: veículos de ${esc(D().perfil.nome)} e de ${esc(nomeParceiro())}, com o dono de cada um. De ${esc(nomeParceiro())} chegam só os totais mensais por veículo e categoria; quilometragem, manutenções e lançamentos continuam privados. Aqui não se edita o veículo nem os custos da outra pessoa.`
-       :'Painel derivado dos lançamentos com veículo vinculado e das leituras do hodômetro. Os veículos são cadastrados em Configurações.'}</span></div>
+       :'Escolha o veículo para ver o painel: manutenções, quilometragem, combustível e custos. Km e litros escritos nas descrições dos lançamentos também são usados.'}</span></div>
    <div class="card" style="margin-bottom:14px"><div class="filterbar">
      <div class="field"><label for="veiSel">Veículo</label><select id="veiSel" class="input">
        <option value="todos"${VEI.sel==='todos'?' selected':''}>Todos os veículos</option>
@@ -4797,49 +5030,13 @@ function renderVeiculos(){
        <b>${esc(v.nome)}</b><span class="tag">${esc(v.tipo||'Veículo')}</span>
        <span class="tag ${v.dono===DB.usuarioAtual?'ok':''}">${v.dono===DB.usuarioAtual?'Seu':'De '+esc(nomeParceiro())}</span></div>`).join('')||
        '<p class="small muted">Nenhum veículo cadastrado pelos dois perfis.</p>'}</div>`:''}
-   <div class="kpi-row scroller">
-     <div class="kpi k-neg"><div class="kpi-label">${rotuloCusto} no período</div><div class="kpi-value">${fmt(custo)}</div>
-       <div class="kpi-foot">${badgeTrend(variacao(custo,custoAnt),true)} <span>ante os ${nMeses} meses anteriores</span></div></div>
-     <div class="kpi k-brand"><div class="kpi-label">Média mensal</div><div class="kpi-value">${fmt(media)}</div><div class="tiny muted">${nMeses} meses no período${filtroTxt?' · '+esc(filtroTxt):''}</div></div>
-     <div class="kpi k-brand"><div class="kpi-label">No ano de ${HOJE_P.y}</div><div class="kpi-value">${fmt(custoAno)}</div><div class="tiny muted">${esc(rotuloCusto)}</div></div>
-     <div class="kpi k-neg"><div class="kpi-label">Maior mês de gasto</div><div class="kpi-value">${maior&&maior.valor?fmt(maior.valor):'—'}</div>
-       <div class="tiny muted">${maior&&maior.valor?mesLabel(maior.idx,false):'sem movimentação'}</div></div>
-   </div>
-   ${pc.itens.length?`<div class="note" style="margin-bottom:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
-     <span>Categoria mais representativa: <b>${esc(pc.itens[0].nome)}</b>, com ${fmt(pc.itens[0].valor)} (${NUM.format(pc.itens[0].pct)}% de ${esc(rotuloCusto.toLowerCase())} no período).</span></div>`:''}
-   ${an?htmlKmCusto(an)+htmlConsumo(an)+htmlManut(an):''}
-   ${VEI.sel==='todos'?htmlResumoVeiculos(resumo):''}
-   ${vParc?`<div class="note" style="margin-bottom:14px"><span>Quilometragem, consumo e manutenções deste veículo são privados de ${esc(nomeParceiro())}; aqui aparecem só os custos totais publicados.</span></div>`:''}
-   <div class="split" style="margin-bottom:14px">
-     <div class="card"><div class="card-head"><h2>${temOdo?'Gastos e hodômetro':'Evolução mensal'}</h2></div>
-       <div class="chart-box"><div class="chart-canvas" id="veiEvoBox"><canvas id="chartVeiEvo" role="img" aria-label="Evolução mensal dos gastos${temOdo?' e do hodômetro':''}"></canvas></div></div>
-       ${temOdo?'<div class="card-pad" style="padding-top:0"><p class="tiny muted">Linha: última leitura real do hodômetro em cada mês (meses sem leitura ficam sem ponto).</p></div>':''}</div>
-     <div class="card"><div class="card-head"><h2>Custos por categoria</h2><span class="tiny muted" style="margin-left:auto">Toque numa fatia</span></div>
-       <div class="chart-box"><div class="chart-canvas" id="veiCatBox">${pc.itens.length?'<canvas id="chartVeiCat" role="img" aria-label="Custos por categoria"></canvas>':''}</div></div></div>
-   </div>
-   <div class="card" style="margin-bottom:14px"><div class="card-head"><h2>Comparação entre veículos</h2>
-     <span class="tiny muted">${esc(rotuloCusto)} no mesmo período</span></div>
-     <div class="chart-box"><div class="chart-canvas" style="height:190px"><canvas id="chartVeiCmp" role="img" aria-label="Comparação de custo entre veículos"></canvas></div></div></div>
-   ${fora.length?`<div class="card" style="margin-bottom:14px"><div class="card-head"><h2>Fora da média operacional</h2>
-     <span class="tiny muted">${fora.length} lançamentos · ${fmt(somaV(fora))}</span></div>
-     <div class="card-pad"><p class="small muted" style="margin-bottom:10px">Estes lançamentos continuam no fluxo financeiro geral, mas não entram no custo operacional nem no custo por km.</p>
-     ${fora.map(l=>l._agregado?`<div class="alert-item"><span class="alert-ico a-info">✕</span><div><p><b>${esc(nomeCatVeicF(l))}</b> — ${fmt(l.valor)}</p>
-       <div class="tiny">${mesLabel(mesIndex(l.dataParcela),false)} · ${esc(nomeVeicModo(l))} · total de ${esc(nomeParceiro())}</div></div></div>`
-       :`<div class="alert-item"><span class="alert-ico a-info">✕</span><div><p><b>${esc(l.observacao||nomeCat(l.categoriaId))}</b> — ${fmt(l.valor)}</p>
-       <div class="tiny">${fmtData(l.dataParcela)} · ${esc(nomeCat(l.categoriaId))} · ${esc(nomeVeicModo(l))}</div></div></div>`).join('')}</div></div>`:''}
-   <div class="card"><div class="card-head"><h2>${casal?'Seus lançamentos de veículo':'Lançamentos do veículo'}</h2>
-     <span class="tiny muted">${casal?'Os custos de '+esc(nomeParceiro())+' entram nos totais e gráficos acima, sem registros individuais':'Use o botão “Inclui/Fora” para ajustar a média operacional'}</span></div>
-     <div class="table-wrap" id="veiTabela"></div></div>`;
+   ${an?htmlPainel(an)+`<div class="subnav" role="tablist" aria-label="Seções do veículo">${ABAS_VEI.map(([k,t])=>`<button role="tab" data-vaba="${k}" aria-selected="${aba===k}">${t}</button>`).join('')}</div>`:''}
+   ${an&&aba==='manut'?htmlManut(an):''}
+   ${an&&aba==='km'?htmlKmCusto(an):''}
+   ${an&&aba==='comb'?htmlConsumo(an):''}
+   ${aba==='custos'?custosHtml:''}`;
 
-  const ordenados=soRegistros(noPeriodo.filter(l=>passaTipo(l)&&passaCat(l))).sort((a,b)=>a.dataParcela<b.dataParcela?1:-1);
-  $('#veiTabela').innerHTML=ordenados.length?`<table class="tbl"><thead><tr><th>Data</th><th>Veículo</th><th>Categoria</th><th>Observação</th><th class="r">Km</th><th class="r">Valor</th><th>Custo operacional</th><th>Situação</th><th class="r">Ações</th></tr></thead>
-    <tbody>${ordenados.map(l=>`<tr><td>${fmtData(l.dataParcela)}</td><td>${esc(nomeVeicModo(l))}</td><td>${esc(nomeCat(l.categoriaId))}</td>
-      <td class="wrap">${esc(l.observacao||'—')}</td><td class="r">${+l.km>0?fmtKm(l.km):'—'}</td><td class="r money neg">− ${fmt(l.valor)}</td>
-      <td>${ehMeu(l)?`<button class="btn btn-sm" data-toggle="${l.id}">${l.incluiCustoVeiculo!==false?'Inclui':'Fora'}</button>`:`<span class="tag">${l.incluiCustoVeiculo!==false?'Inclui':'Fora'}</span>`}</td>
-      <td>${tagSituacao(l)}${tagDono(l)?' '+tagDono(l):''}</td><td class="r">${ehMeu(l)?`<button class="btn btn-sm" data-edit="${l.id}">Editar</button>`:soLeitura(l)}</td></tr>`).join('')}</tbody></table>`
-    :vazio('Nenhum custo no filtro','Vincule um veículo ao criar um lançamento ou ajuste os filtros.');
-
-  $('#veiSel').onchange=e=>{VEI.sel=e.target.value;renderVeiculos();};
+  $('#veiSel').onchange=e=>{VEI.sel=e.target.value;VEI.grupo='';renderVeiculos();};
   $('#veiDe').onchange=e=>{PERIODOS.vei.de=+e.target.value;renderVeiculos();};
   $('#veiAte').onchange=e=>{PERIODOS.vei.ate=+e.target.value;renderVeiculos();};
   $('#veiCat').onchange=e=>{VEI.cat=e.target.value;renderVeiculos();};
@@ -4855,22 +5052,24 @@ function renderVeiculos(){
     salvar();toast(l.incluiCustoVeiculo?'Lançamento incluído no custo operacional.':'Lançamento fora da média operacional, mas mantido no fluxo geral.','ok');renderVeiculos();});
   $$('#veiTabela [data-edit]').forEach(b=>b.onclick=()=>abrirFormLancamento(b.dataset.edit));
 
-  const mmVei=mediaMovelSerie(serie,3,'valor');
-  const dsEvo=[{label:rotuloCusto,data:serie.map(m=>m.valor),backgroundColor:COR_A,borderRadius:4,order:2,yAxisID:'y'},
-    {label:'Média móvel (3 meses)',data:mmVei,type:'line',borderColor:COR_B,backgroundColor:COR_B,tension:.35,borderWidth:3,pointRadius:2,spanGaps:false,order:1,yAxisID:'y'}];
-  const escalas={y:{ticks:{callback:v=>fmtCompacto(v)},grid:{color:cssVar('--border')}},x:{grid:{display:false}}};
-  if(temOdo){dsEvo.push({label:'Hodômetro',data:odoMes,type:'line',borderColor:'#2F9E44',backgroundColor:'#2F9E44',borderDash:[6,4],tension:.2,borderWidth:2,pointRadius:4,spanGaps:true,order:0,yAxisID:'y1'});
-    escalas.y1={position:'right',grid:{display:false},ticks:{callback:v=>kmCompacto(v)}};}
-  desenharGrafico('chartVeiEvo',{type:'bar',data:{labels:serie.map(m=>mesLabel(m.idx)),datasets:dsEvo},
-    options:{scales:escalas,plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,boxHeight:10}},
-      tooltip:{callbacks:{label:c=>c.dataset.yAxisID==='y1'?`Hodômetro: ${fmtKm(c.parsed.y)}`:`${c.dataset.label}: ${fmt(c.parsed.y)}`}}}}});
-  if(pc.itens.length)desenharGrafico('chartVeiCat',{type:'doughnut',
-    data:{labels:pc.itens.map(i=>i.nome),datasets:[{data:pc.itens.map(i=>i.valor),backgroundColor:pc.itens.map((_,i)=>PALETA[i%PALETA.length]),borderWidth:2,borderColor:cssVar('--surface')}]},
-    options:{cutout:'56%',plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,boxHeight:10,padding:8}},
-      tooltip:{callbacks:{label:c=>`${c.label}: ${fmt(c.parsed)} · ${NUM.format(pc.itens[c.dataIndex].pct)}%`}}}}});
-  desenharGrafico('chartVeiCmp',{type:'bar',data:{labels:comparativo.map(c=>c.nome),
-      datasets:[{label:rotuloCusto,data:comparativo.map(c=>c.valor),backgroundColor:comparativo.map((c,i)=>casal?(c.dono===DB.usuarioAtual?COR_A:COR_B):PALETA[i%PALETA.length]),borderRadius:4}]},
-    options:{indexAxis:'y',scales:{x:{ticks:{callback:v=>fmtCompacto(v)},grid:{color:cssVar('--border')}},y:{grid:{display:false}}}}});
+  if(aba==='custos'){
+    const mmVei=mediaMovelSerie(serie,3,'valor');
+    const dsEvo=[{label:rotuloCusto,data:serie.map(m=>m.valor),backgroundColor:COR_A,borderRadius:4,order:2,yAxisID:'y'},
+      {label:'Média móvel (3 meses)',data:mmVei,type:'line',borderColor:COR_B,backgroundColor:COR_B,tension:.35,borderWidth:3,pointRadius:2,spanGaps:false,order:1,yAxisID:'y'}];
+    const escalas={y:{ticks:{callback:v=>fmtCompacto(v)},grid:{color:cssVar('--border')}},x:{grid:{display:false}}};
+    if(temOdo){dsEvo.push({label:'Hodômetro',data:odoMes,type:'line',borderColor:'#2F9E44',backgroundColor:'#2F9E44',borderDash:[6,4],tension:.2,borderWidth:2,pointRadius:4,spanGaps:true,order:0,yAxisID:'y1'});
+      escalas.y1={position:'right',grid:{display:false},ticks:{callback:v=>kmCompacto(v)}};}
+    desenharGrafico('chartVeiEvo',{type:'bar',data:{labels:serie.map(m=>mesLabel(m.idx)),datasets:dsEvo},
+      options:{scales:escalas,plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,boxHeight:10}},
+        tooltip:{callbacks:{label:c=>c.dataset.yAxisID==='y1'?`Hodômetro: ${fmtKm(c.parsed.y)}`:`${c.dataset.label}: ${fmt(c.parsed.y)}`}}}}});
+    if(pc.itens.length)desenharGrafico('chartVeiCat',{type:'doughnut',
+      data:{labels:pc.itens.map(i=>i.nome),datasets:[{data:pc.itens.map(i=>i.valor),backgroundColor:pc.itens.map((_,i)=>PALETA[i%PALETA.length]),borderWidth:2,borderColor:cssVar('--surface')}]},
+      options:{cutout:'56%',plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,boxHeight:10,padding:8}},
+        tooltip:{callbacks:{label:c=>`${c.label}: ${fmt(c.parsed)} · ${NUM.format(pc.itens[c.dataIndex].pct)}%`}}}}});
+    desenharGrafico('chartVeiCmp',{type:'bar',data:{labels:comparativo.map(c=>c.nome),
+        datasets:[{label:rotuloCusto,data:comparativo.map(c=>c.valor),backgroundColor:comparativo.map((c,i)=>casal?(c.dono===DB.usuarioAtual?COR_A:COR_B):PALETA[i%PALETA.length]),borderRadius:4}]},
+      options:{indexAxis:'y',scales:{x:{ticks:{callback:v=>fmtCompacto(v)},grid:{color:cssVar('--border')}},y:{grid:{display:false}}}}});
+  }
   ligarPainelVeiculo(an);
 }
 /* ---------- exportação de Veículos ---------- */
@@ -4895,40 +5094,61 @@ async function exportarCsvVeiculos({de,ate,custo,media,custoAno,maior,pc,compara
   add('');add('Comparação entre veículos');add('Veículo',rotuloCusto);
   comparativo.forEach(c=>add(c.nome,NUM.format(c.valor)));
   const a=VEI.an;
-  if(a){
-    add('');add('Quilometragem e custo por km — '+a.v.nome);
+  if(a){const h=a.hist;
+    add('');add('Parâmetros do histórico completo — '+a.v.nome);
     add('Hodômetro atual',a.atual?Math.round(a.atual.km)+' km em '+fmtData(a.atual.data):'—');
+    add('Uso médio (km/dia)',h.uso?NUM1.format(h.uso.kmDia):INSUF);
+    add('Consumo real medido (km/l)',h.medido?NUM1.format(h.medido):INSUF);
+    add('Combustível por km',h.combKm?NUM.format(h.combKm):INSUF);
+    add('Consumo de referência (estimativa, km/l)',a.ref?NUM1.format(a.ref):'—');
+    add('');add('Quilometragem e custo por km no período');
     add('Distância no período',a.iv.ok?Math.round(a.iv.km)+' km':INSUF);
     add('Intervalo usado',a.iv.ok?`${Math.round(a.iv.de.km)} km (${fmtData(a.iv.de.data)}) a ${Math.round(a.iv.ate.km)} km (${fmtData(a.iv.ate.data)})`:a.iv.motivo);
     add('Categorias no custo por km',a.catsOp.filter(c=>!a.excl.has(c.id)).map(c=>c.nome).join('; ')||'—');
     add('Gastos no intervalo',a.ck?NUM.format(a.ck.total):'—');
     add('Custo médio por km',a.cpk!=null?NUM.format(a.cpk):INSUF);
-    add('Consumo real medido (km/l)',a.medido?NUM1.format(a.medido):INSUF);
-    add('Consumo de referência (estimativa, km/l)',a.ref?NUM1.format(a.ref):'—');
     if(a.ck&&a.ck.itens.length){add('');add('Despesas consideradas no custo por km');add('Data','Categoria','Descrição','Valor');
       a.ck.itens.forEach(l=>add(fmtData(dataConsumo(l)),nomeCat(l.categoriaId),l.observacao||'',NUM.format(l.valor)));}
     add('');add('Leituras do hodômetro');add('Data','Hodômetro','Origem','Situação');
-    a.L.forEach(r=>add(fmtData(r.data),Math.round(r.km),r.fonte==='manual'?'Atualização manual':r.fonte==='manut'?r.desc:'Lançamento: '+r.desc,r.conflito?(r.valida?'Conferir':'Conferir (fora do cálculo)'):'OK'));
-    add('');add('Combustível por mês');add('Mês','Abastecimentos','Valor','Litros informados','R$/litro','Km/l medido');
+    a.L.forEach(r=>add(fmtData(r.data),Math.round(r.km),rotuloOrigem(r.origem)+(r.fonte==='lanc'?': '+r.desc:''),r.conflito?(r.valida?'Conferir':'Conferir (fora do cálculo)'):'OK'));
+    add('');add('Combustível por mês');add('Mês','Abastecimentos','Valor','Litros','R$/litro','Km/l medido');
     a.meses.forEach(m=>add(mesLabel(m.idx,false),m.abast,NUM.format(m.valor),m.litros?NUM1.format(m.litros):'',m.preco?NUM.format(m.preco):'',m.kmL?NUM1.format(m.kmL):''));
-    add('');add('Manutenções');add('Tipo','Último registro','Km no último','Dias desde','Km desde','Média histórica (dias)','Média histórica (km)','Referência km','Referência dias','Situação');
-    a.tipos.forEach(s=>add(s.tipo.nome,s.ultimo?fmtData(s.ultimo.data):'—',s.ultimo&&s.ultimo.km?Math.round(s.ultimo.km):'',s.diasDesde!=null?s.diasDesde:'',
-      s.kmDesde!=null?Math.round(s.kmDesde):INSUF,s.mediaDias!=null?s.mediaDias:INSUF,s.mediaKm!=null?s.mediaKm:INSUF,s.iK||'',s.iD||'',
-      {vencido:'Referência atingida',proximo:'Próxima',ok:'Em dia','sem-ref':'Sem referência','sem-evento':'Sem registros'}[s.status]));
+    add('');add('Manutenções (histórico completo)');add('Item','Última','Km na última','Km estimado?','Dias desde','Km desde','Média (dias)','Média (km)','Referência km','Referência dias','Situação');
+    a.tipos.forEach(s=>add(s.tipo.nome,s.ultimo?fmtData(s.ultimo.data):'—',s.ultimo&&s.ultimo.km?Math.round(s.ultimo.km):'',s.ultimo&&s.ultimo.est?'sim':'',s.diasDesde!=null?s.diasDesde:'',
+      s.kmDesde!=null?Math.round(s.kmDesde):INSUF,s.mediaDias!=null?s.mediaDias:INSUF,s.mediaKm!=null?s.mediaKm+(s.mediaKmEst?' (≈)':''):INSUF,s.iK||'',s.iD||'',
+      {vencido:'Referência atingida',proximo:'Próxima',ok:'Em dia','sem-ref':'Acompanhando','sem-evento':'Sem registros'}[s.status]));
+    add('');add('Histórico de peças e serviços');add('Data','Descrição','Identificado como','Km na data','Km estimado?','Dias desde','Km desde','Valor');
+    a.pecas.forEach(p=>add(fmtData(p.data),p.desc,p.pecas.map(id=>nomeTipoManut(a.v,id)).join('; ')||'Outros',p.km?Math.round(p.km):'',p.est?'sim':'',p.dias,p.kmDesde!=null?Math.round(p.kmDesde):'',p.valor?NUM.format(p.valor):''));
   }
   if(fora.length){add('');add('Fora da média operacional (mantidos no fluxo geral)');add('Data','Veículo','Categoria','Observação','Valor');
     fora.forEach(l=>add(fmtData(l.dataParcela),nomeVeic(l.veiculoId),nomeCat(l.categoriaId),l.observacao||'',NUM.format(l.valor)));}
   add('');add('Lançamentos do veículo no período');add('Data','Veículo','Categoria','Observação','Km','Litros','Valor','Custo operacional','Situação');
-  ordenados.forEach(l=>add(fmtData(l.dataParcela),nomeVeic(l.veiculoId),nomeCat(l.categoriaId),l.observacao||'',+l.km>0?Math.round(l.km):'',+l.litros>0?NUM1.format(l.litros):'',NUM.format(l.valor),
-    l.incluiCustoVeiculo!==false?'Inclui':'Fora',situacao(l)==='realizado'?'Realizado':situacao(l)==='futuro'?'Futuro':'Cancelado'));
+  ordenados.forEach(l=>{const k=ehMeu(l)?kmLanc(l):null,lt=ehMeu(l)?litrosLanc(l):null;add(fmtData(l.dataParcela),nomeVeic(l.veiculoId),nomeCat(l.categoriaId),l.observacao||'',k?Math.round(k.km):'',lt?NUM1.format(lt.l):'',NUM.format(l.valor),
+    l.incluiCustoVeiculo!==false?'Inclui':'Fora',situacao(l)==='realizado'?'Realizado':situacao(l)==='futuro'?'Futuro':'Cancelado');});
   await salvarCsv('relatorio-veiculos-'+HOJE+'.csv',lin);
 }
 function exportarPdfVeiculos({de,ate,custo,media,custoAno,maior,pc,comparativo,ordenados,rotuloCusto,filtroTxt}){
   const img=id=>CHARTS[id]?CHARTS[id].toBase64Image():null;
   const imgEvo=img('chartVeiEvo'),imgCat=img('chartVeiCat'),imgCmp=img('chartVeiCmp');
   let html=`<div class="rel-print"><h1>Veículos</h1>
-    <p class="tiny muted">Meu Fluxo — ${esc(rotuloRelatorio())} · Gerado em ${fmtData(HOJE)} · Período: ${mesLabel(de,false)} a ${mesLabel(ate,false)} · ${esc(VEI.sel==='todos'?'Todos os veículos':nomeVeic(VEI.sel.split(':').slice(1).join(':')))}${filtroTxt?' · '+esc(filtroTxt):''}</p>
-    <div class="rel-kpis">
+    <p class="tiny muted">Meu Fluxo — ${esc(rotuloRelatorio())} · Gerado em ${fmtData(HOJE)} · Período: ${mesLabel(de,false)} a ${mesLabel(ate,false)} · ${esc(VEI.sel==='todos'?'Todos os veículos':nomeVeic(VEI.sel.split(':').slice(1).join(':')))}${filtroTxt?' · '+esc(filtroTxt):''}</p>`;
+  const a=VEI.an;
+  if(a){const h=a.hist;
+    html+=`<h2>${esc(a.v.nome)} — parâmetros do histórico</h2><div class="rel-kpis">
+        <div><b>Hodômetro atual</b><span>${a.atual?fmtKm(a.atual.km):'—'}</span></div>
+        <div><b>Uso médio</b><span>${h.uso?NUM1.format(h.uso.kmDia)+' km/dia':INSUF}</span></div>
+        <div><b>Consumo real medido</b><span>${h.medido?fmtKmL(h.medido):INSUF}</span></div>
+        <div><b>Combustível por km</b><span>${h.combKm?fmtPorKm(h.combKm):INSUF}</span></div>
+        <div><b>Custo médio por km (período)</b><span>${a.cpk!=null?fmtPorKm(a.cpk):INSUF}</span></div>
+      </div>
+      <h2>Manutenções</h2><table><thead><tr><th>Item</th><th>Última</th><th>Desde então</th><th>Média histórica</th><th>Referência</th></tr></thead>
+      <tbody>${a.tipos.map(s=>`<tr><td>${esc(s.tipo.nome)}</td><td>${s.ultimo?fmtData(s.ultimo.data)+(s.ultimo.km?' · '+kmTxt(s.ultimo.km,s.ultimo.est):''):'—'}</td>
+        <td>${s.diasDesde!=null?s.diasDesde+' dias':'—'}${s.kmDesde!=null?' · '+kmTxt(s.kmDesde,s.kmEst):''}</td>
+        <td>${s.mediaDias!=null?s.mediaDias+' dias':INSUF}${s.mediaKm!=null?' · '+kmTxt(s.mediaKm,s.mediaKmEst):''}</td>
+        <td>${[s.iK?fmtKm(s.iK):'',s.iD?s.iD+' dias':''].filter(Boolean).join(' / ')||'—'}</td></tr>`).join('')}</tbody></table>
+      <p class="tiny">“≈” = km estimado entre duas leituras reais do hodômetro.</p>`;
+  }
+  html+=`<h2 style="margin-top:22px">Custos</h2><div class="rel-kpis">
       <div><b>${esc(rotuloCusto)} no período</b><span>${fmt(custo)}</span></div>
       <div><b>Média mensal</b><span>${fmt(media)}</span></div>
       <div><b>No ano de ${HOJE_P.y}</b><span>${fmt(custoAno)}</span></div>
@@ -4937,26 +5157,10 @@ function exportarPdfVeiculos({de,ate,custo,media,custoAno,maior,pc,comparativo,o
   if(imgEvo)html+=`<h2>Evolução mensal</h2><img src="${imgEvo}">`;
   if(imgCat)html+=`<h2>Custos por categoria</h2><img src="${imgCat}" style="max-width:360px">`;
   if(imgCmp)html+=`<h2>Comparação entre veículos</h2><img src="${imgCmp}">`;
-  const a=VEI.an;
-  if(a){
-    html+=`<h2 style="margin-top:22px">Quilometragem e custo por km — ${esc(a.v.nome)}</h2>
-      <div class="rel-kpis">
-        <div><b>Hodômetro atual</b><span>${a.atual?fmtKm(a.atual.km):'—'}</span></div>
-        <div><b>Distância no período</b><span>${a.iv.ok?fmtKm(a.iv.km):INSUF}</span></div>
-        <div><b>Custo médio por km</b><span>${a.cpk!=null?fmtPorKm(a.cpk):INSUF}</span></div>
-        <div><b>Consumo real medido</b><span>${a.medido?fmtKmL(a.medido):INSUF}</span></div>
-        <div><b>Referência (estimativa)</b><span>${a.ref?fmtKmL(a.ref):'—'}</span></div>
-      </div>
-      <p class="tiny">Intervalo: ${a.iv.ok?`${fmtKm(a.iv.de.km)} (${fmtData(a.iv.de.data)}) a ${fmtKm(a.iv.ate.km)} (${fmtData(a.iv.ate.data)})`:esc(a.iv.motivo)} · Categorias: ${esc(a.catsOp.filter(c=>!a.excl.has(c.id)).map(c=>c.nome).join(', ')||'—')}</p>
-      <h2>Manutenções</h2><table><thead><tr><th>Tipo</th><th>Último</th><th>Dias desde</th><th>Km desde</th><th>Média histórica</th><th>Referência</th></tr></thead>
-      <tbody>${a.tipos.map(s=>`<tr><td>${esc(s.tipo.nome)}</td><td>${s.ultimo?fmtData(s.ultimo.data)+(s.ultimo.km?' · '+fmtKm(s.ultimo.km):''):'—'}</td><td>${s.diasDesde!=null?s.diasDesde:'—'}</td>
-        <td>${s.kmDesde!=null?fmtKm(s.kmDesde):INSUF}</td><td>${s.mediaDias!=null?s.mediaDias+' dias':INSUF}${s.mediaKm!=null?' · '+fmtKm(s.mediaKm):''}</td>
-        <td>${[s.iK?fmtKm(s.iK):'',s.iD?s.iD+' dias':''].filter(Boolean).join(' / ')||'—'}</td></tr>`).join('')}</tbody></table>`;
-  }
   html+=`<h2 style="margin-top:22px">Lançamentos do veículo no período</h2>
     <table><thead><tr><th>Data</th><th>Veículo</th><th>Categoria</th><th>Observação</th><th>Km</th><th>Valor</th><th>Custo operacional</th></tr></thead>
-    <tbody>${ordenados.map(l=>`<tr><td>${fmtData(l.dataParcela)}</td><td>${esc(nomeVeic(l.veiculoId))}</td><td>${esc(nomeCat(l.categoriaId))}</td>
-      <td>${esc(l.observacao||'—')}</td><td>${+l.km>0?fmtKm(l.km):'—'}</td><td>${fmt(l.valor)}</td><td>${l.incluiCustoVeiculo!==false?'Inclui':'Fora'}</td></tr>`).join('')}</tbody></table></div>`;
+    <tbody>${ordenados.map(l=>{const k=ehMeu(l)?kmLanc(l):null;return `<tr><td>${fmtData(l.dataParcela)}</td><td>${esc(nomeVeic(l.veiculoId))}</td><td>${esc(nomeCat(l.categoriaId))}</td>
+      <td>${esc(l.observacao||'—')}</td><td>${k?fmtKm(k.km):'—'}</td><td>${fmt(l.valor)}</td><td>${l.incluiCustoVeiculo!==false?'Inclui':'Fora'}</td></tr>`;}).join('')}</tbody></table></div>`;
   imprimirRelatorio(html);
 }
 </script>
@@ -5964,7 +6168,7 @@ function atencaoGastos(){
 function listaNotificacoes(){
   const out=[{chave:'frase:'+HOJE,nivel:'info',titulo:'Frase do dia',texto:fraseDoDia(),rota:'visao-geral'}];
   try{alertasManutencao().forEach(x=>out.push({chave:x.chave,nivel:x.s.status==='vencido'?'neg':'warn',titulo:`${x.t.nome} — ${x.v.nome}`,
-    texto:'Referência que você configurou: '+textoManut(x.s),rota:'veiculos?v='+DB.usuarioAtual+':'+x.v.id}));}catch(e){console.warn('manut',e);}
+    texto:'Referência que você configurou: '+textoManut(x.s),rota:'veiculos?v='+DB.usuarioAtual+':'+x.v.id+'&aba=manut'}));}catch(e){console.warn('manut',e);}
   const limite=addMeses(HOJE,1);
   const proximas=soRegistros(D().lancamentos).filter(l=>situacao(l)==='futuro'&&l.dataParcela<=limite)
     .sort((a,b)=>a.dataParcela<b.dataParcela?-1:a.dataParcela>b.dataParcela?1:(a.id<b.id?-1:1)).slice(0,5);
@@ -6015,7 +6219,7 @@ function abrirNotificacoes(){
 function marcarNotifLida(chave){if(!chave||!D())return;const v=notifVistas();
   if(!v.includes(chave)){D().notifLidas=v.concat(chave).slice(-80);salvar();}atualizarNotif();}
 function aplicarContextoRota(pg,params){
-  if(pg==='veiculos'&&params.get('v'))VEI.sel=params.get('v');
+  if(pg==='veiculos'&&params.get('v')){VEI.sel=params.get('v');if(params.get('aba'))VEI.aba=params.get('aba');}
   const n=params.get('n');if(n)marcarNotifLida(n);
 }
 function abrirRotaNotif(rota,chave){
@@ -6120,8 +6324,8 @@ function avisosAgendaveis(){
     });
   }
   if(pr.manut_ativa)(D().veiculos||[]).forEach(v=>{const L=leiturasVeiculo(v);
-    tiposManutencao(v).forEach(t=>{const s=statusManut(v,t,L);if(!s.ultimo||(!s.iD&&!s.iK))return;
-      const base='man:'+v.id+':'+t.id+':'+s.ultimo.data+':',rota='veiculos?v='+DB.usuarioAtual+':'+v.id,nome=`${t.nome} — ${v.nome}`;
+    tiposManutencao(v).forEach(t=>{if(!t.intervaloDias&&!t.intervaloKm)return;const s=statusManut(v,t,L);if(!s.ultimo)return;
+      const base='man:'+v.id+':'+t.id+':'+s.ultimo.data+':',rota='veiculos?v='+DB.usuarioAtual+':'+v.id+'&aba=manut',nome=`${t.nome} — ${v.nome}`;
       if(s.status==='proximo'||s.status==='vencido'){const txt=nome+': '+textoManut(s);
         add({chave:base+s.status,tipo:'manutencao',nivel:s.status==='vencido'?'neg':'warn',titulo:s.status==='vencido'?'Manutenção: referência atingida':'Manutenção próxima',corpo:txt,rota,enviar_em:proxHoraLocal(hA)});}
       if(s.iD&&s.status!=='vencido'&&s.venceEm>HOJE)
