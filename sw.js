@@ -4,7 +4,7 @@
    - NUNCA armazenar em cache os dados privados (chamadas à API do Supabase).
    - Buscar sempre a versão nova quando houver rede, com queda para o cache.
    Ao publicar uma nova versão do app, altere VERSION para forçar a atualização. */
-const VERSION = 'v1.1.0';
+const VERSION = 'v1.2.0';
 const CACHE = 'meufluxo-' + VERSION;
 
 /* Casca essencial (mesma origem). start_url "." resolve para a pasta do app. */
@@ -106,24 +106,28 @@ self.addEventListener('push', (e) => {
     tag: tag,
     renotify: true,
     lang: 'pt-BR',
-    data: { rota: rota, tipo: d.tipo || '', tag: tag }
+    data: { rota: rota, tipo: d.tipo || '', tag: tag, chave: d.chave || '' }
   };
   e.waitUntil(self.registration.showNotification(titulo, opts));
 });
 
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
-  const rota = (e.notification.data && e.notification.data.rota) || 'visao-geral';
+  const dados = e.notification.data || {};
+  const rota = dados.rota || 'visao-geral';
+  const chave = dados.chave || '';
   const destino = new URL('./', self.registration.scope);
-  destino.hash = '#/' + rota;
+  // rota pode trazer contexto (ex.: veiculos?v=…); a chave marca o aviso como lido no app
+  destino.hash = '#/' + rota + (chave ? (rota.indexOf('?') >= 0 ? '&' : '?') + 'n=' + encodeURIComponent(chave) : '');
   const href = destino.href;
   e.waitUntil((async () => {
     const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (const c of wins) {
-      // Já existe uma janela do app aberta: foca e navega para a área do aviso.
+      // Já existe uma janela do app: foca e pede à página que abra a tela no
+      // contexto, sem recarregar (navigate() recarregaria o app inteiro).
       if ('focus' in c) {
         try { await c.focus(); } catch (_) {}
-        try { c.postMessage({ tipo: 'abrir-rota', rota: rota }); } catch (_) {}
+        try { c.postMessage({ tipo: 'abrir-rota', rota: rota, chave: chave }); return; } catch (_) {}
         if ('navigate' in c) { try { await c.navigate(href); } catch (_) {} }
         return;
       }
