@@ -383,6 +383,52 @@ tr.dia-sep td{background:var(--surface-2);font-size:.75rem;font-weight:700;color
 @media (max-width:760px){.saude-grid{grid-template-columns:1fr}.saude-3d{height:300px}.saude-hud b{font-size:2rem}}
 @media (prefers-reduced-motion:reduce){.saude-fallback div{animation:none}.sd-comp .trk span{transition:none}}
 .page:focus,.page:focus-visible{outline:none;box-shadow:none}
+
+/* v2.2: identidade do resultado, notas, amigos e conversa */
+.kpi.res-pos::before{background:var(--res-pos,#4263EB)} .kpi.res-neg::before{background:var(--res-neg,#F76707)}
+#kpis .kpi.res-pos .kpi-value,#kpis .kpi.res-pos .kpi-value *{color:var(--res-pos,#4263EB)!important} #kpis .kpi.res-neg .kpi-value,#kpis .kpi.res-neg .kpi-value *{color:var(--res-neg,#F76707)!important}
+.kpi.res-pos .spark{color:var(--res-pos,#4263EB)} .kpi.res-neg .spark{color:var(--res-neg,#F76707)}
+.kpi.res-neg{background:linear-gradient(180deg,color-mix(in srgb,var(--res-neg,#F76707) 12%,var(--surface)),var(--surface) 80%);border-color:color-mix(in srgb,var(--res-neg,#F76707) 40%,var(--border))}
+.kpi.res-neg .deficit-chip{color:var(--res-neg,#F76707);background:color-mix(in srgb,var(--res-neg,#F76707) 14%,transparent);border-color:color-mix(in srgb,var(--res-neg,#F76707) 40%,transparent)}
+.swatch-res{display:inline-block;width:16px;height:16px;border-radius:5px;box-shadow:0 2px 6px -2px rgba(0,0,0,.4)}
+.nav-badge{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:var(--neg);color:#fff;font-size:.7rem;font-weight:700;display:inline-grid;place-items:center}
+.notas-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;padding:12px 16px 16px}
+.nota{all:unset;box-sizing:border-box;display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:12px;cursor:pointer;min-height:96px;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--warn) 10%,var(--surface)),var(--surface));border:1px solid var(--border);box-shadow:var(--shadow-1);transition:transform .15s ease,box-shadow .15s ease}
+.nota:hover,.nota:focus-visible{transform:translateY(-2px);box-shadow:0 10px 24px -14px rgba(0,0,0,.45)}
+.nota b{font-size:.9rem}.nota-txt{font-size:.82rem;color:var(--ink-2);line-height:1.4;white-space:pre-wrap;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical}
+.nota-pin{color:var(--warn);font-size:1rem;cursor:pointer;padding:0 2px}
+.nota-editor{display:flex;flex-direction:column;gap:8px}.nota-editor textarea{resize:vertical;min-height:110px;font:inherit;line-height:1.5}
+.amigo{all:unset;box-sizing:border-box;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;width:100%;padding:14px 16px;border-top:1px solid var(--border);cursor:pointer}
+.amigo:hover,.amigo:focus-visible{background:var(--surface-2)}
+.amigo-av{position:relative;display:inline-block}.amigo-av .avatar{width:48px;height:48px;font-size:1rem}.amigo-av .avatar-xl{width:84px;height:84px}
+.pt-on{position:absolute;right:1px;bottom:1px;width:12px;height:12px;border-radius:50%;background:var(--ink-3);border:2px solid var(--surface)}
+.pt-on.on{background:#12A971;box-shadow:0 0 0 3px rgba(18,169,113,.25)}
+.amigo-t{display:flex;flex-direction:column;gap:2px;min-width:0}.amigo-t>span{font-size:.84rem}.amigo-ult{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.amg-wrap{display:grid;grid-template-columns:minmax(260px,320px) 1fr;gap:14px;align-items:start}
+.amg-cab{display:flex;gap:14px;align-items:center;margin:12px 0}
+.amg-linhas{display:grid;gap:8px;margin-bottom:10px}.amg-linhas>div{border:1px solid var(--border);border-radius:10px;padding:8px 12px;display:flex;flex-direction:column}
+.amg-linhas small{font-size:.72rem;color:var(--ink-3)}
+.chat{display:flex;flex-direction:column;min-height:440px}
+.chat-lista{flex:1;overflow-y:auto;max-height:58vh;min-height:260px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;background:linear-gradient(180deg,var(--surface-2),var(--surface))}
+.chat-dia{align-self:center;font-size:.7rem;color:var(--ink-3);background:var(--surface);border:1px solid var(--border);border-radius:99px;padding:2px 10px;margin:6px 0}
+.msg{max-width:78%;padding:8px 12px;border-radius:14px;display:flex;flex-direction:column;gap:2px;box-shadow:0 4px 12px -8px rgba(0,0,0,.4);word-wrap:break-word}
+.msg.eu{align-self:flex-end;background:linear-gradient(140deg,#3B5BDB,#4263EB);color:#fff;border-bottom-right-radius:4px}
+.msg.ele{align-self:flex-start;background:var(--surface);border:1px solid var(--border);border-bottom-left-radius:4px}
+.msg.pend{opacity:.65}.msg-t{font-size:.9rem;line-height:1.4}.msg-h{align-self:flex-end;font-size:.66rem;opacity:.75}
+.msg-l.lida{color:#7CE7FF;font-weight:700}
+.chat-vazio{margin:auto;color:var(--ink-3);font-size:.9rem;text-align:center}
+.chat-comp{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);align-items:flex-end}
+.chat-comp textarea{flex:1;resize:none;font:inherit;line-height:1.4;max-height:140px}
+.sd-delta{display:block;font-style:normal;font-size:.75rem;font-weight:700;margin-top:4px}.sd-delta.sobe{color:#12A971}.sd-delta.cai{color:#F76707}
+.sd-info{position:absolute;right:14px;top:14px;max-width:min(260px,60%);display:flex;flex-direction:column;gap:3px;padding:10px 12px;border-radius:12px;font-size:.78rem;
+  background:color-mix(in srgb,var(--surface) 88%,transparent);border:1px solid var(--border);box-shadow:var(--shadow-1);backdrop-filter:blur(6px)}
+.sd-info b{font-size:.85rem}.sd-info .neg-res{color:var(--res-neg,#F76707);font-weight:700}.sd-info .pos-res{color:var(--res-pos,#4263EB);font-weight:700}
+.saude-leg .fantasma{border:1px dashed var(--ink-3);background:transparent}
+button.sd-comp{all:unset;box-sizing:border-box;display:grid;grid-template-columns:1fr auto;gap:2px 10px;width:100%;padding:9px 6px;border-top:1px solid var(--border);cursor:pointer;border-radius:8px}
+button.sd-comp:hover,button.sd-comp.ativo{background:var(--surface-2)}
+@media (max-width:860px){.amg-wrap{grid-template-columns:1fr}.chat-lista{max-height:52vh}}
+#page-visao-geral>#cardNotas{order:99;margin-top:14px}
 </style>
 <style>
 /* ============ 9. Gráficos ============ */
@@ -909,6 +955,7 @@ h1,h2,h3{letter-spacing:-.01em}
 
       <!-- ============ Demais páginas ============ -->
       <section class="page" id="page-lancamentos" tabindex="-1"></section>
+      <section class="page" id="page-amigos" tabindex="-1"></section>
       <section class="page" id="page-analises" tabindex="-1"></section>
       <section class="page" id="page-casal" tabindex="-1"></section>
       <section class="page" id="page-investimentos" tabindex="-1"></section>
@@ -1015,7 +1062,7 @@ function novoPerfil(id){
   const p=perfilCasa(id);
   return {
     grupos:clone(GRUPOS),categorias:clone(CATEGORIAS),formas:[...FORMAS],
-    instituicoes:[],veiculos:[],cartoes:[],viagens:[],rascunhos:[],
+    instituicoes:[],veiculos:[],cartoes:[],viagens:[],rascunhos:[],notas:[],
     lancamentos:[],recorrencias:[],
     emprestimos:{pessoas:[],contratos:[]},
     capital:{contas:[]},
@@ -1264,6 +1311,7 @@ function docsDoPerfil(id,d){
      sem conhecer "viagens" e apagaria a lista. Este documento ela não toca. */
   out[P+'/mod/viagens']={viagens:d.viagens||[]};
   out[P+'/mod/atividade']={rascunhos:Array.isArray(d.rascunhos)?d.rascunhos:[]};
+  out[P+'/mod/notas']={notas:Array.isArray(d.notas)?d.notas:[]};
   const porMes={};
   d.lancamentos.forEach(l=>{const m=String(l.dataParcela||'0000-00').slice(0,7);(porMes[m]=porMes[m]||[]).push(l);});
   Object.keys(porMes).forEach(m=>{
@@ -1345,12 +1393,13 @@ async function carregarPerfil(id){
   /* Lançamentos, Empréstimos e Capital são lidos SEMPRE, mesmo que o
      documento-base do perfil falte: dado que existe no banco nunca fica
      escondido nem é sobrescrito por um perfil vazio. */
-  const [base,emp,cap,meses,vgs,atv]=await Promise.all([ARM.get(P),ARM.get(P+'/mod/emprestimos'),ARM.get(P+'/mod/capital'),ARM.list(P+'/lanc'),ARM.get(P+'/mod/viagens'),ARM.get(P+'/mod/atividade')]);
+  const [base,emp,cap,meses,vgs,atv,nts]=await Promise.all([ARM.get(P),ARM.get(P+'/mod/emprestimos'),ARM.get(P+'/mod/capital'),ARM.list(P+'/lanc'),ARM.get(P+'/mod/viagens'),ARM.get(P+'/mod/atividade'),ARM.get(P+'/mod/notas')]);
   if(base){aplicarBase(d,base);ULTIMO[P]=estavel(base);}
   if(emp){d.emprestimos=emp;ULTIMO[P+'/mod/emprestimos']=estavel(emp);}
   if(cap){d.capital=cap;ULTIMO[P+'/mod/capital']=estavel(cap);}
   if(vgs&&Array.isArray(vgs.viagens)){d.viagens=vgs.viagens;ULTIMO[P+'/mod/viagens']=estavel(vgs);}
   if(atv&&Array.isArray(atv.rascunhos)){d.rascunhos=atv.rascunhos;ULTIMO[P+'/mod/atividade']=estavel(atv);}
+  if(nts&&Array.isArray(nts.notas)){d.notas=nts.notas;ULTIMO[P+'/mod/notas']=estavel(nts);}
   else if(base&&Array.isArray(base.viagens))d.viagens=base.viagens;   // perfis salvos na primeira hora da v12
   d.lancamentos=[];
   meses.sort((a,b)=>a.id<b.id?1:-1).forEach(m=>{const it=(m.data&&m.data.itens)||[];ULTIMO[P+'/lanc/'+m.id]=estavel({itens:it});d.lancamentos.push(...it);});
@@ -2103,6 +2152,7 @@ const PAGINAS=[
   {id:'veiculos',nome:'Veículos',ico:ICO.vei,sub:'Derivado dos lançamentos com veículo vinculado',novo:true},
   {id:'emprestimos',nome:'Empréstimos',ico:ICO.emp,sub:'Módulo independente da base de lançamentos',novo:false},
   {id:'capital',nome:'Capital e Liquidez',ico:ICO.cap,sub:'Saldos informados manualmente',novo:false},
+  {id:'amigos',nome:'Amigos',ico:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M15.5 4.6a3.2 3.2 0 0 1 0 6.3M18 14.3c1.8.8 3 2.7 3 5.7"/></svg>',sub:'Status da casa e conversas',novo:true},
   {id:'configuracoes',nome:'Configurações',ico:ICO.cfg,sub:'Grupos, categorias, cadastros e aparência',novo:false}
 ];
 const VISTA={catTipo:'saida',evo:'line',evoSeries:{entradas:true,saidas:true,resultado:true,acumulado:false}};
@@ -2237,7 +2287,7 @@ async function entrar(id){
   AVISO_SENHA_FECHADO=false;atualizarAvisoSenha();
   salvar();            // cria os documentos iniciais e publica o catálogo compartilhado, se preciso
   ouvir();
-  aoEntrar8();sincronizarPush();sincronizarAgendaPush(true);registrarAcesso();
+  aoEntrar8();aoEntrar9();sincronizarPush();sincronizarAgendaPush(true);registrarAcesso();
   toast(r.novo?`Olá, ${r.d.perfil.nome}! Seu espaço está pronto — comece pelo primeiro lançamento.`:`Você entrou como ${r.d.perfil.nome}.`,'ok');
 }
 async function sair(){
@@ -2482,6 +2532,7 @@ function montarNav(){
   const ss=$('#syncStatus');if(ss)ss.dataset.modo=ARM.modo;statusSync(ESTADO_SYNC);
   atualizarNotif();montarTabbar();vigiarFiltros();
   try{aplicarAvatares();}catch(_){}
+  try{marcarBadgeAmigos();}catch(_){}
 }
 function irPara(id,{semHistorico=false}={}){
   if(id!=='lancamentos'){BUSCA_VIVA=null;BUSCA_FOCO=null;}
@@ -2533,7 +2584,7 @@ function renderPagina(){
   setTimeout(atualizarNotif,0);   // o sino acompanha toda alteração local (criar, editar, excluir, marcar)
   const map={'visao-geral':renderDashboard,'lancamentos':renderLancamentos,'analises':renderAnalises,'casal':renderCasal,
     'investimentos':renderInvestimentos,'veiculos':renderVeiculos,'emprestimos':renderEmprestimos,
-    'capital':renderCapital,'configuracoes':renderConfig};
+    'capital':renderCapital,'configuracoes':renderConfig,'amigos':renderAmigos};
   (map[PAGINA]||renderDashboard)();
 }
 
@@ -2792,7 +2843,7 @@ function renderEvolucao(iv){
   $$('#segEvo button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===VISTA.evo)));
   const series=[
     {k:'entradas',nome:'Entradas',cor:COR_ENTRADA},{k:'saidas',nome:'Saídas',cor:COR_SAIDA},
-    {k:'resultado',nome:'Resultado',cor:PALETA[0]},{k:'acumulado',nome:'Resultado acumulado',cor:COR_ACUM}];
+    {k:'resultado',nome:'Resultado',cor:`linear-gradient(90deg,${corRes().pos} 50%,${corRes().neg} 50%)`},{k:'acumulado',nome:'Resultado acumulado',cor:`linear-gradient(90deg,${corRes().aPos} 50%,${corRes().aNeg} 50%)`}];
   $('#evoLegend').innerHTML=series.map(s=>`<button data-serie="${s.k}" aria-pressed="${VISTA.evoSeries[s.k]}">
     <span class="swatch" style="background:${s.cor}"></span>${s.nome}</button>`).join('');
   $$('#evoLegend button').forEach(b=>b.onclick=()=>{VISTA.evoSeries[b.dataset.serie]=!VISTA.evoSeries[b.dataset.serie];renderDashboard();});
@@ -2832,11 +2883,20 @@ function renderEvolucao(iv){
   const suave=cor=>linha?{tension:.42,fill:'origin',borderWidth:3,pointRadius:0,pointHoverRadius:5,pointBackgroundColor:cor,pointBorderColor:cssVar('--surface'),pointBorderWidth:2}:{};
   if(VISTA.evoSeries.entradas)ds.push({label:'Entradas',data:serie.map(m=>m.entradas),backgroundColor:COR_ENTRADA,borderColor:COR_ENTRADA,borderRadius:4,tension:.3,...suave(COR_ENTRADA)});
   if(VISTA.evoSeries.saidas)ds.push({label:'Saídas',data:serie.map(m=>m.saidas),backgroundColor:COR_SAIDA,borderColor:COR_SAIDA,borderRadius:4,tension:.3,...suave(COR_SAIDA)});
-  const vRes=serie.map(m=>m.resultado),corRes=v=>v<0?COR_RES_NEG:PALETA[0];
-  if(VISTA.evoSeries.resultado)ds.push({label:'Resultado',data:vRes,backgroundColor:linha?PALETA[0]:vRes.map(corRes),borderColor:PALETA[0],borderRadius:4,tension:linha?.42:.3,
-    ...(linha?{borderWidth:2.5,borderDash:[6,4],pointRadius:vRes.map(v=>v<0?4:0),pointBackgroundColor:vRes.map(corRes),pointBorderColor:vRes.map(corRes),
-      segment:{borderColor:c=>(c.p0.parsed.y<0||c.p1.parsed.y<0)?COR_RES_NEG:PALETA[0]}}:{})});
-  if(VISTA.evoSeries.acumulado)ds.push({label:'Resultado acumulado',data:serie.map(m=>m.acumulado),backgroundColor:COR_ACUM,borderColor:COR_ACUM,type:VISTA.evo==='bar'?'line':'line',tension:.3,borderWidth:2,pointRadius:2});
+  /* resultado e acumulado têm identidade própria (par positivo/negativo das
+     preferências), distinta do verde das entradas e do vermelho das saídas;
+     quando aparecem sozinhos, o preenchimento muda de cor acima e abaixo do zero */
+  const P=corRes(),vis=Object.keys(VISTA.evoSeries).filter(k=>VISTA.evoSeries[k]);
+  const sozinho=vis.length===1&&(vis[0]==='resultado'||vis[0]==='acumulado');
+  const parDs=(label,vals,pos,neg,trac)=>{const c=v=>v<0?neg:pos;
+    return {label,data:vals,backgroundColor:linha?pos:vals.map(c),borderColor:pos,borderRadius:4,tension:linha?.42:.3,
+      ...(linha?{borderWidth:trac&&!sozinho?2.5:3,borderDash:trac&&!sozinho?[6,4]:[],pointRadius:vals.map(v=>v<0?4:(sozinho?3:0)),pointHoverRadius:6,
+        pointBackgroundColor:vals.map(c),pointBorderColor:vals.map(c),segment:{borderColor:x=>(x.p0.parsed.y<0||x.p1.parsed.y<0)?neg:pos},
+        ...(sozinho?{fill:{target:'origin',above:hexA(pos,.24),below:hexA(neg,.24)}}:{})}:{})};};
+  if(VISTA.evoSeries.resultado)ds.push(parDs('Resultado',serie.map(m=>m.resultado),P.pos,P.neg,true));
+  if(VISTA.evoSeries.acumulado)ds.push({...parDs('Resultado acumulado',serie.map(m=>m.acumulado),P.aPos,P.aNeg,false),type:'line',tension:linha?.42:.3,
+    ...(linha?{}:{backgroundColor:P.aPos,borderWidth:2.5,pointRadius:serie.map(m=>m.acumulado<0?4:2),pointBackgroundColor:serie.map(m=>m.acumulado<0?P.aNeg:P.aPos),
+      segment:{borderColor:x=>(x.p0.parsed.y<0||x.p1.parsed.y<0)?P.aNeg:P.aPos}})});
   if(!ds.length){wrap.innerHTML=vazio('Nenhuma série visível','Ative ao menos uma série na legenda acima.');return;}
   desenharGrafico('chartEvo',{type:VISTA.evo==='line'?'line':'bar',
     data:{labels:serie.map(m=>m.label),datasets:ds},
@@ -3829,17 +3889,18 @@ function renderTendencias(){
 }
 function idxsInfo(saz){const anos=saz.reduce((a,s)=>Math.max(a,s.n),0);return anos+(anos===1?' ano de dados':' anos de dados');}
 function projetar(ateIdx){
-  const hist=serieMensal(MES_ATUAL-5,MES_ATUAL-1);
+  const PJ=prefsProj();
+  const hist=serieMensal(MES_ATUAL-PJ.janela,MES_ATUAL-1);
   const mediaE=hist.length?hist.reduce((a,m)=>a+m.entradas,0)/hist.length:0;
   const mediaS=hist.length?hist.reduce((a,m)=>a+m.saidas,0)/hist.length:0;
   const meses=[];let acum=acumuladoAte(MES_ATUAL-1);
-  const cenarios={conservador:{e:0.95,s:1.08},base:{e:1,s:1},otimista:{e:1.06,s:0.94}};
+  const cenarios={conservador:{e:1+PJ.consE/100,s:1+PJ.consS/100},base:{e:1,s:1},otimista:{e:1+PJ.otiE/100,s:1+PJ.otiS/100}};
   const saida={};
   for(const c in cenarios)saida[c]={meses:[],acumulado:acum,entradas:0,saidas:0};
   for(let i=MES_ATUAL;i<=ateIdx;i++){
     const agendados=LV().filter(l=>mesIndex(l.dataParcela)===i&&situacao(l)!=='cancelado');
     const agE=somaV(agendados.filter(l=>l.tipo==='entrada')),agS=somaV(agendados.filter(l=>l.tipo==='saida'));
-    const baseE=Math.max(agE,mediaE),baseS=Math.max(agS,mediaS);
+    const baseE=PJ.completar?Math.max(agE,mediaE):agE,baseS=PJ.completar?Math.max(agS,mediaS):agS;
     meses.push(i);
     for(const c in cenarios){
       const e=round2(baseE*cenarios[c].e),s=round2(baseS*cenarios[c].s);
@@ -3851,7 +3912,8 @@ function projetar(ateIdx){
   return {meses,cenarios:saida,mediaE:round2(mediaE),mediaS:round2(mediaS),baseHist:hist.length};
 }
 function renderProjecoes(){
-  const p=projetar(+ANA.projAte);
+  if(!ANA._pjIni){ANA._pjIni=true;ANA.projAte=String(MES_ATUAL+prefsProj().horizonte);}
+  const p=projetar(+ANA.projAte),PJ=prefsProj(),sinal=v=>(v>0?'+':v<0?'−':'')+Math.abs(v)+'%';
   const b=p.cenarios.base,ult=b.meses[b.meses.length-1];
   const confiavel=p.baseHist>=3;
   $('#anaConteudo').innerHTML=`
@@ -3869,7 +3931,7 @@ function renderProjecoes(){
      <div class="kpi k-brand"><div class="kpi-label">Acumulado projetado</div><div class="kpi-value">${fmt(ult?ult.acumulado:0)}</div><div class="tiny muted">Até ${mesLabel(+ANA.projAte,false)}</div></div>
    </div>
    <div class="card">
-     <div class="card-head"><h2>Três cenários</h2><span class="tiny muted">Conservador: −5% de entradas e +8% de saídas · Otimista: +6% e −6% · a faixa sombreada é o intervalo entre os dois cenários</span></div>
+     <div class="card-head"><h2>Três cenários</h2><span class="tiny muted">Conservador: ${sinal(PJ.consE)} de entradas e ${sinal(PJ.consS)} de saídas · Otimista: ${sinal(PJ.otiE)} e ${sinal(PJ.otiS)} (ajuste em Configurações → Aparência) · a faixa sombreada é o intervalo entre os dois cenários</span></div>
      <div class="chart-box"><div class="chart-canvas" id="projBox"><canvas id="chartProj" role="img" aria-label="Acumulado projetado nos três cenários"></canvas></div></div>
      <div class="table-wrap"><table class="tbl"><thead><tr><th>Mês</th><th class="r">Entradas (base)</th><th class="r">Saídas (base)</th><th class="r">Resultado</th><th class="r">Acumulado conservador</th><th class="r">Acumulado base</th><th class="r">Acumulado otimista</th></tr></thead>
        <tbody>${b.meses.map((m,i)=>`<tr><td>${mesLabel(m.idx,false)}</td><td class="r money">${fmt(m.entradas)}</td><td class="r money">${fmt(m.saidas)}</td>
@@ -6295,6 +6357,7 @@ function aplicarContextoRota(pg,params){
 }
 function abrirRotaNotif(rota,chave){
   if(/^atividade/.test(String(rota||''))){LSEG='rasc';rota='lancamentos';}
+  if(/^notificacoes/.test(String(rota||''))){if(chave)marcarNotifLida(chave);irPara('visao-geral');setTimeout(()=>abrirNotificacoes(),60);return;}
   if(!DB.usuarioAtual||!D()){
     // ainda na tela de entrada: guarda a rota no endereço; aplicada depois do login
     const r=String(rota||'visao-geral');history.replaceState(null,'','#/'+r+(chave?(r.includes('?')?'&':'?')+'n='+encodeURIComponent(chave):''));return;}
@@ -6322,12 +6385,12 @@ function b64urlParaU8(b){const pad='='.repeat((4-b.length%4)%4);const base=(b+pa
 function pushSuportado(){return ('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);}
 function ehStandalonePush(){return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true;}
 function ehIOSpush(){return /iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);}
-function pushPrefs(){const d=D();const def={frase_ativa:true,frase_hora:8,fin_ativa:true,mostrar_valores:false,aviso_hora:9,manut_ativa:true,atencao_ativa:true,resumo_ativa:true,dica_ativa:true,dica_dia:1,lembrete_dias:7};
+function pushPrefs(){const d=D();const def={frase_ativa:true,frase_hora:8,fin_ativa:true,mostrar_valores:false,tom:'descontraido',aviso_hora:9,manut_ativa:true,atencao_ativa:true,resumo_ativa:true,dica_ativa:true,dica_dia:1,lembrete_dias:7};
   if(!d)return def;if(!d.prefs)d.prefs={};if(!d.prefs.push)d.prefs.push={...def};const p=d.prefs.push;
   Object.keys(def).forEach(k=>{if(p[k]===undefined)p[k]=def[k];});if(typeof p.frase_hora!=='number')p.frase_hora=8;return p;}
 const colunasPrefs=pr=>({frase_ativa:!!pr.frase_ativa,frase_hora:pr.frase_hora|0,fin_ativa:!!pr.fin_ativa,mostrar_valores:!!pr.mostrar_valores,
   aviso_hora:pr.aviso_hora|0,manut_ativa:!!pr.manut_ativa,atencao_ativa:!!pr.atencao_ativa,resumo_ativa:!!pr.resumo_ativa,
-  dica_ativa:!!pr.dica_ativa,dica_dia:pr.dica_dia|0,lembrete_dias:pr.lembrete_dias|0});
+  dica_ativa:!!pr.dica_ativa,dica_dia:pr.dica_dia|0,lembrete_dias:pr.lembrete_dias|0,tom:pr.tom==='neutro'?'neutro':'descontraido'});
 function tzAtual(){try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'America/Sao_Paulo';}catch(_){return 'America/Sao_Paulo';}}
 function pushLigadoAparelho(){try{return localStorage.getItem(PUSH_ON_KEY)==='1';}catch(_){return false;}}
 function marcarPushAparelho(on){try{on?localStorage.setItem(PUSH_ON_KEY,'1'):localStorage.removeItem(PUSH_ON_KEY);}catch(_){}}
@@ -6497,6 +6560,8 @@ function cfgNotificacoes(){
      <div class="row" style="align-items:center;gap:10px"><label for="pushLembrete" class="small"><b>Lembrete de registros</b></label><select id="pushLembrete" style="${selEstilo}">
        ${[[0,'Desligado'],[3,'após 3 dias sem abrir'],[7,'após 7 dias sem abrir'],[14,'após 14 dias sem abrir'],[30,'após 30 dias sem abrir']].map(([v,t])=>`<option value="${v}" ${pr.lembrete_dias===v?'selected':''}>${t}</option>`).join('')}</select></div>
      <p class="tiny muted" style="margin-top:-6px">O lembrete só diz que o app não é aberto há alguns dias; ele não afirma que faltam lançamentos. Um por período sem acesso.</p>
+     <div class="row" style="align-items:center;gap:10px"><label for="pushTom" class="small"><b>Tom das mensagens</b></label><select id="pushTom" style="${selEstilo}"><option value="descontraido" ${pr.tom!=='neutro'?'selected':''}>Descontraído</option><option value="neutro" ${pr.tom==='neutro'?'selected':''}>Neutro</option></select></div>
+     <p class="tiny muted" style="margin-top:-6px">O Meu Fluxo não acompanha o que você faz em outros aplicativos; as mensagens usam só o tempo sem abrir o app, a última revisão e as pendências daqui.</p>
      <hr style="border:0;border-top:1px solid var(--border);margin:2px 0">
      ${chk('pushValores',pr.mostrar_valores,'Mostrar valores e detalhes financeiros na notificação','Desligado por padrão: na tela bloqueada aparecem só textos genéricos. Os detalhes ficam dentro do app.')}
      <div class="row"><button class="btn" id="pushTeste">Enviar um teste para este aparelho</button></div>
@@ -6518,6 +6583,7 @@ function cfgNotificacoes(){
   bindPref('pushFin','fin_ativa');bindPref('pushManut','manut_ativa');bindPref('pushAtencao','atencao_ativa');bindPref('pushResumo','resumo_ativa');
   bindPref('pushDica','dica_ativa');bindPref('pushDicaDia','dica_dia','num');bindPref('pushLembrete','lembrete_dias','num');
   bindPref('pushValores','mostrar_valores');
+  const pt=$('#pushTom');if(pt)pt.onchange=async()=>{pushPrefs().tom=pt.value;salvar();atualizarNotif();await atualizarPrefsInscricoes();};
   const teste=$('#pushTeste');
   if(teste)teste.onclick=async()=>{
     teste.disabled=true;teste.textContent='Enviando…';
@@ -6576,7 +6642,8 @@ const diasDesdeIso=iso=>iso?Math.floor((Date.now()-new Date(iso).getTime())/864e
 let _presenca='';
 async function sincronizarPresenca(){
   if(!SB||!ARM.uid||!D())return;
-  const v={ultima_revisao:D().prefs.ultimaRevisao||null,pendencias:(D().rascunhos||[]).length};
+  let dec=0;try{dec=recorrenciasEmTermino().filter(x=>!x.adiado).length+variacoesValor().length;}catch(_){}
+  const v={ultima_revisao:D().prefs.ultimaRevisao||null,pendencias:Math.min(99,(D().rascunhos||[]).length+dec)};
   const k=JSON.stringify(v);if(k===_presenca)return;_presenca=k;
   try{await SB.from('push_subscricoes').update(v).eq('user_id',ARM.uid);}catch(_){}
 }
@@ -6584,7 +6651,14 @@ async function sincronizarPresenca(){
 /* ---------- mensagens com personalidade (mesmas do servidor) ----------
    Só usam dados do próprio Meu Fluxo: dias sem abrir, última revisão e
    rascunhos. Nenhuma afirma saber o que você faz em outros aplicativos. */
+const MSG_REVISAO_NEUTRO=[
+  'Faz alguns dias que você não revisa suas finanças. Vamos atualizar o dashboard?',
+  'Que tal reservar alguns minutos para conferir suas movimentações?',
+  'Uma revisão rápida mantém suas projeções confiáveis.'
+];
 const MSG_REVISAO=[
+  'Entre um story e outro, que tal 2 minutinhos para o seu dashboard financeiro?',
+  'Rolou o feed hoje? Seu fluxo de caixa também merece uma atualizadinha.',
   'Alguns minutos agora podem evitar surpresas no fim do mês.',
   'Seu feed pode esperar um pouquinho. Que tal dar uma olhada no seu fluxo de caixa?',
   'O dinheiro também merece sua atenção. Vamos conferir como está tudo?',
@@ -6740,7 +6814,7 @@ function itensExtras(){
     motivo:'Rascunhos salvos neste perfil.',acoes:[{rot:'Abrir rascunhos',pri:true,fn:()=>{LSEG='rasc';irPara('lancamentos');}}]});
   const dr=diasDesdeIso(D().prefs.ultimaRevisao);
   if(dr!=null&&dr>=7){const ch='revisao:'+semanaDe(HOJE);if(!dispensada(ch))out.push({chave:ch,categoria:'lembrete',prioridade:'baixa',data:HOJE,
-    titulo:'Hora de uma revisão rápida',texto:msgDoDia(MSG_REVISAO),motivo:`Sua última revisão financeira foi há ${dr} dias (último lançamento criado ou editado, ou revisão marcada).`,
+    titulo:'Hora de uma revisão rápida',texto:msgDoDia(pushPrefs().tom==='neutro'?MSG_REVISAO_NEUTRO:MSG_REVISAO),motivo:`Sua última revisão financeira foi há ${dr} dias (último lançamento criado ou editado, ou revisão marcada).`,
     acoes:[{rot:'Revisar lançamentos',pri:true,fn:()=>irLancamentos({},false)},{rot:'Já revisei',fica:true,fn:()=>{marcarRevisao(true);renderPagina();}}]});}
   return out;
 }
@@ -6968,12 +7042,15 @@ renderDashboard=function(){
   _renderDashboardBase();
   try{ligarCliqueCategorias();}catch(e){console.warn('cat',e);}
   destacarNegativos();
+  try{if(!$('#cardNotas')){const c=document.createElement('div');c.className='card';c.id='cardNotas';$('#page-visao-geral').appendChild(c);}renderNotas();}catch(e){console.warn('notas',e);}
 };
-/* resultado negativo: cartão com tom vermelho próprio e selo "Déficit" */
+/* cartões de resultado: identidade própria (par das preferências), com selo "Déficit" quando negativo */
 function destacarNegativos(){
-  $$('#kpis .kpi').forEach(k=>{const v=k.querySelector('.kpi-value');if(!v)return;const neg=(parseBRL(v.textContent)||0)<0;
-    k.classList.toggle('deficit',neg);const lb=k.querySelector('.kpi-label');
-    if(neg&&lb&&!lb.querySelector('.deficit-chip'))lb.insertAdjacentHTML('beforeend','<span class="deficit-chip" title="Saídas maiores que as entradas">▼ Déficit</span>');});
+  const P=corRes(),r=document.documentElement.style;r.setProperty('--res-pos',P.pos);r.setProperty('--res-neg',P.neg);
+  $$('#kpis .kpi').forEach(k=>{const lb=k.querySelector('.kpi-label'),v=k.querySelector('.kpi-value');if(!lb||!v||!/^Resultado/.test(lb.textContent.trim()))return;
+    const neg=(parseBRL(v.textContent)||0)<0;k.classList.remove('k-pos','k-neg','deficit');k.classList.toggle('res-neg',neg);k.classList.toggle('res-pos',!neg);
+    v.classList.remove('pos','neg');
+    if(neg&&!lb.querySelector('.deficit-chip'))lb.insertAdjacentHTML('beforeend','<span class="deficit-chip" title="Saídas maiores que as entradas">▼ Déficit</span>');});
 }
 
 /* ---------- Extrato (Lançamentos): resumo, agrupamento por dia, itens por página ---------- */
@@ -7024,7 +7101,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 /* gradiente vertical nos gráficos de linha preenchidos (cor original → transparente) */
 if(window.Chart&&!window.__mfGrad){window.__mfGrad=true;Chart.register({id:'mfGrad',beforeDatasetsDraw(ch){const a=ch.chartArea;if(!a)return;
-  ch.data.datasets.forEach((ds,i)=>{const t=ds.type||ch.config.type;if(t!=='line'||!ds.fill)return;
+  ch.data.datasets.forEach((ds,i)=>{const t=ds.type||ch.config.type;if(t!=='line'||!ds.fill||typeof ds.fill==='object')return;
     const base=ds._mfCor||(typeof ds.backgroundColor==='string'?ds.backgroundColor:(typeof ds.borderColor==='string'?ds.borderColor:null));if(!base)return;ds._mfCor=base;
     const hex=base.startsWith('#')&&base.length===7?base:null;if(!hex)return;const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
     const gr=ch.ctx.createLinearGradient(0,a.top,0,a.bottom);gr.addColorStop(0,`rgba(${r},${g},${b},.38)`);gr.addColorStop(1,`rgba(${r},${g},${b},0)`);
@@ -7033,30 +7110,34 @@ if(window.Chart&&!window.__mfGrad){window.__mfGrad=true;Chart.register({id:'mfGr
 
 
 /* ---------- Análises → Saúde financeira ----------
-   Pontuação 0–100, determinística, com os lançamentos visíveis no modo atual
-   (realizados). Seis componentes com pesos fixos; os sem dados ficam de fora
-   e os pesos restantes são redistribuídos. Não é recomendação financeira. */
+   Pontuação 0–100, determinística, com os lançamentos realizados visíveis no
+   modo atual. Seis componentes com pesos fixos; os sem dados ficam de fora e
+   os pesos restantes são redistribuídos. Não é recomendação financeira.
+   A esfera responde ao período escolhido, mostra a nota do período anterior
+   como um "fantasma" e conversa com os gráficos: tocar num mês (na esfera ou
+   no gráfico) destaca o mesmo mês no outro; tocar num componente realça a
+   esfera e o radar. */
 const SD_PESOS={poup:30,pos:20,estab:15,tend:15,comp:10,res:10};
 const clamp01=x=>Math.max(0,Math.min(1,x));
 function saudeFinanceira(fimIdx=MES_ATUAL-1,janela=6){
   const ini=fimIdx-janela+1,serie=serieMensal(ini,fimIdx,{}).filter(m=>m.entradas>0||m.saidas>0);
-  if(serie.length<3)return {ok:false,motivo:`São necessários pelo menos 3 meses fechados com movimentação; há ${serie.length} entre ${mesLabel(ini)} e ${mesLabel(fimIdx)}.`,serie};
+  if(serie.length<3)return {ok:false,motivo:`São necessários pelo menos 3 meses fechados com movimentação; há ${serie.length} entre ${mesLabel(ini)} e ${mesLabel(fimIdx)}.`,serie,ini,fim:fimIdx};
   const mE=serie.reduce((a,m)=>a+m.entradas,0)/serie.length,mS=serie.reduce((a,m)=>a+m.saidas,0)/serie.length;
-  const comps=[];
+  const comps=[],pc=v=>PCT1.format(Math.round(v*1000)/10);
   const comE=serie.filter(m=>m.entradas>0);
   const taxa=comE.length?comE.reduce((a,m)=>a+m.resultado/m.entradas,0)/comE.length:null;
-  comps.push({k:'poup',nome:'Poupança média',s:taxa==null?null:clamp01((taxa+0.2)/0.4),txt:taxa==null?'sem entradas':`sobrou ${PCT1.format(Math.round(taxa*1000)/10)}% das entradas, em média`});
+  comps.push({k:'poup',nome:'Poupança média',s:taxa==null?null:clamp01((taxa+0.2)/0.4),txt:taxa==null?'sem entradas':`sobrou ${pc(taxa)}% das entradas, em média`});
   const nPos=serie.filter(m=>m.resultado>=0).length;
   comps.push({k:'pos',nome:'Meses no positivo',s:nPos/serie.length,txt:`${nPos} de ${serie.length} meses fecharam no azul`});
   const dp=Math.sqrt(serie.reduce((a,m)=>a+Math.pow(m.saidas-mS,2),0)/serie.length),cv=mS>0?dp/mS:0;
-  comps.push({k:'estab',nome:'Estabilidade das despesas',s:clamp01(1-(cv-0.1)/0.4),txt:`variação típica de ${PCT1.format(Math.round(cv*1000)/10)}% entre os meses`});
+  comps.push({k:'estab',nome:'Estabilidade das despesas',s:clamp01(1-(cv-0.1)/0.4),txt:`variação típica de ${pc(cv)}% entre os meses`});
   const h=Math.floor(serie.length/2),med=a=>a.reduce((x,m)=>x+m.saidas,0)/a.length;
-  const m1=med(serie.slice(0,h)),m2=med(serie.slice(-h)),rel=m1>0?(m2-m1)/m1:0,pr=PCT1.format(Math.round(Math.abs(rel)*1000)/10);
+  const m1=med(serie.slice(0,h)),m2=med(serie.slice(-h)),rel=m1>0?(m2-m1)/m1:0,pr=pc(Math.abs(rel));
   comps.push({k:'tend',nome:'Tendência das despesas',s:rel<=0?1:clamp01(1-rel/0.25),
     txt:Math.abs(rel)<0.03?'despesas estáveis entre a primeira e a segunda metade do período':rel<0?`despesas ${pr}% menores na segunda metade do período`:`despesas ${pr}% maiores na segunda metade do período`});
   const fut=somaV(LV().filter(l=>l.tipo==='saida'&&situacao(l)==='futuro'&&mesIndex(l.dataParcela)>=MES_ATUAL&&mesIndex(l.dataParcela)<=MES_ATUAL+2));
   const rc=mE>0?fut/(mE*3):null;
-  comps.push({k:'comp',nome:'Compromissos futuros',s:rc==null?null:clamp01(1-(rc-0.3)/0.7),txt:rc==null?'sem entradas para comparar':`${fmt(fut)} já previstos nos próximos 3 meses (${PCT1.format(Math.round(rc*1000)/10)}% das entradas esperadas)`});
+  comps.push({k:'comp',nome:'Compromissos futuros',s:rc==null?null:clamp01(1-(rc-0.3)/0.7),txt:rc==null?'sem entradas para comparar':`${fmt(fut)} já previstos nos próximos 3 meses (${pc(rc)}% das entradas esperadas)`});
   const contas=(D().capital&&D().capital.contas)||[],cap=contas.reduce((a,c)=>a+(+c.saldo||0),0);
   const mesesRes=contas.length&&mS>0?cap/mS:null;
   comps.push({k:'res',nome:'Reserva',s:mesesRes==null?null:clamp01(mesesRes/6),txt:mesesRes==null?'sem saldos informados em Capital':`capital informado cobre ${NUM1.format(mesesRes)} meses de despesas`});
@@ -7065,41 +7146,54 @@ function saudeFinanceira(fimIdx=MES_ATUAL-1,janela=6){
   const faixa=score>=80?{rot:'Excelente',cor:'#12A971'}:score>=65?{rot:'Boa',cor:'#1098AD'}:score>=50?{rot:'Atenção',cor:'#E8A300'}:{rot:'Crítica',cor:'#EF4A5A'};
   return {ok:true,score,...faixa,comps,serie,ini,fim:fimIdx,mE,mS};
 }
+const corComp=s=>s==null?'#8A94A6':s>=.65?'#12A971':s>=.4?'#E8A300':'#EF4A5A';
 function renderSaude(){
   const cont=$('#anaConteudo');if(!cont)return;
-  const sd=saudeFinanceira(),hist=[];
-  for(let f=MES_ATUAL-12;f<=MES_ATUAL-1;f++){const r=saudeFinanceira(f);hist.push({idx:f,score:r.ok?r.score:null});}
-  const meses=serieMensal(MES_ATUAL-11,MES_ATUAL,{});
-  const cor=sd.ok?sd.cor:'#8A94A6';
-  cont.innerHTML=`<div class="saude-grid">
-    <div class="saude-3d" id="sdBox" style="--sd-cor:${cor}" role="img" aria-label="Esfera da saúde financeira: ${sd.ok?sd.score+' de 100, '+sd.rot:'dados insuficientes'}. Arraste para girar.">
-      <div class="saude-hud"><small>Saúde financeira</small><b>${sd.ok?sd.score:'—'}</b><span>${sd.ok?sd.rot:'dados insuficientes'}</span></div>
-      <div class="saude-leg"><span><i style="background:#12A971"></i>mês positivo</span><span><i style="background:#EF4A5A"></i>mês negativo</span></div>
-      <div class="saude-dica">arraste para girar</div></div>
-    <div class="card"><div class="card-head"><h2>Como a nota é formada</h2><span class="tiny muted" style="margin-left:auto">${sd.ok?mesLabel(sd.ini)+' a '+mesLabel(sd.fim):''}</span></div>
-      <div class="card-pad">${sd.ok?sd.comps.map(c=>`<div class="sd-comp"><b class="small">${c.nome}</b><span class="small"><b>${c.s==null?'—':Math.round(c.s*100)}</b><span class="tiny muted"> · peso ${SD_PESOS[c.k]}</span></span>
-          <div class="trk"><span style="width:${c.s==null?0:Math.round(c.s*100)}%;background:${c.s==null?'transparent':c.s>=.65?'#12A971':c.s>=.4?'#E8A300':'#EF4A5A'}"></span></div><small>${esc(c.txt)}</small></div>`).join('')
+  const jan=[3,6,12].includes(+ANA.sdJan)?+ANA.sdJan:6;
+  const sd=saudeFinanceira(MES_ATUAL-1,jan),ant=saudeFinanceira(MES_ATUAL-1-jan,jan),hist=[];
+  for(let f=MES_ATUAL-12;f<=MES_ATUAL-1;f++){const r=saudeFinanceira(f,jan);hist.push({idx:f,score:r.ok?r.score:null});}
+  const meses=serieMensal(MES_ATUAL-jan,MES_ATUAL-1,{}),P=corRes();
+  const cor=sd.ok?sd.cor:'#8A94A6',delta=sd.ok&&ant.ok?sd.score-ant.score:null;
+  cont.innerHTML=`<div class="row" style="gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><span class="tiny muted">Período analisado:</span>
+      <div class="seg" role="group" aria-label="Período da saúde financeira">${[3,6,12].map(n=>`<button data-sdjan="${n}" aria-pressed="${jan===n}">${n} meses</button>`).join('')}</div>
+      <span class="tiny muted">${sd.ok?mesLabel(sd.ini)+' a '+mesLabel(sd.fim):''}</span></div>
+  <div class="saude-grid">
+    <div class="saude-3d" id="sdBox" style="--sd-cor:${cor}" role="img" aria-label="Esfera da saúde financeira: ${sd.ok?sd.score+' de 100, '+sd.rot:'dados insuficientes'}. Arraste para girar; toque num mês para ver os detalhes.">
+      <div class="saude-hud"><small>Saúde financeira</small><b>${sd.ok?sd.score:'—'}</b><span>${sd.ok?sd.rot:'dados insuficientes'}</span>
+        ${delta!=null?`<em class="sd-delta ${delta>=0?'sobe':'cai'}">${delta>=0?'▲':'▼'} ${delta>=0?'+':''}${delta} vs ${jan} meses anteriores</em>`:''}</div>
+      <div class="sd-info" id="sdInfo" hidden></div>
+      <div class="saude-leg"><span><i style="background:${P.pos}"></i>mês positivo</span><span><i style="background:${P.neg}"></i>mês negativo</span>${ant.ok?'<span><i class="fantasma"></i>período anterior</span>':''}</div>
+      <div class="saude-dica">arraste · toque num mês</div></div>
+    <div class="card"><div class="card-head"><h2>Como a nota é formada</h2><span class="tiny muted" style="margin-left:auto">toque para destacar</span></div>
+      <div class="card-pad">${sd.ok?sd.comps.map(c=>`<button class="sd-comp" data-sdcomp="${c.k}"><b class="small">${c.nome}</b><span class="small"><b>${c.s==null?'—':Math.round(c.s*100)}</b><span class="tiny muted"> · peso ${SD_PESOS[c.k]}</span></span>
+          <div class="trk"><span style="width:${c.s==null?0:Math.round(c.s*100)}%;background:linear-gradient(90deg,${hexA(corComp(c.s),.55)},${corComp(c.s)})"></span></div><small>${esc(c.txt)}</small></button>`).join('')
         :`<p class="small muted">${esc(sd.motivo)}</p>`}
-        <p class="tiny muted" style="margin-top:10px">Nota calculada só com os lançamentos realizados${modoCasal()?' do modo casal':''}, nos últimos 6 meses fechados. É um termômetro do seu histórico, não uma recomendação financeira.</p></div></div>
+        <p class="tiny muted" style="margin-top:10px">Nota calculada só com os lançamentos realizados${modoCasal()?' do modo casal':''}. É um termômetro do seu histórico, não uma recomendação financeira.</p></div></div>
   </div>
   <div class="split" style="margin-bottom:14px">
     <div class="card"><div class="card-head"><h2>Equilíbrio dos componentes</h2></div><div class="chart-box"><div class="chart-canvas" style="height:280px">${sd.ok?'<canvas id="chartSdRadar" role="img" aria-label="Radar dos componentes da saúde financeira"></canvas>':vazio('Sem dados suficientes','')}</div></div></div>
-    <div class="card"><div class="card-head"><h2>Quanto sobrou em cada mês</h2><span class="tiny muted" style="margin-left:auto">% das entradas</span></div><div class="chart-box"><div class="chart-canvas" style="height:280px"><canvas id="chartSdPoup" role="img" aria-label="Taxa de poupança mensal"></canvas></div></div></div>
+    <div class="card"><div class="card-head"><h2>Quanto sobrou em cada mês</h2><span class="tiny muted" style="margin-left:auto">% das entradas · toque num mês</span></div><div class="chart-box"><div class="chart-canvas" style="height:280px"><canvas id="chartSdPoup" role="img" aria-label="Taxa de poupança mensal"></canvas></div></div></div>
   </div>
-  <div class="card"><div class="card-head"><h2>Evolução da nota</h2><span class="tiny muted" style="margin-left:auto">janela móvel de 6 meses</span></div><div class="chart-box"><div class="chart-canvas" style="height:230px"><canvas id="chartSdHist" role="img" aria-label="Evolução da nota de saúde financeira"></canvas></div></div></div>`;
-  if(sd.ok){const val=sd.comps.filter(c=>c.s!=null);
-    desenharGrafico('chartSdRadar',{type:'radar',data:{labels:val.map(c=>c.nome),datasets:[{label:'Componente',data:val.map(c=>Math.round(c.s*100)),borderColor:cor,backgroundColor:cor+'33',pointBackgroundColor:cor,borderWidth:2,fill:true}]},
-      options:{scales:{r:{min:0,max:100,ticks:{display:false,stepSize:25},grid:{color:cssVar('--border')},angleLines:{color:cssVar('--border')},pointLabels:{color:cssVar('--ink-2'),font:{size:11}}}},plugins:{legend:{display:false}}}});}
+  <div class="card"><div class="card-head"><h2>Evolução da nota</h2><span class="tiny muted" style="margin-left:auto">janela móvel de ${jan} meses</span></div><div class="chart-box"><div class="chart-canvas" style="height:230px"><canvas id="chartSdHist" role="img" aria-label="Evolução da nota de saúde financeira"></canvas></div></div></div>`;
+  $$('[data-sdjan]',cont).forEach(b=>b.onclick=()=>{ANA.sdJan=+b.dataset.sdjan;renderSaude();});
+  const val=sd.ok?sd.comps.filter(c=>c.s!=null):[];
+  if(sd.ok)desenharGrafico('chartSdRadar',{type:'radar',data:{labels:val.map(c=>c.nome),datasets:[{label:'Componente',data:val.map(c=>Math.round(c.s*100)),borderColor:cor,backgroundColor:hexA(cor,.2),pointBackgroundColor:val.map(c=>corComp(c.s)),pointRadius:4,pointHoverRadius:7,borderWidth:2,fill:true,_mfFixo:true}]},
+      options:{scales:{r:{min:0,max:100,ticks:{display:false,stepSize:25},grid:{color:cssVar('--border')},angleLines:{color:cssVar('--border')},pointLabels:{color:cssVar('--ink-2'),font:{size:11}}}},plugins:{legend:{display:false}}}});
   const tx=meses.map(m=>m.entradas>0?Math.round(m.resultado/m.entradas*1000)/10:null);
-  desenharGrafico('chartSdPoup',{type:'bar',data:{labels:meses.map(m=>m.label),datasets:[{label:'Sobrou (%)',data:tx,backgroundColor:tx.map(v=>v==null?'transparent':v<0?'#EF4A5A':'#12A971'),borderRadius:5}]},
-    options:{scales:{y:{ticks:{callback:v=>v+'%'},grid:{color:c=>c.tick&&c.tick.value===0?cssVar('--ink-3'):cssVar('--border')}},x:{grid:{display:false}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y==null?'sem entradas':`${PCT1.format(c.parsed.y)}% das entradas`}}}}});
+  desenharGrafico('chartSdPoup',{type:'bar',data:{labels:meses.map(m=>m.label),datasets:[{label:'Sobrou (%)',data:tx,backgroundColor:tx.map(v=>v==null?'#8A94A6':v<0?P.neg:P.pos),borderRadius:6}]},
+    options:{onClick:(e,els)=>{if(els&&els.length&&ESF.focarMes)ESF.focarMes(els[0].index);},
+      scales:{y:{ticks:{callback:v=>v+'%'},grid:{color:c=>c.tick&&c.tick.value===0?cssVar('--ink-3'):cssVar('--border')}},x:{grid:{display:false}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y==null?'sem entradas':`${PCT1.format(c.parsed.y)}% das entradas`}}}}});
   desenharGrafico('chartSdHist',{type:'line',data:{labels:hist.map(h=>mesLabel(h.idx)),datasets:[{label:'Nota',data:hist.map(h=>h.score),borderColor:cor,backgroundColor:cor,fill:'origin',tension:.42,borderWidth:3,pointRadius:3,spanGaps:true}]},
     options:{scales:{y:{min:0,max:100,ticks:{stepSize:25},grid:{color:cssVar('--border')}},x:{grid:{display:false}}},plugins:{legend:{display:false}}}});
-  montarEsfera($('#sdBox'),sd,meses);
+  $$('[data-sdcomp]',cont).forEach(b=>b.onclick=()=>{const c=sd.comps.find(x=>x.k===b.dataset.sdcomp);if(!c)return;
+    $$('[data-sdcomp]',cont).forEach(x=>x.classList.toggle('ativo',x===b));
+    if(ESF.destacar)ESF.destacar(corComp(c.s),`${c.nome}: ${c.s==null?'sem dados':Math.round(c.s*100)+' de 100'} — ${c.txt}`);
+    const ch=CHARTS.chartSdRadar,i=val.indexOf(c);if(ch&&i>=0){ch.setActiveElements([{datasetIndex:0,index:i}]);ch.tooltip.setActiveElements([{datasetIndex:0,index:i}],{x:0,y:0});ch.update();}});
+  montarEsfera($('#sdBox'),sd,meses,ant);
 }
 
 /* ---------- esfera 3D (Three.js r128, carregado só nesta aba) ---------- */
-const ESF={ren:null,raf:0,ro:null};
+const ESF={ren:null,raf:0,ro:null,focarMes:null,destacar:null};
 let THREE_P=null;
 function carregarThree(){
   if(window.THREE)return Promise.resolve(window.THREE);
@@ -7108,56 +7202,72 @@ function carregarThree(){
   return THREE_P;
 }
 function pararEsfera(){
-  if(ESF.raf)cancelAnimationFrame(ESF.raf);ESF.raf=0;
+  if(ESF.raf)cancelAnimationFrame(ESF.raf);ESF.raf=0;ESF.focarMes=null;ESF.destacar=null;
   if(ESF.ro){ESF.ro.disconnect();ESF.ro=null;}
   if(ESF.ren){try{ESF.ren.dispose();ESF.ren.forceContextLoss&&ESF.ren.forceContextLoss();}catch(_){}ESF.ren=null;}
 }
 function esferaFallback(box){if(!box||box.querySelector('.saude-fallback'))return;const d=document.createElement('div');d.className='saude-fallback';d.innerHTML='<div></div>';box.insertBefore(d,box.firstChild);const dc=box.querySelector('.saude-dica');if(dc)dc.textContent='';}
-async function montarEsfera(box,sd,meses){
+function infoMes(m){const t=m.entradas>0?m.resultado/m.entradas*100:null;
+  return `<b>${esc(mesLabel(m.idx,false))}</b><span>Entradas ${fmt(m.entradas)} · Saídas ${fmt(m.saidas)}</span><span class="${m.resultado<0?'neg-res':'pos-res'}">Resultado ${fmt(m.resultado)}${t!=null?' ('+PCT1.format(Math.round(t*10)/10)+'% das entradas)':''}</span>`;}
+async function montarEsfera(box,sd,meses,ant){
   pararEsfera();if(!box)return;
-  let T;try{T=await carregarThree();}catch(e){esferaFallback(box);return;}
+  const info=$('#sdInfo',box),mostrar=html=>{if(!info)return;info.innerHTML=html;info.hidden=!html;};
+  let T;try{T=await carregarThree();}catch(e){esferaFallback(box);ESF.focarMes=i=>{const m=meses[i];if(m)mostrar(infoMes(m));};return;}
   if(!box.isConnected)return;
   let ren;try{ren=new T.WebGLRenderer({antialias:true,alpha:true});}catch(e){esferaFallback(box);return;}
   ESF.ren=ren;
-  const parado=reduzMov(),movel=matchMedia('(max-width:760px)').matches;
+  const parado=reduzMov(),movel=matchMedia('(max-width:760px)').matches,P=corRes();
   const W=()=>box.clientWidth,H=()=>box.clientHeight;
   ren.setPixelRatio(Math.min(window.devicePixelRatio||1,2));ren.setSize(W(),H());ren.setClearColor(0x000000,0);
   box.insertBefore(ren.domElement,box.firstChild);
   const cena=new T.Scene(),cam=new T.PerspectiveCamera(38,W()/H(),.1,100);cam.position.set(0,0,6.4);
-  const corHex=sd.ok?sd.cor:'#8A94A6',cor=new T.Color(corHex),score=sd.ok?sd.score:50;
+  const corBase=new T.Color(sd.ok?sd.cor:'#8A94A6'),score=sd.ok?sd.score:50;
   const grupo=new T.Group();cena.add(grupo);
   const geo=new T.IcosahedronGeometry(1.35,movel?14:20),pos=geo.attributes.position,base=pos.array.slice();
-  const mat=new T.MeshStandardMaterial({color:cor,emissive:cor,emissiveIntensity:.22,roughness:.32,metalness:.18});
+  const mat=new T.MeshStandardMaterial({color:corBase.clone(),emissive:corBase.clone(),emissiveIntensity:.22,roughness:.3,metalness:.2});
   const nucleo=new T.Mesh(geo,mat);grupo.add(nucleo);
-  const malha=new T.Mesh(new T.IcosahedronGeometry(1.7,2),new T.MeshBasicMaterial({color:cor,wireframe:true,transparent:true,opacity:.14}));grupo.add(malha);
+  const malha=new T.Mesh(new T.IcosahedronGeometry(1.7,2),new T.MeshBasicMaterial({color:corBase.clone(),wireframe:true,transparent:true,opacity:.14}));grupo.add(malha);
+  // "fantasma" do período anterior: maior = nota anterior mais alta
+  let fant=null;
+  if(sd.ok&&ant&&ant.ok){fant=new T.Mesh(new T.IcosahedronGeometry(1.35*Math.max(.7,Math.min(1.35,ant.score/Math.max(1,sd.score))),3),new T.MeshBasicMaterial({color:0xffffff,wireframe:true,transparent:true,opacity:.18}));grupo.add(fant);}
   cena.add(new T.AmbientLight(0xffffff,.55));
   const l1=new T.PointLight(0x7fe3ff,1.1,30);l1.position.set(4,3,5);cena.add(l1);
   const l2=new T.PointLight(0xff8fb1,.8,30);l2.position.set(-4,-2,4);cena.add(l2);
   const l3=new T.DirectionalLight(0xffffff,.5);l3.position.set(0,4,3);cena.add(l3);
-  // um satélite por mês: verde = fechou positivo, vermelho = negativo
   const orb=new T.Group();grupo.add(orb);orb.rotation.x=.42;
-  const maxAbs=Math.max(1,...meses.map(m=>Math.abs(m.resultado)));
+  const maxAbs=Math.max(1,...meses.map(m=>Math.abs(m.resultado))),sats=[];
   meses.forEach((m,i)=>{if(!(m.entradas||m.saidas))return;const a=i/meses.length*Math.PI*2;
-    const s=new T.Mesh(new T.SphereGeometry(.055+.07*Math.abs(m.resultado)/maxAbs,16,12),new T.MeshBasicMaterial({color:m.resultado>=0?0x12A971:0xEF4A5A}));
-    s.position.set(Math.cos(a)*2.35,0,Math.sin(a)*2.35);orb.add(s);});
-  const anel=new T.Mesh(new T.TorusGeometry(2.35,.006,6,120),new T.MeshBasicMaterial({color:cor,transparent:true,opacity:.35}));anel.rotation.x=Math.PI/2;orb.add(anel);
-  // batimento: nota alta = ritmo calmo e superfície lisa; nota baixa = mais rápido e agitado
+    const s=new T.Mesh(new T.SphereGeometry(.07+.07*Math.abs(m.resultado)/maxAbs,18,14),new T.MeshBasicMaterial({color:new T.Color(m.resultado>=0?P.pos:P.neg)}));
+    s.position.set(Math.cos(a)*2.35,0,Math.sin(a)*2.35);s.userData={i};orb.add(s);sats.push(s);});
+  const anel=new T.Mesh(new T.TorusGeometry(2.35,.006,6,120),new T.MeshBasicMaterial({color:corBase.clone(),transparent:true,opacity:.35}));anel.rotation.x=Math.PI/2;orb.add(anel);
   const bpm=score>=80?56:score>=65?66:score>=50?80:96,amp=.03+.14*(1-score/100);
   const bat=t=>{const f=(t*bpm/60)%1;return Math.exp(-Math.pow((f-.08)/.035,2))+.55*Math.exp(-Math.pow((f-.26)/.045,2));};
-  let rx=-.15,ry=.4,vx=0,vy=0,arr=null;
-  const cv=ren.domElement;
-  cv.addEventListener('pointerdown',e=>{arr={x:e.clientX,y:e.clientY};cv.setPointerCapture(e.pointerId);});
-  cv.addEventListener('pointermove',e=>{if(!arr)return;const dx=e.clientX-arr.x,dy=e.clientY-arr.y;arr={x:e.clientX,y:e.clientY};vy=dx*.006;vx=dy*.006;ry+=vy;rx=Math.max(-1.1,Math.min(1.1,rx+vx));if(parado)desenha(0);});
-  const solta=()=>{arr=null;};cv.addEventListener('pointerup',solta);cv.addEventListener('pointercancel',solta);
-  let quadro=0;const t0=performance.now();
+  let rx=-.15,ry=.4,vx=0,vy=0,arr=null,movido=0,foco=-1,alvoCor=corBase.clone(),orbParado=false;
+  const cv=ren.domElement,ray=new T.Raycaster(),pt=new T.Vector2();
+  const pick=e=>{const r=cv.getBoundingClientRect();pt.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(pt,cam);const h=ray.intersectObjects(sats);return h.length?h[0].object.userData.i:-1;};
+  ESF.focarMes=i=>{foco=i;orbParado=i>=0;sats.forEach(s=>s.scale.setScalar(s.userData.i===i?1.9:1));
+    const m=meses[i];mostrar(m?infoMes(m):'');
+    const ch=CHARTS.chartSdPoup;if(ch&&i>=0){ch.setActiveElements([{datasetIndex:0,index:i}]);ch.tooltip.setActiveElements([{datasetIndex:0,index:i}],{x:0,y:0});ch.update();}
+    if(parado)desenha(0);};
+  ESF.destacar=(hex,txt)=>{alvoCor=new T.Color(hex);mostrar(`<b>Componente</b><span>${esc(txt)}</span>`);if(parado){mat.color.copy(alvoCor);mat.emissive.copy(alvoCor);desenha(0);}
+    clearTimeout(ESF._t);ESF._t=setTimeout(()=>{alvoCor=corBase.clone();if(parado){mat.color.copy(alvoCor);mat.emissive.copy(alvoCor);desenha(0);}},4000);};
+  cv.addEventListener('pointerdown',e=>{arr={x:e.clientX,y:e.clientY};movido=0;cv.setPointerCapture(e.pointerId);});
+  cv.addEventListener('pointermove',e=>{if(!arr){cv.style.cursor=pick(e)>=0?'pointer':'';return;}const dx=e.clientX-arr.x,dy=e.clientY-arr.y;movido+=Math.abs(dx)+Math.abs(dy);arr={x:e.clientX,y:e.clientY};
+    vy=dx*.006;vx=dy*.006;ry+=vy;rx=Math.max(-1.1,Math.min(1.1,rx+vx));if(parado)desenha(0);});
+  cv.addEventListener('pointerup',e=>{if(arr&&movido<6){const i=pick(e);ESF.focarMes(i===foco?-1:i);}arr=null;});
+  cv.addEventListener('pointercancel',()=>{arr=null;});
+  let quadro=0,tOrb=0;const t0=performance.now();let tAnt=0;
   function desenha(t){
-    const p=pos.array,k=parado?0:1,fase=t*.6;
-    if(k&&(quadro++%2===0)){for(let i=0;i<p.length;i+=3){const x=base[i],y=base[i+1],z=base[i+2];
+    const p=pos.array;
+    if(!parado&&(quadro++%2===0)){const fase=t*.6;for(let i=0;i<p.length;i+=3){const x=base[i],y=base[i+1],z=base[i+2];
       const n=Math.sin(x*2.6+fase)*Math.sin(y*3.1+fase*1.3)*Math.sin(z*2.4+fase*.8);const r=1+amp*n;p[i]=x*r;p[i+1]=y*r;p[i+2]=z*r;}
       pos.needsUpdate=true;}
-    const pulso=1+.045*(parado?0:bat(t));nucleo.scale.setScalar(pulso);malha.scale.setScalar(1+.02*(parado?0:bat(t-.05)));
+    if(!parado){mat.color.lerp(alvoCor,.08);mat.emissive.lerp(alvoCor,.08);}
+    const b=parado?0:bat(t);nucleo.scale.setScalar(1+.045*b);malha.scale.setScalar(1+.02*(parado?0:bat(t-.05)));
+    if(fant){fant.rotation.y=-t*.08;fant.material.opacity=.12+.08*b;}
     if(!arr&&!parado){ry+=.0035+vy;vy*=.94;vx*=.94;rx=Math.max(-1.1,Math.min(1.1,rx+vx));}
-    grupo.rotation.set(rx,ry,0);orb.rotation.y=parado?0:t*.12;malha.rotation.y=-t*.05;
+    if(!orbParado&&!parado)tOrb+=(t-tAnt);tAnt=t;
+    grupo.rotation.set(rx,ry,0);orb.rotation.y=tOrb*.12;malha.rotation.y=-t*.05;
     ren.render(cena,cam);
   }
   function loop(){
@@ -7167,6 +7277,288 @@ async function montarEsfera(box,sd,meses){
   ESF.ro=new ResizeObserver(()=>{if(!ESF.ren)return;ren.setSize(W(),H());cam.aspect=W()/H();cam.updateProjectionMatrix();if(parado)desenha(0);});ESF.ro.observe(box);
   if(parado)desenha(0);else loop();
 }
+
+
+/* =========================================================================
+   Bloco 9: identidade dos gráficos (degradês, sombras, estilo de linha),
+   preferências de gráficos e projeções, Bloco de notas e Amigos (presença,
+   última atualização financeira e conversa em tempo real).
+   ========================================================================= */
+/* Cores do resultado: identidade própria, diferente de entradas (verde) e
+   saídas (vermelho). Positivo e negativo em par, escolhido nas preferências. */
+const PARES_RESULTADO={
+  'azul-laranja':{nome:'Azul e laranja',pos:'#4263EB',neg:'#F76707',aPos:'#7048E8',aNeg:'#F59F00'},
+  'ciano-magenta':{nome:'Ciano e magenta',pos:'#1098AD',neg:'#C2255C',aPos:'#3B5BDB',aNeg:'#E64980'},
+  'violeta-ambar':{nome:'Violeta e âmbar',pos:'#7048E8',neg:'#E8A300',aPos:'#1C7ED6',aNeg:'#F76707'}
+};
+function prefsGraf(){const p=D()?D().prefs:{};if(!p.graficos)p.graficos={};const g=p.graficos;
+  return {linha:g.linha||'suave',pontos:g.pontos||'hover',degrade:g.degrade!==false,sombra:g.sombra!==false,par:PARES_RESULTADO[g.par]?g.par:'azul-laranja'};}
+const corRes=()=>PARES_RESULTADO[prefsGraf().par];
+const hexA=(h,a)=>{const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return `rgba(${r},${g},${b},${a})`;};
+/* Plugin global: estilo de linha conforme a preferência, degradê nas barras
+   e sombra suave em linhas e barras — vale para todos os gráficos do app. */
+if(window.Chart&&!window.__mfTema){window.__mfTema=true;Chart.register({id:'mfTema',
+  beforeUpdate(ch){if(!D())return;const pg=prefsGraf();
+    ch.data.datasets.forEach(ds=>{const t=ds.type||ch.config.type;if(t!=='line'||ds._mfFixo)return;
+      if(ds._mfTension==null)ds._mfTension=ds.tension==null?.35:ds.tension;
+      ds.tension=pg.linha==='reta'?0:Math.max(ds._mfTension,.35);
+      if(pg.linha==='reta'&&pg.pontos!=='nunca'&&!Array.isArray(ds.pointRadius))ds.pointRadius=pg.pontos==='sempre'||pg.linha==='reta'?3:0;
+      else if(pg.pontos==='sempre'&&!Array.isArray(ds.pointRadius))ds.pointRadius=3;
+      if(!pg.degrade&&ds.fill&&ds._mfFillOrig===undefined){ds._mfFillOrig=ds.fill;ds.fill=false;}
+      else if(pg.degrade&&ds._mfFillOrig!==undefined){ds.fill=ds._mfFillOrig;delete ds._mfFillOrig;}});},
+  beforeDatasetsDraw(ch){if(!D()||!prefsGraf().degrade)return;
+    ch.data.datasets.forEach((ds,i)=>{const t=ds.type||ch.config.type;if(t!=='bar')return;const meta=ch.getDatasetMeta(i);if(meta.hidden)return;
+      meta.data.forEach((el,j)=>{const c=Array.isArray(ds.backgroundColor)?ds.backgroundColor[j]:ds.backgroundColor;if(typeof c!=='string'||!/^#[0-9a-f]{6}$/i.test(c))return;
+        const horiz=ch.options.indexAxis==='y',g=horiz?ch.ctx.createLinearGradient(el.base,0,el.x,0):ch.ctx.createLinearGradient(0,el.y,0,el.base);
+        g.addColorStop(0,c);g.addColorStop(1,hexA(c,.45));el.options.backgroundColor=g;});});},
+  beforeDatasetDraw(ch,a){if(!D()||!prefsGraf().sombra)return;const ds=ch.data.datasets[a.index],t=ds.type||ch.config.type;if(t!=='line'&&t!=='bar')return;
+    const c=typeof ds.borderColor==='string'&&/^#/.test(ds.borderColor)?ds.borderColor:(typeof ds.backgroundColor==='string'&&/^#/.test(ds.backgroundColor)?ds.backgroundColor:null);if(!c)return;
+    const x=ch.ctx;x.save();x.shadowColor=hexA(c.slice(0,7),.35);x.shadowBlur=t==='line'?12:8;x.shadowOffsetY=t==='line'?6:3;},
+  afterDatasetDraw(ch,a){if(!D()||!prefsGraf().sombra)return;const ds=ch.data.datasets[a.index],t=ds.type||ch.config.type;if(t!=='line'&&t!=='bar')return;
+    const c=typeof ds.borderColor==='string'&&/^#/.test(ds.borderColor)?ds.borderColor:(typeof ds.backgroundColor==='string'&&/^#/.test(ds.backgroundColor)?ds.backgroundColor:null);if(c)ch.ctx.restore();}
+});}
+
+/* ---------- preferências: gráficos e projeções ---------- */
+function prefsProj(){const p=D()?D().prefs:{};if(!p.projecao)p.projecao={};const q=p.projecao;
+  return {janela:[3,6,12].includes(+q.janela)?+q.janela:5,completar:q.completar!==false,horizonte:[6,12,24].includes(+q.horizonte)?+q.horizonte:6,
+    consE:q.consE!=null?+q.consE:-5,consS:q.consS!=null?+q.consS:8,otiE:q.otiE!=null?+q.otiE:6,otiS:q.otiS!=null?+q.otiS:-6};}
+const _cfgAparenciaBase=cfgAparencia;
+cfgAparencia=function(){
+  _cfgAparenciaBase();const c=$('#cfgConteudo');if(!c)return;const g=prefsGraf(),q=prefsProj();
+  const radios=(nome,ops,val)=>ops.map(([k,t,d])=>`<label class="check"><input type="radio" name="${nome}" value="${k}" ${val===k?'checked':''}><span><b>${t}</b>${d?'<br><span class="tiny muted">'+d+'</span>':''}</span></label>`).join('');
+  const sel=(id,ops,val)=>`<select id="${id}" class="input">${ops.map(([k,t])=>`<option value="${k}" ${String(val)===String(k)?'selected':''}>${t}</option>`).join('')}</select>`;
+  c.insertAdjacentHTML('beforeend',`<div class="card" style="margin-top:14px"><div class="card-head"><h2>Gráficos</h2></div><div class="card-pad stack">
+      <div class="small"><b>Estilo das linhas</b></div>${radios('gLinha',[['suave','Suaves','curvas que acompanham a tendência'],['reta','Retas (pontiagudas)','liga diretamente o valor de cada mês, como em gráficos financeiros tradicionais']],g.linha)}
+      <div class="form-grid">
+        <div class="field"><label for="gPontos">Pontos de cada mês</label>${sel('gPontos',[['hover','Só ao tocar/passar'],['sempre','Sempre visíveis'],['nunca','Nunca']],g.pontos)}</div>
+        <div class="field"><label for="gPar">Cores do resultado</label>${sel('gPar',Object.entries(PARES_RESULTADO).map(([k,v])=>[k,v.nome]),g.par)}</div></div>
+      <div class="row" style="gap:6px;align-items:center"><span class="tiny muted">Resultado:</span>${['pos','neg','aPos','aNeg'].map(k=>`<span class="swatch-res" style="background:${corRes()[k]}" title="${{pos:'positivo',neg:'negativo',aPos:'acumulado positivo',aNeg:'acumulado negativo'}[k]}"></span>`).join('')}
+        <span class="tiny muted">entradas seguem verdes e saídas vermelhas</span></div>
+      <label class="check"><input type="checkbox" id="gDegrade" ${g.degrade?'checked':''}><span><b>Degradês</b><br><span class="tiny muted">preenchimento suave sob as linhas e nas barras</span></span></label>
+      <label class="check"><input type="checkbox" id="gSombra" ${g.sombra?'checked':''}><span><b>Sombras suaves</b><br><span class="tiny muted">profundidade discreta em linhas e barras</span></span></label>
+    </div></div>
+    <div class="card" style="margin-top:14px"><div class="card-head"><h2>Projeções e futuro</h2></div><div class="card-pad stack">
+      <div class="form-grid">
+        <div class="field"><label for="pJanela">Histórico usado como base</label>${sel('pJanela',[[3,'Últimos 3 meses'],[5,'Últimos 5 meses (padrão)'],[6,'Últimos 6 meses'],[12,'Últimos 12 meses']],q.janela)}</div>
+        <div class="field"><label for="pHorizonte">Projetar por padrão até</label>${sel('pHorizonte',[[6,'6 meses à frente'],[12,'12 meses à frente'],[24,'24 meses à frente']],q.horizonte)}</div>
+        <div class="field"><label for="pConsE">Conservador: entradas (%)</label><input id="pConsE" class="input" type="number" step="1" min="-50" max="50" value="${q.consE}"></div>
+        <div class="field"><label for="pConsS">Conservador: saídas (%)</label><input id="pConsS" class="input" type="number" step="1" min="-50" max="50" value="${q.consS}"></div>
+        <div class="field"><label for="pOtiE">Otimista: entradas (%)</label><input id="pOtiE" class="input" type="number" step="1" min="-50" max="50" value="${q.otiE}"></div>
+        <div class="field"><label for="pOtiS">Otimista: saídas (%)</label><input id="pOtiS" class="input" type="number" step="1" min="-50" max="50" value="${q.otiS}"></div></div>
+      <label class="check"><input type="checkbox" id="pCompletar" ${q.completar?'checked':''}><span><b>Completar meses pouco lançados com a média</b><br><span class="tiny muted">desligado: a projeção usa só o que já está agendado (parcelas e recorrências)</span></span></label>
+    </div></div>`);
+  const gp=()=>D().prefs.graficos,pp=()=>D().prefs.projecao,ok=()=>{salvar();typeof limparGraficos==='function'&&limparGraficos();toast('Preferência salva.','ok');};
+  $$('input[name="gLinha"]',c).forEach(r=>r.onchange=()=>{gp().linha=r.value;ok();});
+  $('#gPontos').onchange=e=>{gp().pontos=e.target.value;ok();};
+  $('#gPar').onchange=e=>{gp().par=e.target.value;ok();cfgAparencia();};
+  $('#gDegrade').onchange=e=>{gp().degrade=e.target.checked;ok();};
+  $('#gSombra').onchange=e=>{gp().sombra=e.target.checked;ok();};
+  $('#pJanela').onchange=e=>{pp().janela=+e.target.value;ok();};
+  $('#pHorizonte').onchange=e=>{pp().horizonte=+e.target.value;ANA.projAte=String(MES_ATUAL+(+e.target.value));ok();};
+  [['pConsE','consE'],['pConsS','consS'],['pOtiE','otiE'],['pOtiS','otiS']].forEach(([id,k])=>$('#'+id).onchange=e=>{const v=Math.max(-50,Math.min(50,Math.round(+e.target.value||0)));e.target.value=v;pp()[k]=v;ok();});
+  $('#pCompletar').onchange=e=>{pp().completar=e.target.checked;ok();};
+};
+
+/* ---------- Bloco de notas (separado dos lançamentos e dos rascunhos) ---------- */
+const NOTAS={editando:null,timer:0};
+const notas=()=>{const d=D();if(!Array.isArray(d.notas))d.notas=[];return d.notas;};
+function renderNotas(){
+  const box=$('#cardNotas');if(!box||!D())return;
+  const lst=notas().slice().sort((a,b)=>(b.fixada?1:0)-(a.fixada?1:0)||String(b.atualizadoEm).localeCompare(String(a.atualizadoEm)));
+  const ed=NOTAS.editando?notas().find(n=>n.id===NOTAS.editando):null;
+  box.innerHTML=`<div class="card-head"><h2>Bloco de notas</h2><span class="tiny muted" id="notaStatus" style="margin-left:auto">${lst.length?lst.length+(lst.length===1?' anotação':' anotações'):''}</span>
+      <button class="btn btn-sm btn-primary" id="notaNova">Nova nota</button></div>
+    ${ed?`<div class="card-pad nota-editor"><input id="notaTitulo" class="input" placeholder="Título (opcional)" maxlength="80" value="${esc(ed.titulo||'')}">
+      <textarea id="notaTexto" class="input" rows="5" placeholder="Escreva aqui: lembretes, observações, combinados…" maxlength="5000">${esc(ed.texto||'')}</textarea>
+      <div class="row" style="gap:8px;justify-content:space-between;flex-wrap:wrap"><span class="tiny muted" id="notaSalvo">Salvo automaticamente</span>
+        <span class="row" style="gap:6px"><button class="btn btn-sm btn-danger" id="notaExcluir">Excluir</button><button class="btn btn-sm btn-primary" id="notaFechar">Concluir</button></span></div></div>`:''}
+    ${lst.filter(n=>n.id!==NOTAS.editando).length?`<div class="notas-grade">${lst.filter(n=>n.id!==NOTAS.editando).map(n=>`<button class="nota" data-nota="${esc(n.id)}">
+        <span class="row" style="justify-content:space-between;gap:6px"><b>${esc(n.titulo||(n.texto||'').split('\n')[0].slice(0,40)||'Sem título')}</b><span class="nota-pin" data-pin="${esc(n.id)}" title="${n.fixada?'Desafixar':'Fixar no topo'}" aria-label="${n.fixada?'Desafixar':'Fixar'}">${n.fixada?'★':'☆'}</span></span>
+        <span class="nota-txt">${esc((n.titulo?n.texto:(n.texto||'').split('\n').slice(1).join(' '))||'').slice(0,160)}</span>
+        <span class="tiny muted">${fmtData(String(n.atualizadoEm).slice(0,10))}</span></button>`).join('')}</div>`
+      :(ed?'':'<div class="card-pad"><p class="small muted">Um espaço para anotações livres: lembretes, combinados, ideias. Não é lançamento e não altera saldos nem projeções.</p></div>')}`;
+  $('#notaNova').onclick=()=>{const n={id:uid('n'),titulo:'',texto:'',fixada:false,criadoEm:new Date().toISOString(),atualizadoEm:new Date().toISOString()};notas().unshift(n);NOTAS.editando=n.id;salvar();renderNotas();setTimeout(()=>$('#notaTexto')&&$('#notaTexto').focus(),30);};
+  $$('[data-nota]',box).forEach(b=>b.onclick=e=>{if(e.target.closest('[data-pin]'))return;NOTAS.editando=b.dataset.nota;renderNotas();setTimeout(()=>$('#notaTexto')&&$('#notaTexto').focus(),30);});
+  $$('[data-pin]',box).forEach(p=>p.onclick=e=>{e.stopPropagation();const n=notas().find(x=>x.id===p.dataset.pin);if(!n)return;n.fixada=!n.fixada;salvar();renderNotas();});
+  if(ed){const grava=()=>{ed.titulo=$('#notaTitulo').value.trim();ed.texto=$('#notaTexto').value;ed.atualizadoEm=new Date().toISOString();salvar();const s=$('#notaSalvo');if(s)s.textContent='Salvo às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});};
+    const adia=()=>{clearTimeout(NOTAS.timer);const s=$('#notaSalvo');if(s)s.textContent='Salvando…';NOTAS.timer=setTimeout(grava,500);};
+    $('#notaTitulo').oninput=adia;$('#notaTexto').oninput=adia;
+    $('#notaFechar').onclick=()=>{clearTimeout(NOTAS.timer);grava();if(!ed.titulo&&!ed.texto.trim()){D().notas=notas().filter(x=>x.id!==ed.id);salvar();}NOTAS.editando=null;renderNotas();};
+    $('#notaExcluir').onclick=async()=>{if(await confirmar({titulo:'Excluir anotação',texto:'Excluir esta anotação? Não afeta nenhum lançamento.',botao:'Excluir'})){D().notas=notas().filter(x=>x.id!==ed.id);NOTAS.editando=null;salvar();renderNotas();toast('Anotação excluída.','ok');}};}
+}
+
+/* ---------- Amigos: presença, última atualização financeira e conversa ----------
+   Presença: o login registra o acesso; "online" exige o app visível e alguma
+   interação nos últimos 2 minutos (pulso a cada 60 s). Última atualização
+   financeira: muda só quando lançamentos são criados, editados ou excluídos.
+   Nenhum valor ou lançamento do outro perfil é exibido aqui. */
+const AMG={uid:{},pres:{},msgs:[],naoLidas:0,aberto:null,canal:null,atividade:Date.now(),pulso:0,assinatura:null,ultFinEnvio:0,carregado:false,poll:0};
+const ONLINE_MS=150e3;
+const nuvemOk=()=>SB&&ARM.modo==='nuvem'&&ARM.uid;
+function tempoRel(iso,prefixo){
+  if(!iso)return null;const ms=Date.now()-new Date(iso).getTime();if(ms<0)return prefixo+' agora';
+  const m=Math.floor(ms/60e3),h=Math.floor(ms/36e5),d=Math.floor(ms/864e5);
+  if(m<2)return prefixo+' agora há pouco';if(m<60)return prefixo+' há '+(m<10?'alguns':m)+' minutos';
+  if(h<24)return prefixo+' há '+h+(h===1?' hora':' horas');if(d===1)return prefixo+' ontem';return prefixo+' há '+d+' dias';
+}
+function statusAmigo(uid){
+  const p=AMG.pres[uid];if(!p||p.mostrar_status===false)return {txt:'Status oculto',online:false};
+  if(p.visto_em&&Date.now()-new Date(p.visto_em).getTime()<ONLINE_MS)return {txt:'Online',online:true};
+  return {txt:tempoRel(p.visto_em,'Visto por último')||'Ainda sem acesso registrado',online:false};
+}
+const finAmigo=uid=>{const p=AMG.pres[uid];if(!p||p.mostrar_status===false)return 'Status oculto';return tempoRel(p.ultima_atualizacao_fin,'Última atualização financeira')||'Sem atualização financeira registrada';};
+function amigos(){return PERFIS_CASA.filter(p=>p.id!==DB.usuarioAtual).map(p=>({...p,uid:AMG.uid[p.id]||null}));}
+async function carregarAmigos(){
+  if(!nuvemOk())return;
+  try{const [{data:pf},{data:pr}]=await Promise.all([SB.from('perfis').select('user_id,perfil'),SB.from('presenca').select('*')]);
+    (pf||[]).forEach(p=>{AMG.uid[p.perfil]=p.user_id;AVATAR.uidPerfil[p.user_id]=p.perfil;});
+    AMG.pres={};(pr||[]).forEach(p=>AMG.pres[p.user_id]=p);AMG.carregado=true;
+    await carregarMensagens();}catch(e){console.warn('amigos',e);}
+}
+async function carregarMensagens(){
+  if(!nuvemOk())return;
+  const {data,error}=await SB.from('mensagens').select('*').order('criada_em',{ascending:true}).limit(500);
+  if(error){console.warn('mensagens',error);return;}
+  AMG.msgs=data||[];contarNaoLidas();
+}
+function contarNaoLidas(){AMG.naoLidas=AMG.msgs.filter(m=>m.para===ARM.uid&&!m.lida_em).length;marcarBadgeAmigos();}
+function marcarBadgeAmigos(){
+  $$('[data-pg="amigos"]').forEach(b=>{let s=b.querySelector('.nav-badge');if(AMG.naoLidas){if(!s){s=document.createElement('span');s.className='nav-badge';b.appendChild(s);}s.textContent=AMG.naoLidas>9?'9+':AMG.naoLidas;}else if(s)s.remove();});
+  try{atualizarNotif();}catch(_){}
+}
+async function pulsoPresenca(forcar){
+  if(!nuvemOk())return;
+  const vis=prefsAmigos().mostrar;
+  if(!vis){if(forcar)await SB.from('presenca').upsert({user_id:ARM.uid,visto_em:null,ultima_atualizacao_fin:null,mostrar_status:false,atualizado_em:new Date().toISOString()},{onConflict:'user_id'});return;}
+  const ativo=document.visibilityState==='visible'&&Date.now()-AMG.atividade<120e3;
+  if(!forcar&&!ativo)return;
+  try{await SB.from('presenca').upsert({user_id:ARM.uid,visto_em:new Date().toISOString(),mostrar_status:true,atualizado_em:new Date().toISOString()},{onConflict:'user_id'});}catch(_){}
+}
+const prefsAmigos=()=>{const p=D().prefs;if(!p.amigos)p.amigos={};return {mostrar:p.amigos.mostrar!==false};};
+/* assinatura leve dos lançamentos: muda quando algo financeiro muda */
+function assinaturaLanc(){
+  let h=0;const ls=D()?D().lancamentos:[];
+  for(const l of ls){const s=l.id+'|'+l.valor+'|'+l.dataParcela+'|'+l.tipo+'|'+(l.situacaoManual||'')+'|'+l.categoriaId;
+    for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;}
+  return ls.length+':'+h;
+}
+async function checarAtualizacaoFin(){
+  if(!D())return;const a=assinaturaLanc();
+  if(AMG.assinatura==null){AMG.assinatura=a;return;}
+  if(a===AMG.assinatura)return;AMG.assinatura=a;
+  if(!nuvemOk()||!prefsAmigos().mostrar)return;
+  if(Date.now()-AMG.ultFinEnvio<15e3){clearTimeout(AMG._tf);AMG._tf=setTimeout(()=>{AMG.ultFinEnvio=0;enviarAtualizacaoFin();},15e3);return;}
+  enviarAtualizacaoFin();
+}
+async function enviarAtualizacaoFin(){AMG.ultFinEnvio=Date.now();const agora=new Date().toISOString();
+  try{await SB.from('presenca').upsert({user_id:ARM.uid,visto_em:agora,ultima_atualizacao_fin:agora,mostrar_status:true,atualizado_em:agora},{onConflict:'user_id'});}catch(_){}}
+const _salvarBase9=salvar;
+salvar=function(){const r=_salvarBase9.apply(this,arguments);try{checarAtualizacaoFin();}catch(_){}return r;};
+function assinarTempoReal(){
+  if(!nuvemOk()||AMG.canal||!SB.channel)return;
+  try{AMG.canal=SB.channel('mf-amigos')
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'mensagens'},p=>{const m=p.new;if(m.de!==ARM.uid&&m.para!==ARM.uid)return;if(!AMG.msgs.some(x=>x.id===m.id))AMG.msgs.push(m);contarNaoLidas();aoMudarChat(m);})
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'mensagens'},p=>{const m=p.new,i=AMG.msgs.findIndex(x=>x.id===m.id);if(i>=0)AMG.msgs[i]=m;contarNaoLidas();aoMudarChat();})
+    .on('postgres_changes',{event:'*',schema:'public',table:'presenca'},p=>{const r=p.new;if(r&&r.user_id){AMG.pres[r.user_id]=r;if(PAGINA==='amigos')pintarStatus();}})
+    .subscribe();}catch(e){console.warn('realtime',e);}
+}
+function aoMudarChat(nova){
+  if(PAGINA==='amigos'){if(AMG.aberto)pintarConversa(true);else renderAmigos();}
+  else if(nova&&nova.para===ARM.uid){const p=perfilCasa(AVATAR.uidPerfil[nova.de]);toast('Nova mensagem de '+(p?p.nome:'sua casa')+'.','ok');}
+}
+function aoEntrar9(){
+  ['pointerdown','keydown','touchstart','wheel'].forEach(ev=>document.addEventListener(ev,()=>{AMG.atividade=Date.now();},{passive:true}));
+  if(!Array.isArray(D().notas))D().notas=[];
+  AMG.assinatura=assinaturaLanc();
+  if(!nuvemOk())return;
+  pulsoPresenca(true);carregarAmigos().then(()=>{if(PAGINA==='amigos')renderAmigos();});assinarTempoReal();
+  clearInterval(AMG.pulso);AMG.pulso=setInterval(()=>pulsoPresenca(false),60e3);
+}
+document.addEventListener('visibilitychange',()=>{if(!DB.usuarioAtual||!nuvemOk())return;
+  if(document.visibilityState==='hidden')pulsoPresenca(true);else{AMG.atividade=Date.now();pulsoPresenca(true);carregarAmigos().then(()=>{if(PAGINA==='amigos')renderAmigos();});}});
+
+function renderAmigos(){
+  const sec=$('#page-amigos');if(!sec)return;
+  if(!nuvemOk()){sec.innerHTML=`<div class="card"><div class="card-pad">${vazio('Disponível com a sincronização em nuvem','Amigos, status e conversas usam a conta conectada de cada pessoa.')}</div></div>`;return;}
+  if(AMG.aberto){renderPerfilAmigo(AMG.aberto);return;}
+  const ams=amigos(),pm=prefsAmigos();
+  sec.innerHTML=`<div class="card" style="margin-bottom:14px"><div class="card-head"><h2>Amigos</h2><span class="tiny muted" style="margin-left:auto">perfis da casa</span></div>
+    ${ams.map(a=>{const st=statusAmigo(a.uid),nl=AMG.msgs.filter(m=>m.de===a.uid&&m.para===ARM.uid&&!m.lida_em).length,ult=[...AMG.msgs].reverse().find(m=>m.de===a.uid||m.para===a.uid);
+      return `<button class="amigo" data-amigo="${esc(a.id)}"><span class="amigo-av">${avatarHtml(a.id,a.iniciais)}<i class="pt-on${st.online?' on':''}" aria-hidden="true"></i></span>
+        <span class="amigo-t"><b>${esc(a.nome)}</b><span class="${st.online?'pos':''}">${esc(st.txt)}</span><span class="tiny muted">${esc(finAmigo(a.uid))}</span>
+          ${ult?`<span class="tiny muted amigo-ult">${ult.de===ARM.uid?'Você: ':''}${esc(ult.texto.slice(0,60))}</span>`:''}</span>
+        ${nl?`<span class="nav-badge">${nl}</span>`:'<span class="tiny muted">Conversar ›</span>'}</button>`;}).join('')||'<div class="card-pad"><p class="small muted">Nenhum outro perfil na casa.</p></div>'}
+    </div>
+    <div class="card"><div class="card-pad"><label class="check"><input type="checkbox" id="amgMostrar" ${pm.mostrar?'checked':''}><span><b>Mostrar meu status para a casa</b><br><span class="tiny muted">Online, visto por último e quando houve a última atualização financeira. Nunca mostra valores nem lançamentos. Desligado, o app para de registrar sua presença.</span></span></label></div></div>`;
+  $$('[data-amigo]',sec).forEach(b=>b.onclick=()=>{AMG.aberto=b.dataset.amigo;renderAmigos();});
+  $('#amgMostrar').onchange=async e=>{D().prefs.amigos=D().prefs.amigos||{};D().prefs.amigos.mostrar=e.target.checked;salvar();await pulsoPresenca(true);if(e.target.checked)enviarAtualizacaoFin();toast(e.target.checked?'Seu status voltou a aparecer.':'Seu status foi ocultado.','ok');};
+}
+function pintarStatus(){
+  if(!AMG.aberto){if(PAGINA==='amigos'&&!AMG.aberto)renderAmigos();return;}
+  const a=amigos().find(x=>x.id===AMG.aberto);if(!a)return;const st=statusAmigo(a.uid);
+  const e1=$('#amgStatus'),e2=$('#amgFin'),dot=$('#amgDot');if(e1){e1.textContent=st.txt;e1.className=st.online?'pos':'';}if(e2)e2.textContent=finAmigo(a.uid);if(dot)dot.classList.toggle('on',st.online);
+}
+function renderPerfilAmigo(id){
+  const sec=$('#page-amigos'),a=amigos().find(x=>x.id===id);if(!a){AMG.aberto=null;renderAmigos();return;}
+  const st=statusAmigo(a.uid);
+  sec.innerHTML=`<div class="amg-wrap">
+    <div class="card amg-perfil"><div class="card-pad">
+      <button class="btn btn-sm btn-ghost" id="amgVoltar">‹ Amigos</button>
+      <div class="amg-cab"><span class="amigo-av">${avatarHtml(a.id,a.iniciais,'avatar-xl')}<i class="pt-on${st.online?' on':''}" id="amgDot" aria-hidden="true"></i></span>
+        <div><h2 style="margin:0">${esc(a.nome)}</h2><span class="tiny muted">${esc(a.papel)}</span></div></div>
+      <div class="amg-linhas"><div><small>Último acesso ao app</small><b id="amgStatus" class="${st.online?'pos':''}">${esc(st.txt)}</b></div>
+        <div><small>Finanças</small><b id="amgFin">${esc(finAmigo(a.uid))}</b></div></div>
+      <p class="tiny muted">Só o tempo desde a última atividade autorizada; valores e lançamentos de ${esc(a.nome)} continuam privados.</p></div></div>
+    <div class="card chat"><div class="card-head"><h2>Conversa</h2><span class="tiny muted" style="margin-left:auto" id="chatInfo"></span></div>
+      <div class="chat-lista" id="chatLista" aria-live="polite"></div>
+      <div class="chat-comp"><textarea id="chatTexto" class="input" rows="1" maxlength="2000" placeholder="Mensagem para ${esc(a.nome)}…" aria-label="Escrever mensagem"></textarea>
+        <button class="btn btn-primary" id="chatEnviar" aria-label="Enviar">Enviar</button></div></div></div>`;
+  $('#amgVoltar').onclick=()=>{AMG.aberto=null;renderAmigos();};
+  const ta=$('#chatTexto'),env=$('#chatEnviar');
+  ta.oninput=()=>{ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,140)+'px';};
+  ta.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();enviarMensagem(a);}};
+  env.onclick=()=>enviarMensagem(a);
+  pintarConversa(false);
+  clearInterval(AMG.poll);AMG.poll=setInterval(()=>{if(PAGINA!=='amigos'||!AMG.aberto){clearInterval(AMG.poll);return;}if(document.visibilityState==='visible')carregarMensagens().then(()=>pintarConversa(true));},15e3);
+}
+function pintarConversa(manterRolagem){
+  const lista=$('#chatLista');if(!lista)return;const a=amigos().find(x=>x.id===AMG.aberto);if(!a)return;
+  const conv=AMG.msgs.filter(m=>(m.de===ARM.uid&&m.para===a.uid)||(m.de===a.uid&&m.para===ARM.uid));
+  const perto=!manterRolagem||lista.scrollHeight-lista.scrollTop-lista.clientHeight<80;
+  let dia='';
+  lista.innerHTML=conv.length?conv.map(m=>{const d=m.criada_em.slice(0,10),eu=m.de===ARM.uid,hora=new Date(m.criada_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const sep=d!==dia?(dia=d,`<div class="chat-dia">${new Date(m.criada_em).toLocaleDateString('pt-BR',{day:'2-digit',month:'long'})}</div>`):'';
+    return `${sep}<div class="msg ${eu?'eu':'ele'}${m._pend?' pend':''}"><span class="msg-t">${esc(m.texto).replace(/\n/g,'<br>')}</span><span class="msg-h">${hora}${eu?` <span class="msg-l ${m.lida_em?'lida':''}" title="${m._pend?'enviando':m.lida_em?'lida':'enviada'}">${m._pend?'◷':m.lida_em?'✓✓':'✓'}</span>`:''}</span></div>`;}).join('')
+    :`<div class="chat-vazio">Nenhuma mensagem ainda. Diga oi para ${esc(a.nome)}! 👋</div>`;
+  if(perto)lista.scrollTop=lista.scrollHeight;
+  $('#chatInfo').textContent=conv.length?conv.length+(conv.length===1?' mensagem':' mensagens'):'';
+  marcarLidas(a);
+}
+async function marcarLidas(a){
+  const ids=AMG.msgs.filter(m=>m.de===a.uid&&m.para===ARM.uid&&!m.lida_em).map(m=>m.id);if(!ids.length||document.visibilityState!=='visible')return;
+  const agora=new Date().toISOString();AMG.msgs.forEach(m=>{if(ids.includes(m.id))m.lida_em=agora;});contarNaoLidas();
+  try{await SB.from('mensagens').update({lida_em:agora}).in('id',ids);}catch(_){}
+}
+async function enviarMensagem(a){
+  const ta=$('#chatTexto'),txt=ta.value.trim();if(!txt)return;if(!a.uid){toast('Perfil de '+a.nome+' ainda não está conectado.','warn');return;}
+  ta.value='';ta.style.height='auto';
+  const tmp={id:'tmp-'+uid('m'),de:ARM.uid,para:a.uid,texto:txt,criada_em:new Date().toISOString(),lida_em:null,_pend:true};AMG.msgs.push(tmp);pintarConversa(false);
+  const {data,error}=await SB.from('mensagens').insert({para:a.uid,texto:txt}).select().single();
+  const i=AMG.msgs.findIndex(m=>m.id===tmp.id);
+  if(error){if(i>=0)AMG.msgs.splice(i,1);ta.value=txt;pintarConversa(false);toast('Não foi possível enviar. Verifique a conexão.','err');return;}
+  if(AMG.msgs.some(m=>m.id===data.id))AMG.msgs.splice(i,1);else AMG.msgs[i]=data;pintarConversa(false);
+}
+
+/* integrações do Bloco 9 com o restante do app */
+const _irPara9=irPara;
+irPara=function(id,o){if(id==='amigos'&&PAGINA!=='amigos')AMG.aberto=null;return _irPara9(id,o);};
+const _itensExtras9=itensExtras;
+itensExtras=function(){const out=_itensExtras9();
+  if(nuvemOk()&&AMG.naoLidas){const porDe={};AMG.msgs.filter(m=>m.para===ARM.uid&&!m.lida_em).forEach(m=>porDe[m.de]=(porDe[m.de]||[]).concat(m));
+    Object.entries(porDe).forEach(([de,ms])=>{const p=perfilCasa(AVATAR.uidPerfil[de]),nome=p?p.nome:'sua casa',ult=ms[ms.length-1];
+      out.push({chave:'msg:'+ult.id,categoria:'info',prioridade:'media',data:ult.criada_em.slice(0,10),titulo:`${ms.length===1?'Nova mensagem':ms.length+' novas mensagens'} de ${nome}`,
+        texto:ult.texto.slice(0,140),motivo:'Conversa em Amigos.',acoes:[{rot:'Abrir conversa',pri:true,fn:()=>{AMG.aberto=p?p.id:null;irPara('amigos');}}]});});}
+  return out;};
 
 /* ---------------------- inicialização ---------------------- */
 function bindGlobal(){
