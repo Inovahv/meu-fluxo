@@ -429,6 +429,37 @@ button.sd-comp{all:unset;box-sizing:border-box;display:grid;grid-template-column
 button.sd-comp:hover,button.sd-comp.ativo{background:var(--surface-2)}
 @media (max-width:860px){.amg-wrap{grid-template-columns:1fr}.chat-lista{max-height:52vh}}
 #page-visao-geral>#cardNotas{order:99;margin-top:14px}
+
+/* v2.3: planeta financeiro (Análises → Saúde financeira) */
+.planeta{position:relative;height:560px;border-radius:var(--r);overflow:hidden;touch-action:none;cursor:grab;
+  background:radial-gradient(120% 90% at 50% 40%,#16213D 0%,#0B1222 60%,#070B16 100%);box-shadow:var(--shadow-1);border:1px solid var(--border)}
+.planeta:active{cursor:grabbing}.planeta canvas{display:block;width:100%!important;height:100%!important}
+.pf-hud{position:absolute;left:18px;top:16px;pointer-events:none;color:#EEF3FB}
+.pf-hud small{display:block;font-size:.8rem;color:#A9B6D0;font-weight:600}
+.pf-hud b{display:block;font-size:3.2rem;font-weight:800;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.pf-hud span{font-weight:700;font-size:.95rem}
+.pf-delta{display:block;font-style:normal;margin-top:4px;font-size:.8rem;font-weight:700}.pf-delta.sobe{color:#3DDC97}.pf-delta.cai{color:#FF922B}
+.pf-mes{position:absolute;right:16px;top:16px;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#EEF3FB;font-size:.8rem;font-weight:700;display:none}
+.pf-mes.on{display:block}
+.pf-det{position:absolute;right:16px;bottom:52px;width:min(300px,calc(100% - 32px));padding:14px 16px;border-radius:16px;background:rgba(14,22,40,.8);border:1px solid rgba(255,255,255,.13);
+  color:#EEF3FB;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 18px 40px -20px rgba(0,0,0,.9);opacity:0;transform:translateY(8px);transition:opacity .25s ease,transform .25s ease;pointer-events:none}
+.pf-det.on{opacity:1;transform:none;pointer-events:auto}
+.pf-det h3{margin:0 0 6px;font-size:1rem;display:flex;align-items:center;gap:8px;color:#EEF3FB}.pf-det h3 i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.pf-det dl{margin:0;display:grid;grid-template-columns:auto auto;gap:3px 14px;font-size:.84rem}.pf-det dt{color:#A9B6D0}.pf-det dd{margin:0;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.pf-det dd.pos{color:#3DDC97}.pf-det dd.neg{color:#FF7A88}.pf-det .pf-txt{margin:0;font-size:.84rem;color:#D5DEEE;line-height:1.45}
+.pf-det .btn{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#EEF3FB}
+.pf-fechar{position:absolute;right:6px;top:4px;border:0;background:transparent;color:#A9B6D0;font-size:1.15rem;cursor:pointer;padding:4px 8px}
+.pf-leg{position:absolute;left:18px;bottom:14px;right:18px;display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.76rem;color:#A9B6D0;pointer-events:none}
+.pf-leg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:0}
+.pf-leg .anel{width:16px;height:6px;border-radius:4px;background:linear-gradient(90deg,#748FFC,#FAB005,#22B8CF)}
+.pf-num{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:12px 16px 16px}
+.pf-num>div{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;background:var(--surface-2)}
+.pf-num small{font-size:.74rem;color:var(--ink-3);font-weight:600}.pf-num b{font-size:1.02rem;font-weight:800;font-variant-numeric:tabular-nums}
+.planeta .saude-fallback div{--sd-cor:inherit}
+@media (max-width:760px){.planeta{height:540px}.pf-hud b{font-size:2.6rem}
+  .pf-det{top:auto;bottom:58px;left:12px;right:12px;width:auto;padding:10px 12px}.pf-det dl{font-size:.78rem}.pf-mes{right:12px;top:14px}
+  .pf-num{grid-template-columns:1fr}.pf-num>div{flex-direction:row;justify-content:space-between;align-items:baseline}.pf-leg{font-size:.7rem}}
+@media (prefers-reduced-motion:reduce){.pf-det{transition:none}}
 </style>
 <style>
 /* ============ 9. Gráficos ============ */
@@ -7147,28 +7178,53 @@ function saudeFinanceira(fimIdx=MES_ATUAL-1,janela=6){
   return {ok:true,score,...faixa,comps,serie,ini,fim:fimIdx,mE,mS};
 }
 const corComp=s=>s==null?'#8A94A6':s>=.65?'#12A971':s>=.4?'#E8A300':'#EF4A5A';
+/* Planeta financeiro: o planeta é a saúde do período (cor e pulso pela nota),
+   os anéis são as 5 maiores categorias de gasto (espessura = peso nas saídas),
+   as luas são os meses (azul = positivo, laranja = negativo, tamanho pelo
+   resultado). "Percorrer meses" anda mês a mês: a lua acende, os anéis
+   assumem os gastos daquele mês e os números contam até o novo valor. */
+const CORES_ANEL=['#748FFC','#FAB005','#22B8CF','#DA77F2','#ADB5BD'];
+function gastosPorCategoria(ini,fim){
+  const porMes=new Map(),tot=new Map();
+  LV().forEach(l=>{if(l.tipo!=='saida'||!ehRealizado(l))return;const mi=mesIndex(l.dataParcela);if(mi<ini||mi>fim)return;
+    const nome=nomeCat(l.categoriaId)||'Outros',v=+l.valor||0;
+    if(!porMes.has(mi))porMes.set(mi,new Map());const m=porMes.get(mi);m.set(nome,(m.get(nome)||0)+v);tot.set(nome,(tot.get(nome)||0)+v);
+    if(!tot._ids)tot._ids={};if(!tot._ids[nome])tot._ids[nome]=l.categoriaId;});
+  return {porMes,tot,ids:tot._ids||{}};
+}
 function renderSaude(){
   const cont=$('#anaConteudo');if(!cont)return;
-  const jan=[3,6,12].includes(+ANA.sdJan)?+ANA.sdJan:6;
-  const sd=saudeFinanceira(MES_ATUAL-1,jan),ant=saudeFinanceira(MES_ATUAL-1-jan,jan),hist=[];
+  const jan=[3,6,12].includes(+ANA.sdJan)?+ANA.sdJan:6,fim=MES_ATUAL-1,ini=fim-jan+1;
+  const sd=saudeFinanceira(fim,jan),ant=saudeFinanceira(fim-jan,jan),hist=[];
   for(let f=MES_ATUAL-12;f<=MES_ATUAL-1;f++){const r=saudeFinanceira(f,jan);hist.push({idx:f,score:r.ok?r.score:null});}
-  const meses=serieMensal(MES_ATUAL-jan,MES_ATUAL-1,{}),P=corRes();
+  const meses=serieMensal(ini,fim,{}),P=corRes();
+  const g=gastosPorCategoria(ini,fim),gAnt=gastosPorCategoria(ini-jan,fim-jan);
+  const totSai=[...g.tot.values()].reduce((a,b)=>a+b,0);
+  const top=[...g.tot.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5).map(([nome,v],i)=>({nome,v,id:g.ids[nome],cor:CORES_ANEL[i],part:totSai?v/totSai:0,ant:gAnt.tot.get(nome)||0}));
+  const T={entradas:meses.reduce((a,m)=>a+m.entradas,0),saidas:meses.reduce((a,m)=>a+m.saidas,0)};T.resultado=round2(T.entradas-T.saidas);
   const cor=sd.ok?sd.cor:'#8A94A6',delta=sd.ok&&ant.ok?sd.score-ant.score:null;
-  cont.innerHTML=`<div class="row" style="gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><span class="tiny muted">Período analisado:</span>
+  cont.innerHTML=`<div class="row" style="gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><span class="tiny muted">Período analisado:</span>
       <div class="seg" role="group" aria-label="Período da saúde financeira">${[3,6,12].map(n=>`<button data-sdjan="${n}" aria-pressed="${jan===n}">${n} meses</button>`).join('')}</div>
-      <span class="tiny muted">${sd.ok?mesLabel(sd.ini)+' a '+mesLabel(sd.fim):''}</span></div>
+      <span class="tiny muted">${mesLabel(ini)} a ${mesLabel(fim)}</span>
+      <button class="btn btn-sm" id="pfPlay" aria-pressed="false" style="margin-left:auto"><span id="pfIco" aria-hidden="true">▶</span> <span id="pfTxt">Percorrer meses</span></button></div>
   <div class="saude-grid">
-    <div class="saude-3d" id="sdBox" style="--sd-cor:${cor}" role="img" aria-label="Esfera da saúde financeira: ${sd.ok?sd.score+' de 100, '+sd.rot:'dados insuficientes'}. Arraste para girar; toque num mês para ver os detalhes.">
-      <div class="saude-hud"><small>Saúde financeira</small><b>${sd.ok?sd.score:'—'}</b><span>${sd.ok?sd.rot:'dados insuficientes'}</span>
-        ${delta!=null?`<em class="sd-delta ${delta>=0?'sobe':'cai'}">${delta>=0?'▲':'▼'} ${delta>=0?'+':''}${delta} vs ${jan} meses anteriores</em>`:''}</div>
-      <div class="sd-info" id="sdInfo" hidden></div>
-      <div class="saude-leg"><span><i style="background:${P.pos}"></i>mês positivo</span><span><i style="background:${P.neg}"></i>mês negativo</span>${ant.ok?'<span><i class="fantasma"></i>período anterior</span>':''}</div>
-      <div class="saude-dica">arraste · toque num mês</div></div>
-    <div class="card"><div class="card-head"><h2>Como a nota é formada</h2><span class="tiny muted" style="margin-left:auto">toque para destacar</span></div>
-      <div class="card-pad">${sd.ok?sd.comps.map(c=>`<button class="sd-comp" data-sdcomp="${c.k}"><b class="small">${c.nome}</b><span class="small"><b>${c.s==null?'—':Math.round(c.s*100)}</b><span class="tiny muted"> · peso ${SD_PESOS[c.k]}</span></span>
-          <div class="trk"><span style="width:${c.s==null?0:Math.round(c.s*100)}%;background:linear-gradient(90deg,${hexA(corComp(c.s),.55)},${corComp(c.s)})"></span></div><small>${esc(c.txt)}</small></button>`).join('')
-        :`<p class="small muted">${esc(sd.motivo)}</p>`}
-        <p class="tiny muted" style="margin-top:10px">Nota calculada só com os lançamentos realizados${modoCasal()?' do modo casal':''}. É um termômetro do seu histórico, não uma recomendação financeira.</p></div></div>
+    <div class="planeta" id="sdBox" style="--sd-cor:${cor}" role="img" aria-label="Planeta financeiro: saúde ${sd.ok?sd.score+' de 100, '+sd.rot:'com dados insuficientes'}. Os anéis são as maiores categorias de gasto e as luas são os meses. Arraste para girar; toque num anel ou numa lua para ver detalhes.">
+      <div class="pf-hud"><small>Saúde financeira</small><b style="color:${cor}">${sd.ok?sd.score:'—'}</b><span style="color:${cor}">${sd.ok?sd.rot:'dados insuficientes'}</span>
+        ${delta!=null?`<em class="pf-delta ${delta>=0?'sobe':'cai'}">${delta>=0?'▲ +':'▼ '}${delta} em relação aos ${jan} meses anteriores</em>`:''}</div>
+      <div class="pf-mes" id="pfMes"></div>
+      <div class="pf-det" id="sdInfo" aria-live="polite"><button class="pf-fechar" id="pfFechar" aria-label="Fechar detalhe">×</button><div id="pfCorpo"></div></div>
+      <div class="pf-leg"><span><i class="anel"></i>anéis: maiores categorias de gasto</span><span><i style="background:${P.pos}"></i>mês positivo</span><span><i style="background:${P.neg}"></i>mês negativo</span><span>arraste para girar · toque para detalhar</span></div>
+    </div>
+    <div class="stack" style="gap:14px">
+      <div class="card"><div class="card-head"><h2>Números do período</h2><span class="tiny muted" style="margin-left:auto" id="pfCtx">${mesLabel(ini)} a ${mesLabel(fim)}</span></div>
+        <div class="pf-num"><div><small>Entradas</small><b class="pos" id="pfEnt">${fmt(T.entradas)}</b></div><div><small>Saídas</small><b class="neg" id="pfSai">${fmt(T.saidas)}</b></div>
+          <div><small>Resultado</small><b id="pfRes" style="color:${T.resultado<0?P.neg:P.pos}">${fmt(T.resultado)}</b></div></div></div>
+      <div class="card"><div class="card-head"><h2>Como a nota é formada</h2><span class="tiny muted" style="margin-left:auto">toque para destacar</span></div>
+        <div class="card-pad">${sd.ok?sd.comps.map(c=>`<button class="sd-comp" data-sdcomp="${c.k}"><b class="small">${c.nome}</b><span class="small"><b>${c.s==null?'—':Math.round(c.s*100)}</b><span class="tiny muted"> · peso ${SD_PESOS[c.k]}</span></span>
+            <div class="trk"><span style="width:${c.s==null?0:Math.round(c.s*100)}%;background:linear-gradient(90deg,${hexA(corComp(c.s),.55)},${corComp(c.s)})"></span></div><small>${esc(c.txt)}</small></button>`).join('')
+          :`<p class="small muted">${esc(sd.motivo)}</p>`}
+          <p class="tiny muted" style="margin-top:10px">Nota calculada só com os lançamentos realizados${modoCasal()?' do modo casal':''}. É um termômetro do seu histórico, não uma recomendação financeira.</p></div></div>
+    </div>
   </div>
   <div class="split" style="margin-bottom:14px">
     <div class="card"><div class="card-head"><h2>Equilíbrio dos componentes</h2></div><div class="chart-box"><div class="chart-canvas" style="height:280px">${sd.ok?'<canvas id="chartSdRadar" role="img" aria-label="Radar dos componentes da saúde financeira"></canvas>':vazio('Sem dados suficientes','')}</div></div></div>
@@ -7185,15 +7241,54 @@ function renderSaude(){
       scales:{y:{ticks:{callback:v=>v+'%'},grid:{color:c=>c.tick&&c.tick.value===0?cssVar('--ink-3'):cssVar('--border')}},x:{grid:{display:false}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y==null?'sem entradas':`${PCT1.format(c.parsed.y)}% das entradas`}}}}});
   desenharGrafico('chartSdHist',{type:'line',data:{labels:hist.map(h=>mesLabel(h.idx)),datasets:[{label:'Nota',data:hist.map(h=>h.score),borderColor:cor,backgroundColor:cor,fill:'origin',tension:.42,borderWidth:3,pointRadius:3,spanGaps:true}]},
     options:{scales:{y:{min:0,max:100,ticks:{stepSize:25},grid:{color:cssVar('--border')}},x:{grid:{display:false}}},plugins:{legend:{display:false}}}});
+  /* números que contam e detalhes */
+  const VAL=new Map();
+  const contar=(el,v,corV)=>{if(!el)return;if(corV)el.style.color=corV;const de=VAL.has(el)?VAL.get(el):v;VAL.set(el,v);
+    if(reduzMov()||de===v){el.textContent=fmt(v);return;}const t0=performance.now();
+    const p=t=>{const k=Math.min(1,(t-t0)/600),e=1-Math.pow(1-k,3);el.textContent=fmt(de+(v-de)*e);if(k<1&&VAL.get(el)===v)requestAnimationFrame(p);};requestAnimationFrame(p);};
+  [['#pfEnt',T.entradas],['#pfSai',T.saidas],['#pfRes',T.resultado]].forEach(([s,v])=>VAL.set($(s),v));
+  const numeros=(x,ctx)=>{contar($('#pfEnt'),x.entradas);contar($('#pfSai'),x.saidas);contar($('#pfRes'),round2(x.entradas-x.saidas),x.entradas-x.saidas<0?P.neg:P.pos);$('#pfCtx').textContent=ctx;};
+  const det=$('#sdInfo'),corpo=$('#pfCorpo');
+  const PF={sel:null,play:false,passo:-1,timer:0};
+  const fechaDet=()=>{det.classList.remove('on');};
+  const mostraMes=i=>{const m=meses[i];if(!m)return;const mm=g.porMes.get(m.idx)||new Map(),maior=[...mm.entries()].sort((a,b)=>b[1]-a[1])[0];
+    corpo.innerHTML=`<h3><i style="background:${m.resultado<0?P.neg:P.pos}"></i>${esc(mesLabel(m.idx,false))}</h3><dl>
+      <dt>Entradas</dt><dd class="pos">${fmt(m.entradas)}</dd><dt>Saídas</dt><dd class="neg">${fmt(m.saidas)}</dd>
+      <dt>Resultado</dt><dd style="color:${m.resultado<0?P.neg:P.pos}">${fmt(m.resultado)}</dd>
+      ${m.entradas>0?`<dt>Sobrou</dt><dd>${PCT1.format(Math.round(m.resultado/m.entradas*1000)/10)}% das entradas</dd>`:''}
+      ${maior?`<dt>Maior gasto</dt><dd>${esc(maior[0])} · ${fmt(maior[1])}</dd>`:''}</dl>`;det.classList.add('on');
+    numeros(m,mesLabel(m.idx,false));};
+  const mostraCat=c=>{const v=c.ant?(c.v-c.ant)/c.ant:null;
+    corpo.innerHTML=`<h3><i style="background:${c.cor}"></i>${esc(c.nome)}</h3><dl>
+      <dt>No período</dt><dd>${fmt(c.v)}</dd><dt>Das saídas</dt><dd>${PCT1.format(Math.round(c.part*1000)/10)}%</dd><dt>Média mensal</dt><dd>${fmt(c.v/jan)}</dd>
+      ${v!=null?`<dt>Antes</dt><dd style="color:${v>0?P.neg:'#12A971'}">${v>0?'+':''}${PCT1.format(Math.round(v*1000)/10)}% vs ${jan} meses anteriores</dd>`:''}</dl>
+      ${c.id?'<button class="btn btn-sm" id="pfVerCat" style="margin-top:10px;width:100%">Ver lançamentos</button>':''}`;det.classList.add('on');
+    const vb=$('#pfVerCat');if(vb)vb.onclick=()=>{Object.assign(LF,{busca:'',tipo:'saida',grupo:'',categoria:c.id,forma:'',inst:'',veiculo:'',situacao:'realizado',viagem:'',km:'',kmDe:'',kmAte:'',
+      deMes:String(ini%12+1),deAno:String(Math.floor(ini/12)),ateMes:String(fim%12+1),ateAno:String(Math.floor(fim/12)),pag:1});LSEG='base';irPara('lancamentos');};};
+  const selecionar=d=>{PF.sel=d;if(ESF.setSel)ESF.setSel(d);
+    if(!d){fechaDet();if(!PF.play)numeros(T,mesLabel(ini)+' a '+mesLabel(fim));if(ESF.aneis)ESF.aneis(null);return;}
+    if(d.tipo==='mes'){mostraMes(d.i);if(ESF.aneis)ESF.aneis(d.i);const ch=CHARTS.chartSdPoup;if(ch){ch.setActiveElements([{datasetIndex:0,index:d.i}]);ch.tooltip.setActiveElements([{datasetIndex:0,index:d.i}],{x:0,y:0});ch.update();}}
+    else{mostraCat(top[d.k]);if(!PF.play){numeros(T,mesLabel(ini)+' a '+mesLabel(fim));if(ESF.aneis)ESF.aneis(null);}}};
+  $('#pfFechar').onclick=()=>{parar();selecionar(null);};
+  const bP=$('#pfPlay');
+  function parar(){if(!PF.play)return;PF.play=false;clearInterval(PF.timer);bP.setAttribute('aria-pressed','false');bP.classList.remove('btn-primary');$('#pfIco').textContent='▶';$('#pfTxt').textContent='Percorrer meses';$('#pfMes').classList.remove('on');}
+  bP.onclick=()=>{if(PF.play){parar();selecionar(null);return;}
+    PF.play=true;PF.passo=-1;bP.setAttribute('aria-pressed','true');bP.classList.add('btn-primary');$('#pfIco').textContent='❚❚';$('#pfTxt').textContent='Pausar';
+    const av=()=>{if(!$('#sdBox')){clearInterval(PF.timer);return;}PF.passo++;if(PF.passo>=meses.length){parar();selecionar(null);return;}
+      selecionar({tipo:'mes',i:PF.passo});const t=$('#pfMes');t.textContent=`${PF.passo+1} de ${meses.length} · ${mesLabel(meses[PF.passo].idx)}`;t.classList.add('on');};
+    av();PF.timer=setInterval(av,reduzMov()?2200:1700);};
+  ESF.focarMes=i=>{parar();selecionar(i>=0?{tipo:'mes',i}:null);};
+  ESF.aoSelecionar=d=>{parar();selecionar(d);};
   $$('[data-sdcomp]',cont).forEach(b=>b.onclick=()=>{const c=sd.comps.find(x=>x.k===b.dataset.sdcomp);if(!c)return;
     $$('[data-sdcomp]',cont).forEach(x=>x.classList.toggle('ativo',x===b));
-    if(ESF.destacar)ESF.destacar(corComp(c.s),`${c.nome}: ${c.s==null?'sem dados':Math.round(c.s*100)+' de 100'} — ${c.txt}`);
+    if(ESF.destacar)ESF.destacar(corComp(c.s));
+    corpo.innerHTML=`<h3><i style="background:${corComp(c.s)}"></i>${esc(c.nome)}</h3><p class="pf-txt">${c.s==null?'Sem dados':Math.round(c.s*100)+' de 100'} — ${esc(c.txt)}</p>`;det.classList.add('on');
     const ch=CHARTS.chartSdRadar,i=val.indexOf(c);if(ch&&i>=0){ch.setActiveElements([{datasetIndex:0,index:i}]);ch.tooltip.setActiveElements([{datasetIndex:0,index:i}],{x:0,y:0});ch.update();}});
-  montarEsfera($('#sdBox'),sd,meses,ant);
+  montarPlaneta($('#sdBox'),{sd,meses,top,g,P});
 }
 
-/* ---------- esfera 3D (Three.js r128, carregado só nesta aba) ---------- */
-const ESF={ren:null,raf:0,ro:null,focarMes:null,destacar:null};
+/* ---------- planeta 3D (Three.js r128, carregado só nesta aba) ---------- */
+const ESF={ren:null,raf:0,ro:null,focarMes:null,destacar:null,aneis:null,setSel:null,aoSelecionar:null};
 let THREE_P=null;
 function carregarThree(){
   if(window.THREE)return Promise.resolve(window.THREE);
@@ -7202,82 +7297,92 @@ function carregarThree(){
   return THREE_P;
 }
 function pararEsfera(){
-  if(ESF.raf)cancelAnimationFrame(ESF.raf);ESF.raf=0;ESF.focarMes=null;ESF.destacar=null;
+  if(ESF.raf)cancelAnimationFrame(ESF.raf);ESF.raf=0;ESF.destacar=null;ESF.aneis=null;ESF.setSel=null;
   if(ESF.ro){ESF.ro.disconnect();ESF.ro=null;}
   if(ESF.ren){try{ESF.ren.dispose();ESF.ren.forceContextLoss&&ESF.ren.forceContextLoss();}catch(_){}ESF.ren=null;}
 }
-function esferaFallback(box){if(!box||box.querySelector('.saude-fallback'))return;const d=document.createElement('div');d.className='saude-fallback';d.innerHTML='<div></div>';box.insertBefore(d,box.firstChild);const dc=box.querySelector('.saude-dica');if(dc)dc.textContent='';}
-function infoMes(m){const t=m.entradas>0?m.resultado/m.entradas*100:null;
-  return `<b>${esc(mesLabel(m.idx,false))}</b><span>Entradas ${fmt(m.entradas)} · Saídas ${fmt(m.saidas)}</span><span class="${m.resultado<0?'neg-res':'pos-res'}">Resultado ${fmt(m.resultado)}${t!=null?' ('+PCT1.format(Math.round(t*10)/10)+'% das entradas)':''}</span>`;}
-async function montarEsfera(box,sd,meses,ant){
+function esferaFallback(box){if(!box||box.querySelector('.saude-fallback'))return;const d=document.createElement('div');d.className='saude-fallback';d.innerHTML='<div></div>';box.insertBefore(d,box.firstChild);}
+async function montarPlaneta(box,{sd,meses,top,g,P}){
   pararEsfera();if(!box)return;
-  const info=$('#sdInfo',box),mostrar=html=>{if(!info)return;info.innerHTML=html;info.hidden=!html;};
-  let T;try{T=await carregarThree();}catch(e){esferaFallback(box);ESF.focarMes=i=>{const m=meses[i];if(m)mostrar(infoMes(m));};return;}
+  let T;try{T=await carregarThree();}catch(e){esferaFallback(box);return;}
   if(!box.isConnected)return;
   let ren;try{ren=new T.WebGLRenderer({antialias:true,alpha:true});}catch(e){esferaFallback(box);return;}
   ESF.ren=ren;
-  const parado=reduzMov(),movel=matchMedia('(max-width:760px)').matches,P=corRes();
-  const W=()=>box.clientWidth,H=()=>box.clientHeight;
+  const parado=reduzMov(),W=()=>box.clientWidth,H=()=>box.clientHeight;
   ren.setPixelRatio(Math.min(window.devicePixelRatio||1,2));ren.setSize(W(),H());ren.setClearColor(0x000000,0);
   box.insertBefore(ren.domElement,box.firstChild);
-  const cena=new T.Scene(),cam=new T.PerspectiveCamera(38,W()/H(),.1,100);cam.position.set(0,0,6.4);
-  const corBase=new T.Color(sd.ok?sd.cor:'#8A94A6'),score=sd.ok?sd.score:50;
-  const grupo=new T.Group();cena.add(grupo);
-  const geo=new T.IcosahedronGeometry(1.35,movel?14:20),pos=geo.attributes.position,base=pos.array.slice();
-  const mat=new T.MeshStandardMaterial({color:corBase.clone(),emissive:corBase.clone(),emissiveIntensity:.22,roughness:.3,metalness:.2});
-  const nucleo=new T.Mesh(geo,mat);grupo.add(nucleo);
-  const malha=new T.Mesh(new T.IcosahedronGeometry(1.7,2),new T.MeshBasicMaterial({color:corBase.clone(),wireframe:true,transparent:true,opacity:.14}));grupo.add(malha);
-  // "fantasma" do período anterior: maior = nota anterior mais alta
-  let fant=null;
-  if(sd.ok&&ant&&ant.ok){fant=new T.Mesh(new T.IcosahedronGeometry(1.35*Math.max(.7,Math.min(1.35,ant.score/Math.max(1,sd.score))),3),new T.MeshBasicMaterial({color:0xffffff,wireframe:true,transparent:true,opacity:.18}));grupo.add(fant);}
-  cena.add(new T.AmbientLight(0xffffff,.55));
-  const l1=new T.PointLight(0x7fe3ff,1.1,30);l1.position.set(4,3,5);cena.add(l1);
-  const l2=new T.PointLight(0xff8fb1,.8,30);l2.position.set(-4,-2,4);cena.add(l2);
-  const l3=new T.DirectionalLight(0xffffff,.5);l3.position.set(0,4,3);cena.add(l3);
-  const orb=new T.Group();grupo.add(orb);orb.rotation.x=.42;
-  const maxAbs=Math.max(1,...meses.map(m=>Math.abs(m.resultado))),sats=[];
-  meses.forEach((m,i)=>{if(!(m.entradas||m.saidas))return;const a=i/meses.length*Math.PI*2;
-    const s=new T.Mesh(new T.SphereGeometry(.07+.07*Math.abs(m.resultado)/maxAbs,18,14),new T.MeshBasicMaterial({color:new T.Color(m.resultado>=0?P.pos:P.neg)}));
-    s.position.set(Math.cos(a)*2.35,0,Math.sin(a)*2.35);s.userData={i};orb.add(s);sats.push(s);});
-  const anel=new T.Mesh(new T.TorusGeometry(2.35,.006,6,120),new T.MeshBasicMaterial({color:corBase.clone(),transparent:true,opacity:.35}));anel.rotation.x=Math.PI/2;orb.add(anel);
-  const bpm=score>=80?56:score>=65?66:score>=50?80:96,amp=.03+.14*(1-score/100);
-  const bat=t=>{const f=(t*bpm/60)%1;return Math.exp(-Math.pow((f-.08)/.035,2))+.55*Math.exp(-Math.pow((f-.26)/.045,2));};
-  let rx=-.15,ry=.4,vx=0,vy=0,arr=null,movido=0,foco=-1,alvoCor=corBase.clone(),orbParado=false;
-  const cv=ren.domElement,ray=new T.Raycaster(),pt=new T.Vector2();
-  const pick=e=>{const r=cv.getBoundingClientRect();pt.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(pt,cam);const h=ray.intersectObjects(sats);return h.length?h[0].object.userData.i:-1;};
-  ESF.focarMes=i=>{foco=i;orbParado=i>=0;sats.forEach(s=>s.scale.setScalar(s.userData.i===i?1.9:1));
-    const m=meses[i];mostrar(m?infoMes(m):'');
-    const ch=CHARTS.chartSdPoup;if(ch&&i>=0){ch.setActiveElements([{datasetIndex:0,index:i}]);ch.tooltip.setActiveElements([{datasetIndex:0,index:i}],{x:0,y:0});ch.update();}
-    if(parado)desenha(0);};
-  ESF.destacar=(hex,txt)=>{alvoCor=new T.Color(hex);mostrar(`<b>Componente</b><span>${esc(txt)}</span>`);if(parado){mat.color.copy(alvoCor);mat.emissive.copy(alvoCor);desenha(0);}
-    clearTimeout(ESF._t);ESF._t=setTimeout(()=>{alvoCor=corBase.clone();if(parado){mat.color.copy(alvoCor);mat.emissive.copy(alvoCor);desenha(0);}},4000);};
-  cv.addEventListener('pointerdown',e=>{arr={x:e.clientX,y:e.clientY};movido=0;cv.setPointerCapture(e.pointerId);});
-  cv.addEventListener('pointermove',e=>{if(!arr){cv.style.cursor=pick(e)>=0?'pointer':'';return;}const dx=e.clientX-arr.x,dy=e.clientY-arr.y;movido+=Math.abs(dx)+Math.abs(dy);arr={x:e.clientX,y:e.clientY};
-    vy=dx*.006;vx=dy*.006;ry+=vy;rx=Math.max(-1.1,Math.min(1.1,rx+vx));if(parado)desenha(0);});
-  cv.addEventListener('pointerup',e=>{if(arr&&movido<6){const i=pick(e);ESF.focarMes(i===foco?-1:i);}arr=null;});
+  const cena=new T.Scene(),cam=new T.PerspectiveCamera(36,W()/H(),.1,200);cam.position.set(0,1.6,13);cam.lookAt(0,0,0);
+  const sistema=new T.Group();cena.add(sistema);
+  const eg=new T.BufferGeometry(),ep=[];for(let i=0;i<600;i++){const r=40+Math.random()*40,t=Math.random()*Math.PI*2,p=Math.acos(2*Math.random()-1);ep.push(r*Math.sin(p)*Math.cos(t),r*Math.cos(p),r*Math.sin(p)*Math.sin(t));}
+  eg.setAttribute('position',new T.Float32BufferAttribute(ep,3));cena.add(new T.Points(eg,new T.PointsMaterial({color:0xaab8d8,size:.12,transparent:true,opacity:.55})));
+  const corBase=new T.Color(sd.ok?sd.cor:'#8A94A6');
+  const uP={uCor:{value:corBase.clone()},uFundo:{value:new T.Color('#0E1A33')},uT:{value:0},uPulso:{value:0}};
+  const planeta=new T.Mesh(new T.SphereGeometry(1.35,96,64),new T.ShaderMaterial({uniforms:uP,
+    vertexShader:`varying vec3 vN;varying vec3 vP;varying vec3 vV;void main(){vP=position;vN=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(position,1.);vV=-mv.xyz;gl_Position=projectionMatrix*mv;}`,
+    fragmentShader:`uniform vec3 uCor;uniform vec3 uFundo;uniform float uT;uniform float uPulso;varying vec3 vN;varying vec3 vP;varying vec3 vV;
+      float h(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453);}
+      float ns(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+        return mix(mix(mix(h(i),h(i+vec3(1,0,0)),f.x),mix(h(i+vec3(0,1,0)),h(i+vec3(1,1,0)),f.x),f.y),mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x),mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y),f.z);}
+      void main(){vec3 n=normalize(vN),v=normalize(vV),L=normalize(vec3(.55,.45,.75));
+        float lat=vP.y/1.35,w=ns(vP*1.6+vec3(uT*.06,0.,uT*.03))*2.2+ns(vP*4.2-uT*.04)*.6,faixas=.5+.5*sin(lat*10.+w);
+        vec3 base=mix(uFundo,uCor,.42+.45*faixas);float luz=max(dot(n,L),0.)*.7+.42,borda=pow(1.-max(dot(n,v),0.),2.6);
+        vec3 c=base*luz+uCor*borda*(1.1+.5*uPulso)+vec3(1.)*pow(max(dot(reflect(-L,n),v),0.),24.)*.25;gl_FragColor=vec4(c,1.);}`}));
+  sistema.add(planeta);
+  const atm=new T.Mesh(new T.SphereGeometry(1.62,64,48),new T.ShaderMaterial({uniforms:{uCor:uP.uCor,uPulso:uP.uPulso},side:T.BackSide,transparent:true,blending:T.AdditiveBlending,depthWrite:false,
+    vertexShader:`varying vec3 vN;void main(){vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader:`uniform vec3 uCor;uniform float uPulso;varying vec3 vN;void main(){float i=pow(.72-dot(vN,vec3(0,0,1.)),3.)*(1.+.6*uPulso);gl_FragColor=vec4(uCor,1.)*i;}`}));
+  sistema.add(atm);
+  const plano=new T.Group();plano.rotation.x=-.32;plano.rotation.z=.12;sistema.add(plano);
+  const largura=part=>.05+.27*Math.min(1,part/.45);
+  const aneis=top.map((c,i)=>{const r0=1.9+i*.34;
+    const u={uCor:{value:new T.Color(c.cor)},uR0:{value:r0},uW:{value:.05},uAlvo:{value:largura(c.part)},uDest:{value:0}};
+    const mesh=new T.Mesh(new T.RingGeometry(r0,r0+.32,160,1),new T.ShaderMaterial({uniforms:u,transparent:true,depthWrite:false,side:T.DoubleSide,
+      vertexShader:`varying float vR;void main(){vR=length(position.xy);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+      fragmentShader:`uniform vec3 uCor;uniform float uR0;uniform float uW;uniform float uDest;varying float vR;
+        void main(){float x=(vR-uR0)/max(uW,.001);if(x<0.||x>1.)discard;float a=pow(sin(x*3.14159),.6)*(.55+.45*uDest);
+          float fio=smoothstep(0.,.06,x)*smoothstep(1.,.94,x);gl_FragColor=vec4(uCor*(1.+.5*uDest),a*(.75+.25*fio));}`}));
+    mesh.rotation.x=-Math.PI/2;mesh.userData={tipo:'cat',k:i,r0};plano.add(mesh);return {mesh,u,c};});
+  const orbita=new T.Group();orbita.rotation.x=-.08;orbita.rotation.z=-.18;sistema.add(orbita);
+  const trilha=new T.Mesh(new T.TorusGeometry(3.95,.006,6,200),new T.MeshBasicMaterial({color:0x9fb3df,transparent:true,opacity:.25}));trilha.rotation.x=Math.PI/2;orbita.add(trilha);
+  cena.add(new T.AmbientLight(0xffffff,.55));const lz=new T.PointLight(0xffffff,1.1,40);lz.position.set(5,4,7);cena.add(lz);
+  const maxAbs=Math.max(1,...meses.map(m=>Math.abs(m.resultado))),luas=[];
+  meses.forEach((m,i)=>{if(!(m.entradas||m.saidas))return;const a=i/meses.length*Math.PI*2+Math.PI/2,cor=new T.Color(m.resultado<0?P.neg:P.pos);
+    const grp=new T.Group();grp.position.set(Math.cos(a)*3.95,0,Math.sin(a)*3.95);
+    const s=new T.Mesh(new T.SphereGeometry(.09+.12*Math.abs(m.resultado)/maxAbs,24,18),new T.MeshStandardMaterial({color:cor,emissive:cor,emissiveIntensity:.55,roughness:.4}));
+    s.userData={tipo:'mes',i};const halo=new T.Mesh(new T.SphereGeometry(.32,20,14),new T.MeshBasicMaterial({color:cor,transparent:true,opacity:0,depthWrite:false}));
+    grp.add(s,halo);orbita.add(grp);luas.push({esfera:s,halo,escala:1,i});});
+  let sel=null,alvoCor=corBase.clone();
+  ESF.setSel=d=>{sel=d;if(parado)desenhar(0);};
+  ESF.aneis=i=>{const mm=i==null?null:(g.porMes.get(meses[i].idx)||new Map()),tot=mm?[...mm.values()].reduce((a,b)=>a+b,0):0;
+    aneis.forEach(a=>{a.u.uAlvo.value=mm?largura(tot?(mm.get(a.c.nome)||0)/tot:0):largura(a.c.part);});if(parado)desenhar(0);};
+  ESF.destacar=hex=>{alvoCor=new T.Color(hex);clearTimeout(ESF._t);ESF._t=setTimeout(()=>{alvoCor=corBase.clone();if(parado)desenhar(0);},4000);if(parado)desenhar(0);};
+  let rx=0,ry=0,vx=0,vy=0,arr=null,mov=0;const ray=new T.Raycaster(),pt=new T.Vector2(),cv=ren.domElement;
+  const pick=e=>{const r=cv.getBoundingClientRect();pt.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(pt,cam);
+    for(const h of ray.intersectObjects([...luas.map(l=>l.esfera),...aneis.map(a=>a.mesh)])){const d=h.object.userData;if(d.tipo==='mes')return d;
+      const p=h.object.worldToLocal(h.point.clone()),rr=Math.hypot(p.x,p.y),a=aneis[d.k];if(rr>=d.r0&&rr<=d.r0+a.u.uW.value+.04)return d;}return null;};
+  cv.addEventListener('pointerdown',e=>{arr={x:e.clientX,y:e.clientY};mov=0;cv.setPointerCapture(e.pointerId);});
+  cv.addEventListener('pointermove',e=>{if(!arr){cv.style.cursor=pick(e)?'pointer':'';return;}const dx=e.clientX-arr.x,dy=e.clientY-arr.y;mov+=Math.abs(dx)+Math.abs(dy);arr={x:e.clientX,y:e.clientY};
+    vy=dx*.005;vx=dy*.004;ry+=vy;rx=Math.max(-.7,Math.min(.7,rx+vx));if(parado)desenhar(0);});
+  cv.addEventListener('pointerup',e=>{if(arr&&mov<6&&ESF.aoSelecionar)ESF.aoSelecionar(pick(e));arr=null;});
   cv.addEventListener('pointercancel',()=>{arr=null;});
-  let quadro=0,tOrb=0;const t0=performance.now();let tAnt=0;
-  function desenha(t){
-    const p=pos.array;
-    if(!parado&&(quadro++%2===0)){const fase=t*.6;for(let i=0;i<p.length;i+=3){const x=base[i],y=base[i+1],z=base[i+2];
-      const n=Math.sin(x*2.6+fase)*Math.sin(y*3.1+fase*1.3)*Math.sin(z*2.4+fase*.8);const r=1+amp*n;p[i]=x*r;p[i+1]=y*r;p[i+2]=z*r;}
-      pos.needsUpdate=true;}
-    if(!parado){mat.color.lerp(alvoCor,.08);mat.emissive.lerp(alvoCor,.08);}
-    const b=parado?0:bat(t);nucleo.scale.setScalar(1+.045*b);malha.scale.setScalar(1+.02*(parado?0:bat(t-.05)));
-    if(fant){fant.rotation.y=-t*.08;fant.material.opacity=.12+.08*b;}
-    if(!arr&&!parado){ry+=.0035+vy;vy*=.94;vx*=.94;rx=Math.max(-1.1,Math.min(1.1,rx+vx));}
-    if(!orbParado&&!parado)tOrb+=(t-tAnt);tAnt=t;
-    grupo.rotation.set(rx,ry,0);orb.rotation.y=tOrb*.12;malha.rotation.y=-t*.05;
+  const t0=performance.now(),score=sd.ok?sd.score:50,bpm=score>=80?56:score>=65?66:score>=50?80:96;let tOrb=0,tAnt=0;
+  function desenhar(t){
+    const f=(t*bpm/60)%1,bat=parado?0:Math.exp(-Math.pow((f-.08)/.035,2))+.55*Math.exp(-Math.pow((f-.26)/.045,2));
+    uP.uT.value=parado?0:t;uP.uPulso.value=bat;planeta.scale.setScalar(1+.025*bat);
+    uP.uCor.value.lerp(alvoCor,parado?1:.08);
+    aneis.forEach((a,i)=>{a.u.uW.value+=(a.u.uAlvo.value-a.u.uW.value)*(parado?1:.08);a.u.uDest.value+=((sel&&sel.tipo==='cat'&&sel.k===i?1:0)-a.u.uDest.value)*(parado?1:.15);});
+    luas.forEach(l=>{const al=sel&&sel.tipo==='mes'&&sel.i===l.i?1.7:1;l.escala+=(al-l.escala)*(parado?1:.15);l.esfera.scale.setScalar(l.escala);l.halo.material.opacity=(l.escala-1)/.7*.22;});
+    if(!arr&&!parado){ry+=.0022+vy;vy*=.93;vx*=.93;rx=Math.max(-.7,Math.min(.7,rx+vx));}
+    if(!parado&&!sel)tOrb+=t-tAnt;tAnt=t;
+    sistema.rotation.set(rx,ry,0);plano.rotation.y=parado?0:-t*.04;orbita.rotation.y=tOrb*.09;
     ren.render(cena,cam);
   }
-  function loop(){
-    if(!box.isConnected||PAGINA!=='analises'||ANA.aba!=='saude'){pararEsfera();return;}
-    ESF.raf=requestAnimationFrame(loop);if(document.hidden)return;desenha((performance.now()-t0)/1000);
-  }
-  ESF.ro=new ResizeObserver(()=>{if(!ESF.ren)return;ren.setSize(W(),H());cam.aspect=W()/H();cam.updateProjectionMatrix();if(parado)desenha(0);});ESF.ro.observe(box);
-  if(parado)desenha(0);else loop();
+  function loop(){if(!box.isConnected||PAGINA!=='analises'||ANA.aba!=='saude'){pararEsfera();return;}
+    ESF.raf=requestAnimationFrame(loop);if(document.hidden)return;desenhar((performance.now()-t0)/1000);}
+  ESF.ro=new ResizeObserver(()=>{if(!ESF.ren)return;ren.setSize(W(),H());cam.aspect=W()/H();const est=W()<560;cam.position.z=est?16.5:13;cam.lookAt(0,est?-2.2:0,0);cam.updateProjectionMatrix();if(parado)desenhar(0);});
+  ESF.ro.observe(box);
+  if(parado)desenhar(0);else loop();
 }
-
 
 /* =========================================================================
    Bloco 9: identidade dos gráficos (degradês, sombras, estilo de linha),
