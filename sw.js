@@ -1,11 +1,11 @@
-/* Meu Fluxo — Service Worker
+/* Orion Finanças — Service Worker
    Objetivos:
    - Tornar o app instalável (PWA) e abrível offline (casca do app).
    - NUNCA armazenar em cache os dados privados (chamadas à API do Supabase).
    - Buscar sempre a versão nova quando houver rede, com queda para o cache.
    Ao publicar uma nova versão do app, altere VERSION para forçar a atualização. */
-const VERSION = 'v1.2.0';
-const CACHE = 'meufluxo-' + VERSION;
+const VERSION = 'v3.0.0';
+const CACHE = 'orion-' + VERSION;
 
 /* Casca essencial (mesma origem). start_url "." resolve para a pasta do app. */
 const CORE = [
@@ -96,7 +96,7 @@ self.addEventListener('push', (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; }
   catch (_) { d = { corpo: e.data ? e.data.text() : '' }; }
-  const titulo = d.titulo || 'Meu Fluxo';
+  const titulo = d.titulo || 'Orion Finanças';
   const rota = d.rota || 'visao-geral';
   const tag = d.tag || ('mf:' + Date.now());
   const opts = {
